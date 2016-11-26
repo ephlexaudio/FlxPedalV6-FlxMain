@@ -117,6 +117,7 @@ extern ProcessingControl procCont;
 #define dbg 1
 int main(int argc, char *argv[])
 {
+	int gitTestVar = 0;
 	cout << "starting..." << endl;
 	int exit = 0;
 	int count = 0;
