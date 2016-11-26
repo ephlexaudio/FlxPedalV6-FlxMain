@@ -1,0 +1,1818 @@
+/*
+ * Effects.cpp
+ *
+ *  Created on: Jun 29, 2016
+ *      Author: mike
+ */
+
+#include "Effects2.h"
+
+
+#define BUFFER_SIZE 1024
+#define NUMBER_OF_BANDS 2
+#define CONTROL_VALUE_INDEX_MAX 100
+
+
+/* actions:
+ * 		0: load the ProcessEvent data
+ * 		1: run the process
+ * 		2: read data from process??
+ * 		3: stop the process
+ *
+ */
+
+// set
+
+extern unsigned int bufferSize;
+#define dbg 1
+
+int resetProcBuffer(struct ProcessBuffer procBufferArray)
+{
+	int status = 0;
+
+	procBufferArray.processed = 0;
+	procBufferArray.ready = 0;
+
+	return status;
+}
+
+
+int setProcBuffer(struct ProcessBuffer procBufferArray, int processed, int ready)
+{
+	int status = 0;
+
+	procBufferArray.processed = processed;
+	procBufferArray.ready = ready;
+
+	return status;
+}
+
+int initProcBuffers(struct ProcessBuffer *procBufferArray)
+{
+	int status = 0;
+
+	for(int i = 0; i < 60; i++)
+	{
+		resetProcBuffer(procBufferArray[i]);
+	}
+
+	return status;
+}
+
+#define dbg 0
+int setProcData(struct ProcessEvent *procEvent, Process processStruct)
+{
+	int status = 0;
+	string processName;
+	volatile int processType = 0;
+	//volatile int processIndex = 0;
+	volatile int processInputCount = 0;
+	volatile int processOutputCount = 0;
+
+	if(processStruct.type.compare("delayb") == 0) processType = 0;
+	else if(processStruct.type.compare("filter3bb") == 0) processType = 1;
+	else if(processStruct.type.compare("filter3bb2") == 0) processType = 2;
+	else if(processStruct.type.compare("lohifilterb") == 0) processType = 3;
+	else if(processStruct.type.compare("mixerb") == 0) processType = 4;
+	else if(processStruct.type.compare("volumeb") == 0) processType = 5;
+	else if(processStruct.type.compare("waveshaperb") == 0) processType = 6;
+
+	processName = processStruct.name;
+	processInputCount = processStruct.inputs.size();
+	processOutputCount = processStruct.outputs.size();
+#if(dbg == 1)
+	std::cout << "ProcessingControl process name: " << processName << std::endl;
+	std::cout << "processType: " << processType << std::endl;
+	std::cout << "process type index: " << atoi(processName.substr(processName.find("_")+1).c_str()) << std::endl;
+	std::cout << "processInputCount: " << processInputCount << std::endl;
+	std::cout << "processOutputCount: " << processOutputCount << std::endl;
+	std::cout <<  std::endl;
+#endif
+
+
+	procEvent->processName = processName;
+	procEvent->processType = processType;
+
+	procEvent->processInputCount = processInputCount;
+
+#if(dbg == 1)
+	cout << "procEvent->inputBufferNames: ";
+#endif
+	for(int processInputIndex = 0; processInputIndex < procEvent->processInputCount; processInputIndex++)
+	{
+		procEvent->inputBufferNames.push_back(processStruct.inputs[processInputIndex].c_str());
+#if(dbg == 1)
+		cout << procEvent->inputBufferNames[processInputIndex] << ",";
+#endif
+	}
+#if(dbg == 1)
+	cout << endl;
+	cout << "procEvent->outputBufferNames: ";
+#endif
+
+	procEvent->processOutputCount = processOutputCount;
+
+	for(int processOutputIndex = 0; processOutputIndex < procEvent->processOutputCount; processOutputIndex++)
+	{
+		procEvent->outputBufferNames.push_back(processStruct.outputs[processOutputIndex].c_str());
+#if(dbg == 1)
+		cout << procEvent->outputBufferNames[processOutputIndex] << ",";
+#endif
+	}
+#if(dbg == 1)
+	cout << endl;
+#endif
+
+	return status;
+}
+
+#define dbg 0
+int setProcParameters(struct ProcessEvent *procEvent, Process processStruct)
+{
+	int status = 0;
+
+
+	volatile int paramArrayCount = processStruct.params.size();
+
+	for(int paramArrayIndex = 0; paramArrayIndex < paramArrayCount; paramArrayIndex++)
+	{
+		procEvent->parameters[paramArrayIndex] = processStruct.params[paramArrayIndex].value;
+
+#if(dbg == 1)
+		std::cout << "parameter[" << paramArrayIndex << "]: " << procEvent->parameters[paramArrayIndex] << std::endl;
+#endif
+	}
+
+	return status;
+}
+
+
+int updateProcParameter(string procName, int paramIndex, int paramValue)
+{
+	int status = 0;
+
+
+
+	return status;
+}
+
+int initProcInputBufferIndexes(struct ProcessEvent *procEvent)
+{
+	int status = 0;
+
+	for(int procInputIndex = 0; procInputIndex < procEvent->processInputCount; procInputIndex++)
+	{
+		procEvent->inputBufferIndexes[procInputIndex] = 58;
+	}
+
+	return status;
+}
+
+int initProcOutputBufferIndexes(struct ProcessEvent *procEvent)
+{
+	int status = 0;
+
+	for(int procOutputIndex = 0; procOutputIndex < procEvent->processOutputCount; procOutputIndex++)
+	{
+		procEvent->outputBufferIndexes[procOutputIndex] = 59;
+	}
+
+	return status;
+}
+
+#define dbg 0
+int setProcInputBufferIndex(struct ProcessEvent *procEvent, int processInputIndex, int inputBufferIndex, struct ProcessBuffer *procBufferArray)
+{
+	int status = 0;
+
+	// set the process input to read from the buffer
+	procEvent->inputBufferIndexes[processInputIndex] = inputBufferIndex;
+
+#if(dbg == 1)
+	std::cout << procEvent->processName << " input buffer: ";
+	std::cout << procEvent->inputBufferIndexes[processInputIndex] << endl;
+#endif
+
+
+	return status;
+}
+
+
+#define dbg 0
+int setProcOutputBufferIndex(struct ProcessEvent *procEvent, int processOutputIndex, int outputBufferIndex, struct ProcessBuffer *procBufferArray)
+{
+	int status = 0;
+
+	// set the process output to write into the buffer
+	procEvent->outputBufferIndexes[processOutputIndex] = outputBufferIndex;
+	procEvent->outputBufferNames.push_back(procBufferArray[outputBufferIndex].portName);
+
+#if(dbg == 1)
+	std::cout << procEvent->processName << " output buffer: ";
+	std::cout << procEvent->outputBufferIndexes[processOutputIndex] << endl;
+#endif
+
+	return status;
+}
+
+#define dbg 1
+
+int control(int action, bool gate, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent)
+{
+	int targetParameterValueIndex = 0;
+
+	if(action == 0)
+	{
+		if(controlEvent->type == 0)
+		{
+
+		}
+		else if(controlEvent->type == 1)
+		{
+			//int attack = controlEvent->parameter[0];
+			//int peakValueIndex = 50;//controlEvent->parameter[4];
+
+			controlEvent->controlContext = (EnvGenContext *)calloc(1, sizeof(EnvGenContext));
+			((EnvGenContext *)(controlEvent->controlContext))->envStage = 0;
+
+			((EnvGenContext *)(controlEvent->controlContext))->stageTimeValue = 0;
+		}
+		else if(controlEvent->type == 2)
+		{
+			controlEvent->controlContext = (LfoContext *)calloc(1, sizeof(LfoContext));
+			((LfoContext *)(controlEvent->controlContext))->cycleTimeValueIndex = 0;
+		}
+	}
+	else if(action == 1)
+	{
+
+		if(controlEvent->type == 0)
+		{
+			controlEvent->int_output = controlEvent->parameter[0];  // direct transfer of parameter value
+#if(dbg >= 2)
+			//cout << "PARAM CONTROL: Normal" << endl;
+#endif
+		}
+		else if(controlEvent->type == 1) // envelope generator
+		{
+
+			if(gate == true && controlEvent->envTriggerStatus == false) // pick detected
+			{
+				((EnvGenContext *)(controlEvent->controlContext))->envStage = 0;
+				((EnvGenContext *)(controlEvent->controlContext))->stageTimeValue = 0;
+#if(dbg >= 2)
+				cout << "gate: true." << endl;
+
+#endif
+				controlEvent->envTriggerStatus = true;
+			}
+			else if(gate == false && controlEvent->envTriggerStatus == true) // string muted
+			{
+#if(dbg >= 2)
+				cout << "gate: false." << endl;
+#endif
+				controlEvent->envTriggerStatus = false;
+			}
+
+
+			int stageTimeValue = ((EnvGenContext *)(controlEvent->controlContext))->stageTimeValue;
+			float slewRate = ((EnvGenContext *)(controlEvent->controlContext))->slewRate;
+			int attack = controlEvent->parameter[0];
+			int decay = controlEvent->parameter[1];
+			//int sustain = controlEvent->parameter[2];
+			//int release = controlEvent->parameter[3];
+			int attackPeakValueIndex = 100;//controlEvent->parameter[4];
+			int decayBottomValueIndex = 10;//controlEvent->parameter[5];
+			//int internalOutput = 50*controlEvent->output;
+
+			switch(((EnvGenContext *)(controlEvent->controlContext))->envStage)
+			{
+			case 0: // idle
+				controlEvent->output = 0.0;
+				// pick detected, go to attack
+				if(controlEvent->envTriggerStatus == true)
+				{
+					((EnvGenContext *)(controlEvent->controlContext))->envStage++;
+#if(dbg >= 3)
+				cout << "case 0: output: " << controlEvent->output << endl;
+#endif
+					slewRate = 10.1 - envTime[attack];
+#if(dbg >= 2)
+					cout << "ATTACK" << endl;
+#endif
+				}
+				break;
+			case 1:	// attack
+				if(controlEvent->output < float(attackPeakValueIndex))
+				{
+					controlEvent->output += slewRate;
+#if(dbg >= 3)
+				cout << "case 1: output: " << controlEvent->output << endl;
+#endif
+				}
+				// peak reached, go to decay
+				else if(/*controlEvent->output >= float(attackPeakValueIndex) && */controlEvent->envTriggerStatus == false)
+				{
+					((EnvGenContext *)(controlEvent->controlContext))->envStage = 2;
+					slewRate = 10.1 - envTime[decay];
+#if(dbg >= 2)
+					cout << "DECAY" << endl;
+#endif
+				}
+				// string muted, go to idle
+				/*else if(controlEvent->envTriggerStatus == false)
+				{
+					((EnvGenContext *)(controlEvent->controlContext))->envStage = 0;
+					slewRate = 10.1 - envTime[sustain];
+#if(dbg >= 2)
+					cout << "RELEASE" << endl;
+#endif
+				}*/
+
+				break;
+			case 2:	// decay
+#if(dbg >= 3)
+				cout << "case 2: output: " << controlEvent->output << endl;
+#endif
+				// pick detected, go back to attack
+				if(controlEvent->envTriggerStatus == true)
+				{
+					((EnvGenContext *)(controlEvent->controlContext))->envStage = 1;
+					slewRate = 10.1 - envTime[attack];
+#if(dbg >= 2)
+					cout << "ATTACK" << endl;
+#endif
+				}
+				else if(controlEvent->output > float(decayBottomValueIndex))
+				{
+					//((EnvGenContext *)(controlEvent->controlContext))->envStage = 0;//envStage++;
+					controlEvent->output -= slewRate;
+				}
+				else // output is below decay bottom value
+				{
+					((EnvGenContext *)(controlEvent->controlContext))->envStage = 0;
+#if(dbg >= 2)
+					cout << "RELEASE" << endl;
+#endif
+				}
+				// string muted, go to idle
+				/*else if(controlEvent->envTriggerStatus == false)
+				{
+					((EnvGenContext *)(controlEvent->controlContext))->envStage = 0;
+					//slewRate = 10.1 - envTime[sustain];
+#if(dbg >= 2)
+					cout << "RELEASE" << endl;
+#endif
+				}*/
+				break;
+
+			default:;
+			}
+			controlEvent->int_output  = (int)(controlEvent->output);
+
+			if(controlEvent->int_output < 0) controlEvent->int_output = 0;
+			if(controlEvent->int_output > 99) controlEvent->int_output = 99;
+
+
+
+			((EnvGenContext *)(controlEvent->controlContext))->stageTimeValue = stageTimeValue;
+			((EnvGenContext *)(controlEvent->controlContext))->slewRate = slewRate;
+		}
+		else if(controlEvent->type == 2) // LFO
+		{
+			unsigned int cycleTimeValueIndex = ((LfoContext *)(controlEvent->controlContext))->cycleTimeValueIndex;
+			float cyclePositionValue = ((LfoContext *)(controlEvent->controlContext))->cyclePositionValue;
+			int int_cyclePositionValue;
+			unsigned int frequencyIndex = controlEvent->parameter[0];
+			unsigned int amplitudeIndex = controlEvent->parameter[1];
+			unsigned int offsetIndex = controlEvent->parameter[2];
+			//float waveValue;
+			//cout << "output: " << controlEvent->output << endl;
+
+			if(cyclePositionValue >= float(99))
+			{
+				cyclePositionValue = 0.0;
+			}
+			else
+			{
+				cyclePositionValue += lfoFreq[frequencyIndex];
+				int_cyclePositionValue = (unsigned int)cyclePositionValue;
+				if(int_cyclePositionValue < 0) int_cyclePositionValue = 0;
+				if(int_cyclePositionValue > 99) int_cyclePositionValue = 99;
+				controlEvent->output = lfoAmp[amplitudeIndex]*lfoSine[int_cyclePositionValue]+lfoOffset[offsetIndex];
+			}
+
+
+			controlEvent->int_output  = (unsigned int)(controlEvent->output);
+			if(controlEvent->int_output > 99) controlEvent->int_output = 99;
+			{
+#if(dbg >= 2)
+				cout << "PARAM CONTROL[" << controlEvent->name << "]: LFO: value index " << controlEvent->int_output << endl;
+#endif
+			}
+			((LfoContext *)(controlEvent->controlContext))->cycleTimeValueIndex = cycleTimeValueIndex;
+			((LfoContext *)(controlEvent->controlContext))->cyclePositionValue = cyclePositionValue;
+		}
+
+		for(int paramControlConnectionIndex = 0; paramControlConnectionIndex < controlEvent->paramContConnectionCount; paramControlConnectionIndex++)
+		{
+			int paramContProcessIndex = controlEvent->paramContConnection[paramControlConnectionIndex].processIndex;
+			int paramContParameterIndex = controlEvent->paramContConnection[paramControlConnectionIndex].processParamIndex;
+
+			procEvent[paramContProcessIndex].parameters[paramContParameterIndex] = controlEvent->int_output;
+			/*cout << "procEvent[" << paramContProcessIndex << "].parameters[" << paramContParameterIndex << "]: " <<
+					procEvent[paramContProcessIndex].parameters[paramContParameterIndex] << endl;*/
+		}
+	}
+	else if(action == 2)
+	{
+
+	}
+	else if(action == 3)
+	{
+
+	}
+	else
+	{
+
+	}
+
+	return targetParameterValueIndex;
+}
+
+
+int processBufferSample(float sample, struct ProcessBuffer *bufferArray)
+{
+	int status = 0;
+
+	/*if(sample < 0.00000)
+	{
+		bufferArray->ampNegativeSum += sample;
+		bufferArray->ampNegativeCount++;
+	}
+	else if(sample > 0.00000)
+	{
+		bufferArray->ampPositiveSum += sample;
+		bufferArray->ampPositiveCount++;
+	}*/
+
+	if(sample < bufferArray->ampNegativePeak)
+		bufferArray->ampNegativePeak = sample;
+	else if(sample > bufferArray->ampPositivePeak)
+		bufferArray->ampPositivePeak = sample;
+
+	return status;
+}
+
+
+void getBufferAvgs(struct ProcessBuffer *bufferArray)
+{
+	if(bufferArray->ampNegativeCount == 0) bufferArray->ampNegativeCount = 1;
+	bufferArray->ampNegativeAvg = bufferArray->ampNegativeSum/bufferArray->ampNegativeCount;
+
+	if(bufferArray->ampPositiveCount == 0) bufferArray->ampPositiveCount = 1;
+	bufferArray->ampPositiveAvg = bufferArray->ampPositiveSum/bufferArray->ampPositiveCount;
+}
+
+
+void clearBufferParameters(struct ProcessBuffer *bufferArray)
+{
+	bufferArray->ampNegativeSum = 0.0000;
+	bufferArray->ampNegativePeak = 0.0000;
+	bufferArray->ampNegativeCount = 0;
+	bufferArray->ampPositiveSum = 0.0000;
+	bufferArray->ampPositivePeak = 0.0000;
+	bufferArray->ampPositiveCount = 0;
+}
+
+
+#define dbg 0
+
+int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+	if(action == 0)
+	{
+		procEvent->processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
+		((DelayContext *)(procEvent->processContext))->inputPtr = 0;
+		((DelayContext *)(procEvent->processContext))->outputPtr = 0;
+		((DelayContext *)(procEvent->processContext))->delayBuffer[0]=0.0;
+		if(procEvent->processContext == NULL)
+		{
+			std::cout << "delayb calloc failed." << std::endl;
+		}
+		procEvent->processFinished = false;
+
+		for(unsigned int i = 0; i < 256; i++)
+		{
+			procEvent->internalData[i] = 0.0;
+		}
+
+		return 0;
+	}
+	else if(action == 1)
+	{
+		//float internalPosPeak = 0.0;
+		//float internalNegPeak = 0.0;
+
+		unsigned int delayCoarse = 0 ;
+		unsigned int delayFine = 0 ;
+		unsigned int delay = 0;
+		//float gain, breakpoint, edge;
+
+		unsigned int i;
+		unsigned int inputPtr = ((DelayContext *)(procEvent->processContext))->inputPtr;
+		unsigned int outputPtr = ((DelayContext *)(procEvent->processContext))->outputPtr;
+
+
+		delayCoarse = delayTime[procEvent->parameters[0]];
+		delayFine = delayTime[procEvent->parameters[1]]/100;
+		delay = delayCoarse + delayFine;
+
+		if(inputPtr >= delay) outputPtr = inputPtr - delay;
+		else outputPtr = DELAY_BUFFER_LENGTH - (delay - inputPtr);
+
+#if(dbg >= 2)
+		cout << "procEvent->parameters[0]: " << procEvent->parameters[0];
+		cout << "procEvent->parameters[1]: " << procEvent->parameters[1];
+		cout << "delayCoarse: " << delayCoarse;
+		cout << "delayFine: " << delayFine;
+		cout << "delay: " << delay;
+		cout << "inputPtr: " << inputPtr;
+		cout << "outputPtr: " << outputPtr << endl;
+#endif
+		for(i = 0; i < bufferSize; i++)
+		{
+			if(footswitchStatus[procEvent->footswitchNumber] == 0)
+			{
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				if(inputPtr >= DELAY_BUFFER_LENGTH) inputPtr = 0;
+				((DelayContext *)(procEvent->processContext))->delayBuffer[inputPtr++] = 0.0;
+			}
+			else
+			{
+				((DelayContext *)(procEvent->processContext))->delayBuffer[inputPtr] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = ((DelayContext *)(procEvent->processContext))->delayBuffer[outputPtr];
+
+				if(inputPtr >= DELAY_BUFFER_LENGTH) inputPtr = 0;
+				else inputPtr++;
+
+				if(outputPtr >= DELAY_BUFFER_LENGTH) outputPtr = 0;
+				else outputPtr++;
+			}
+		}
+
+		procEvent->processFinished = true;
+
+		((DelayContext *)(procEvent->processContext))->inputPtr = inputPtr;
+		((DelayContext *)(procEvent->processContext))->outputPtr = outputPtr;
+
+		procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+		return 0;
+	}
+
+	else if(action == 2)
+	{
+		return 0;
+	}
+	else if(action == 3)
+	{
+		free(procEvent->processContext);
+		procEvent->processFinished = false;
+
+		return 0;
+	}
+	else
+	{
+		std::cout << "delayb: invalid actiond: " << action << std::endl;
+		return 0;
+	}
+}
+
+#define dbg 0
+int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+	if(action == 0)
+	{
+		procEvent->processContext = (float *)calloc(50, sizeof(float));
+		if(procEvent->processContext == NULL)
+		{
+			std::cout << "filter3bb calloc failed." << std::endl;
+		}
+		for(unsigned int i = 0; i < 50; i++)
+		{
+			((float *)procEvent->processContext)[i] = 0.00;
+		}
+		procEvent->processFinished = false;
+
+		for(unsigned int i = 0; i < 256; i++)
+		{
+			procEvent->internalData[i] = 0.0;
+		}
+
+		return 0;
+
+	}
+	else if(action == 1)
+	{
+		unsigned int i,j;
+		unsigned int contextIndex = 0;
+		//float internalPosPeak = 0.0;
+		//float internalNegPeak = 0.0;
+
+		float lp_a[NUMBER_OF_BANDS][4], lp_b[NUMBER_OF_BANDS][4];
+		float hp_a[NUMBER_OF_BANDS][4], hp_b[NUMBER_OF_BANDS][4];
+		ProcessBuffer procOutputBuffer[NUMBER_OF_BANDS]; // transfers data from HP output of lower band to LP input higher band
+
+		float lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+		float hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+		float couplingFilter_y[4], couplingFilter_x[4];
+		float noiseFilter_y[4], noiseFilter_x[4];
+
+
+		for(i = 0; i < NUMBER_OF_BANDS; i++)
+		{
+			for(j = 0; j < 4; j++)
+			{
+				lp_x[i][j] = ((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+				lp_y[i][j] = ((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+				hp_x[i][j] = ((float *)procEvent->processContext)[/*i*8+j*4+2*/contextIndex++];
+				hp_y[i][j] = ((float *)procEvent->processContext)[/*i*8+j*4+3*/contextIndex++];
+			}
+		}
+
+		for(j = 0; j < 3; j++)
+		{
+			couplingFilter_x[j] = ((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+			couplingFilter_y[j] = ((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+		}
+		for(j = 0; j < 3; j++)
+		{
+			noiseFilter_x[j] = ((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+			noiseFilter_y[j] = ((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+		}
+
+
+		//int footswitchStatus = 0;
+		//int filter3bValueIndex[10];
+		//filter3bValueIndex[0] = 30;
+		//filter3bValueIndex[1] = 50;
+		/*filter3bValueIndex[2] = 20;
+		filter3bValueIndex[3] = 25;
+		filter3bValueIndex[4] = 30;
+		filter3bValueIndex[5] = 35;
+		filter3bValueIndex[6] = 40;
+		filter3bValueIndex[7] = 45;
+		filter3bValueIndex[8] = 50;
+		filter3bValueIndex[9] = 55;
+		filter3bValueIndex[10] = 60;
+		filter3bValueIndex[11] = 65;
+		filter3bValueIndex[12] = 70;
+		filter3bValueIndex[13] = 72;
+		filter3bValueIndex[14] = 74;*/
+#if(dbg == 1)
+		cout << "filter3bb procEvent->parameters: ";
+#endif
+
+		//int tempIndex = valueIndex;
+		for(i = 0; i < NUMBER_OF_BANDS; i++)
+		{
+			//if(i == 0)
+			{
+#if(dbg == 1)
+				cout << procEvent->parameters[i] << ", ";
+#endif
+				lp_a[i][0] = lp[procEvent->parameters[i]][0];
+				lp_a[i][1] = lp[procEvent->parameters[i]][1];
+				lp_a[i][2] = lp[procEvent->parameters[i]][2];
+				lp_a[i][3] = lp[procEvent->parameters[i]][3];
+				//lp_a[i][4] = lp[tempIndex][4];
+				lp_b[i][1] = lp[procEvent->parameters[i]][5];
+				lp_b[i][2] = lp[procEvent->parameters[i]][6];
+				lp_b[i][3] = lp[procEvent->parameters[i]][7];
+				//lp_b[i][4] = lp[tempIndex][9];
+
+				hp_a[i][0] = hp[procEvent->parameters[i]][0];
+				hp_a[i][1] = hp[procEvent->parameters[i]][1];
+				hp_a[i][2] = hp[procEvent->parameters[i]][2];
+				hp_a[i][3] = hp[procEvent->parameters[i]][3];
+				//hp_a[i][4] = hp[tempIndex][4];
+				hp_b[i][1] = hp[procEvent->parameters[i]][5];
+				hp_b[i][2] = hp[procEvent->parameters[i]][6];
+				hp_b[i][3] = hp[procEvent->parameters[i]][7];
+				//hp_b[i][4] = hp[tempIndex][9];
+
+			}
+//			else
+//			{
+//				//cout << procEvent->parameters[i] << ", ";
+//				lp_a[i][0] = lp[65/*procEvent->parameters[i]*/][0];
+//				lp_a[i][1] = lp[65/*procEvent->parameters[i]*/][1];
+//				lp_a[i][2] = lp[65/*procEvent->parameters[i]*/][2];
+//				lp_a[i][3] = lp[65/*procEvent->parameters[i]*/][3];
+//				//lp_a[i][4] = lp[tempIndex][4];
+//				lp_b[i][1] = lp[65/*procEvent->parameters[i]*/][5];
+//				lp_b[i][2] = lp[65/*procEvent->parameters[i]*/][6];
+//				lp_b[i][3] = lp[65/*procEvent->parameters[i]*/][7];
+//				//lp_b[i][4] = lp[tempIndex][9];
+//
+//				hp_a[i][0] = hp[65/*procEvent->parameters[i]*/][0];
+//				hp_a[i][1] = hp[65/*procEvent->parameters[i]*/][1];
+//				hp_a[i][2] = hp[65/*procEvent->parameters[i]*/][2];
+//				hp_a[i][3] = hp[65/*procEvent->parameters[i]*/][3];
+//				//hp_a[i][4] = hp[tempIndex][4];
+//				hp_b[i][1] = hp[65/*procEvent->parameters[i]*/][5];
+//				hp_b[i][2] = hp[65/*procEvent->parameters[i]*/][6];
+//				hp_b[i][3] = hp[65/*procEvent->parameters[i]*/][7];
+//				//hp_b[i][4] = hp[tempIndex][9];
+//
+//			}
+		}
+#if(dbg == 1)
+		cout << endl;
+#endif
+		//footswitchStatus = 1;
+
+		clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+		clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[1]]);
+		clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[2]]);
+
+		if(footswitchStatus[procEvent->footswitchNumber] == 0)
+		{
+			for(i = 0; i < bufferSize; i++)
+			{
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				processBufferSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+				procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i] = 0.0000;
+				processBufferSample(procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[1]]);
+				procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = 0.0000;
+				processBufferSample(procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[2]]);
+			}
+		}
+		else
+		{
+			for(j = 0; j < NUMBER_OF_BANDS; j++)
+			{
+				for(i = 0; i < bufferSize; i++)
+				{
+					if(j == 0)
+					{
+						couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+						couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
+
+						lp_x[j][0] = couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
+						hp_x[j][0] = couplingFilter_y[0]; // get input data for BD0 from process input
+
+						couplingFilter_x[2] = couplingFilter_x[1];
+						couplingFilter_x[1] = couplingFilter_x[0];
+
+						couplingFilter_y[2] = couplingFilter_y[1];
+						couplingFilter_y[1] = couplingFilter_y[0];
+
+					}
+					else
+					{
+						lp_x[j][0] = procOutputBuffer[j-1].buffer[i];//hp_y[j-1][0]; // get input data for higher BDs from previous BD output
+						hp_x[j][0] = procOutputBuffer[j-1].buffer[i];//hp_y[j-1][0]; // get input data for higher BDs from previous BD output
+					}
+					//*********************Band Divider (BD): Lowpass filter ********************
+
+					lp_y[j][0] = lp_a[j][0]*lp_x[j][0] + lp_a[j][1]*lp_x[j][1] + lp_a[j][2]*lp_x[j][2] + lp_a[j][3]*lp_x[j][3] - lp_b[j][1]*lp_y[j][1] - lp_b[j][2]*lp_y[j][2] - lp_b[j][3]*lp_y[j][3];
+
+					if(j == 0)
+					{
+						procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = lp_y[j][0];
+						processBufferSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+					}
+					else if(j == 1)
+					{
+						procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i] = lp_y[j][0];
+						processBufferSample(procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[1]]);
+					}
+
+					lp_x[j][3] = lp_x[j][2];
+					lp_x[j][2] = lp_x[j][1];
+					lp_x[j][1] = lp_x[j][0];
+
+					lp_y[j][3] = lp_y[j][2];
+					lp_y[j][2] = lp_y[j][1];
+					lp_y[j][1] = lp_y[j][0];
+
+					//outputBuffer[0][i] = inputBuffer[0][i];
+					//*********************Band Divider (BD): Highpass filter ********************
+					//hp_x[j][0] = inputBuffer[0][i];
+
+					hp_y[j][0] = hp_a[j][0]*hp_x[j][0] + hp_a[j][1]*hp_x[j][1] + hp_a[j][2]*hp_x[j][2] + hp_a[j][3]*hp_x[j][3] - hp_b[j][1]*hp_y[j][1] - hp_b[j][2]*hp_y[j][2] - hp_b[j][3]*hp_y[j][3];
+
+					procOutputBuffer[j].buffer[i] = hp_y[j][0];
+					// j = 0 case is processed above
+					if(j == 1)
+					{
+						noiseFilter_x[0] = hp_y[j][0];
+						noiseFilter_y[0] = 0.01870016*noiseFilter_x[0] + 0.00304999*noiseFilter_x[1] + 0.01870016*noiseFilter_x[2] - (-1.69729152)*noiseFilter_y[1] - 0.73774183*noiseFilter_y[2];
+
+						//procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = hp_y[j][0];
+						procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = noiseFilter_y[0];
+						processBufferSample(procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[2]]);
+
+						noiseFilter_x[2] = noiseFilter_x[1];
+						noiseFilter_x[1] = noiseFilter_x[0];
+
+						noiseFilter_y[2] = noiseFilter_y[1];
+						noiseFilter_y[1] = noiseFilter_y[0];
+					}
+
+					//hp_x[j][4] = hp_x[j][3];
+					hp_x[j][3] = hp_x[j][2];
+					hp_x[j][2] = hp_x[j][1];
+					hp_x[j][1] = hp_x[j][0];
+
+					//hp_y[j][4] = hp_y[j][3];
+					hp_y[j][3] = hp_y[j][2];
+					hp_y[j][2] = hp_y[j][1];
+					hp_y[j][1] = hp_y[j][0];
+					//outputBuffer[2][i] = inputBuffer[0][i];
+				}
+			}
+		}
+
+		contextIndex = 0;
+		for(i = 0; i < NUMBER_OF_BANDS; i++)
+		{
+			for(j = 0; j < 4; j++)
+			{
+				((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = lp_x[i][j];
+				//std::cout << "end: lp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(15) << procEvent->processContext[i*8+j*4] << std::endl;
+				((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = lp_y[i][j];
+				//std::cout << "end: lp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << lp_y[i][j] << std::endl;
+				((float *)procEvent->processContext)[/*i*8+j*4+2*/contextIndex++] = hp_x[i][j];
+				//std::cout << "end: hp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_x[i][j] << std::endl;
+				((float *)procEvent->processContext)[/*i*8+j*4+3*/contextIndex++] = hp_y[i][j];
+				//std::cout << "end: hp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_y[i][j] << std::endl;
+			}
+		}
+		for(j = 0; j < 3; j++)
+		{
+			((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = couplingFilter_x[j];
+			((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = couplingFilter_y[j];
+		}
+		for(j = 0; j < 3; j++)
+		{
+			 ((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = noiseFilter_x[j];
+			 ((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = noiseFilter_y[j];
+		}
+
+		/*getBufferAvgs(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+		getBufferAvgs(&procBufferArray[procEvent->outputBufferIndexes[1]]);
+		getBufferAvgs(&procBufferArray[procEvent->outputBufferIndexes[2]]);*/
+
+		procEvent->internalData[0] = procBufferArray[procEvent->outputBufferIndexes[0]].ampPositivePeak
+				- procBufferArray[procEvent->outputBufferIndexes[0]].ampNegativePeak;
+		procEvent->internalData[1] = procBufferArray[procEvent->outputBufferIndexes[1]].ampPositivePeak
+				- procBufferArray[procEvent->outputBufferIndexes[1]].ampNegativePeak;
+		procEvent->internalData[2] = procBufferArray[procEvent->outputBufferIndexes[2]].ampPositivePeak
+				- procBufferArray[procEvent->outputBufferIndexes[2]].ampNegativePeak;
+
+		procEvent->processFinished = true;
+		procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+		procBufferArray[procEvent->outputBufferIndexes[1]].ready = 1;
+		procBufferArray[procEvent->outputBufferIndexes[2]].ready = 1;
+		return 0;
+	}
+	else if(action == 2)
+	{
+		return 0;
+	}
+	else if(action == 3)
+	{
+		if(procEvent->processContext == NULL)
+		{
+			std::cout << "filter3bb processContext missing." << std::endl;
+		}
+		else
+		{
+			free(procEvent->processContext);
+			procEvent->processFinished = false;
+		}
+		return 0;
+	}
+	else
+	{
+		std::cout << "filter3bb: invalid actiond: " << action << std::endl;
+		return 0;
+	}
+}
+
+
+#define dbg 0
+int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+	if(action == 0)
+	{
+		procEvent->processContext = (float *)calloc(50, sizeof(float));
+		if(procEvent->processContext == NULL)
+		{
+			std::cout << "filter3bb2 calloc failed." << std::endl;
+		}
+		for(unsigned int i = 0; i < 50; i++)
+		{
+			((float *)procEvent->processContext)[i] = 0.00;
+		}
+		procEvent->processFinished = false;
+
+		for(unsigned int i = 0; i < 256; i++)
+		{
+			procEvent->internalData[i] = 0.0;
+		}
+
+		return 0;
+	}
+	else if(action == 1)
+	{
+		unsigned int i,j;
+		unsigned int contextIndex = 0;
+		//float internalPosPeak = 0.0;
+		//float internalNegPeak = 0.0;
+
+		float lp_a[4], lp_b[4];
+		float bp_a[5], bp_b[5];
+		float hp_a[4], hp_b[4];
+		//ProcessBuffer procOutputBuffer[NUMBER_OF_BANDS]; // transfers data from HP output of lower band to LP input higher band
+
+		float lp_y[4], lp_x[4]; // needs to be static to retain data from previous processing
+		float bp_y[5], bp_x[5]; // needs to be static to retain data from previous processing
+		float hp_y[4], hp_x[4]; // needs to be static to retain data from previous processing
+		float couplingFilter_y[3], couplingFilter_x[3];
+		float noiseFilter_y[3], noiseFilter_x[3];
+
+
+		for(j = 0; j < 3; j++)
+		{
+			lp_x[j] = ((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+			lp_y[j] = ((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+		}
+		for(j = 0; j < 5; j++)
+		{
+			bp_x[j] = ((float *)procEvent->processContext)[contextIndex++];
+			bp_y[j] = ((float *)procEvent->processContext)[contextIndex++];
+		}
+		for(j = 0; j < 3; j++)
+		{
+			hp_x[j] = ((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+			hp_y[j] = ((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+		}
+
+
+		for(j = 0; j < 3; j++)
+		{
+			couplingFilter_x[j] = ((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+			couplingFilter_y[j] = ((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+		}
+
+		for(j = 0; j < 3; j++)
+		{
+			noiseFilter_x[j] = ((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+			noiseFilter_y[j] = ((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+		}
+
+
+#if(dbg == 1)
+		cout << "filter3bb2 procEvent->parameters: ";
+#endif
+
+#if(dbg == 1)
+				cout << procEvent->parameters[i] << ", ";
+#endif
+		unsigned int tempIndex = procEvent->parameters[0];
+		lp_a[0] = lp2[tempIndex][0];
+		lp_a[1] = lp2[tempIndex][1];
+		lp_a[2] = lp2[tempIndex][2];
+		lp_b[1] = lp2[tempIndex][4];
+		lp_b[2] = lp2[tempIndex][5];
+
+		bp_a[0] = bp2[tempIndex][0];
+		bp_a[1] = bp2[tempIndex][1];
+		bp_a[2] = bp2[tempIndex][2];
+		bp_a[3] = bp2[tempIndex][3];
+		bp_a[4] = bp2[tempIndex][4];
+		bp_b[1] = bp2[tempIndex][6];
+		bp_b[2] = bp2[tempIndex][7];
+		bp_b[3] = bp2[tempIndex][8];
+		bp_b[4] = bp2[tempIndex][9];
+
+		hp_a[0] = hp2[tempIndex][0];
+		hp_a[1] = hp2[tempIndex][1];
+		hp_a[2] = hp2[tempIndex][2];
+		hp_b[1] = hp2[tempIndex][4];
+		hp_b[2] = hp2[tempIndex][5];
+
+
+
+#if(dbg == 1)
+		cout << endl;
+#endif
+		//footswitchStatus = 1;
+
+		clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+		clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[1]]);
+		clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[2]]);
+
+		if(footswitchStatus[procEvent->footswitchNumber] == 0)
+		{
+			for(i = 0; i < bufferSize; i++)
+			{
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				processBufferSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+				procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i] = 0.0000;
+				processBufferSample(procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[1]]);
+				procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = 0.0000;
+				processBufferSample(procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[2]]);
+			}
+		}
+		else
+		{
+#define FILT 1
+#define LP 1
+#if(FILT == 0)
+			for(i = 0; i < bufferSize; i++)
+			{
+				couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
+
+				lp_x[0] = couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
+				bp_x[0] = couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
+				hp_x[0] = couplingFilter_y[0]; // get input data for BD0 from process input
+
+				couplingFilter_x[2] = couplingFilter_x[1];
+				couplingFilter_x[1] = couplingFilter_x[0];
+				couplingFilter_y[2] = couplingFilter_y[1];
+				couplingFilter_y[1] = couplingFilter_y[0];
+#if(LP == 0)
+				lp_y[0] = lp_x[0];
+#else
+				lp_y[0] = lp_a[0]*lp_x[0] + lp_a[1]*lp_x[1] + lp_a[2]*lp_x[2] + lp_a[3]*lp_x[3] - lp_b[1]*lp_y[1] - lp_b[2]*lp_y[2] - lp_b[3]*lp_y[3];
+
+				lp_x[3] = lp_x[2];
+				lp_x[2] = lp_x[1];
+				lp_x[1] = lp_x[0];
+				lp_y[3] = lp_y[2];
+				lp_y[2] = lp_y[1];
+				lp_y[1] = lp_y[0];
+#endif
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = lp_y[0];
+				processBufferSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+
+				bp_y[0] = bp_x[0];
+				procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i] = bp_y[0];
+
+				hp_y[0] = hp_x[0];
+				procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = hp_y[0];
+			}
+#elif(FILT == 1)
+			for(i = 0; i < bufferSize; i++)
+			{
+					couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+					couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
+
+					lp_x[0] = couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
+					bp_x[0] = couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
+					hp_x[0] = couplingFilter_y[0]; // get input data for BD0 from process input
+
+
+					couplingFilter_x[2] = couplingFilter_x[1];
+					couplingFilter_x[1] = couplingFilter_x[0];
+
+					couplingFilter_y[2] = couplingFilter_y[1];
+					couplingFilter_y[1] = couplingFilter_y[0];
+				//*********************Band Divider (BD): Lowpass filter ********************
+
+				lp_y[0] = lp_a[0]*lp_x[0] + lp_a[1]*lp_x[1] + lp_a[2]*lp_x[2] - lp_b[1]*lp_y[1] - lp_b[2]*lp_y[2];
+
+				lp_x[2] = lp_x[1];
+				lp_x[1] = lp_x[0];
+				lp_y[2] = lp_y[1];
+				lp_y[1] = lp_y[0];
+
+//				lp_y[0] = lp_a[0]*lp_x[0] + lp_a[1]*lp_x[1] + lp_a[2]*lp_x[2] + lp_a[3]*lp_x[3] - lp_b[1]*lp_y[1] - lp_b[2]*lp_y[2] - lp_b[3]*lp_y[3];
+//
+//				lp_x[3] = lp_x[2];
+//				lp_x[2] = lp_x[1];
+//				lp_x[1] = lp_x[0];
+//				lp_y[3] = lp_y[2];
+//				lp_y[2] = lp_y[1];
+//				lp_y[1] = lp_y[0];
+
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = lp_y[0];
+				//*********************** Bandpass filter ****************************
+				bp_y[0] = bp_a[0]*bp_x[0] + bp_a[1]*bp_x[1] + bp_a[2]*bp_x[2] + bp_a[3]*bp_x[3] + bp_a[4]*bp_x[4] - bp_b[1]*bp_y[1] - bp_b[2]*bp_y[2] - bp_b[3]*bp_y[3] - bp_b[4]*bp_y[4];
+				procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i] = bp_y[0];
+				//processBufferSample(procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[1]]);
+
+				bp_x[4] = bp_x[3];
+				bp_x[3] = bp_x[2];
+				bp_x[2] = bp_x[1];
+				bp_x[1] = bp_x[0];
+
+				bp_y[4] = bp_y[3];
+				bp_y[3] = bp_y[2];
+				bp_y[2] = bp_y[1];
+				bp_y[1] = bp_y[0];
+
+				//*********************Band Divider (BD): Highpass filter ********************
+				//hp_x[0] = inputBuffer[0][i];
+
+				hp_y[0] = hp_a[0]*hp_x[0] + hp_a[1]*hp_x[1] + hp_a[2]*hp_x[2] - hp_b[1]*hp_y[1] - hp_b[2]*hp_y[2];
+
+				hp_x[2] = hp_x[1];
+				hp_x[1] = hp_x[0];
+				hp_y[2] = hp_y[1];
+				hp_y[1] = hp_y[0];
+
+//				hp_y[0] = hp_a[0]*hp_x[0] + hp_a[1]*hp_x[1] + hp_a[2]*hp_x[2] + hp_a[3]*hp_x[3] - hp_b[1]*hp_y[1] - hp_b[2]*hp_y[2] - hp_b[3]*hp_y[3];
+//
+//				hp_x[3] = hp_x[2];
+//				hp_x[2] = hp_x[1];
+//				hp_x[1] = hp_x[0];
+//				hp_y[3] = hp_y[2];
+//				hp_y[2] = hp_y[1];
+//				hp_y[1] = hp_y[0];
+
+				procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = hp_y[0];
+
+				//procOutputBuffer.buffer[i] = hp_y[0];
+				// j = 0 case is processed above
+
+				noiseFilter_x[0] = hp_y[0];
+				noiseFilter_y[0] = 0.01870016*noiseFilter_x[0] + 0.00304999*noiseFilter_x[1] + 0.01870016*noiseFilter_x[2] - (-1.69729152)*noiseFilter_y[1] - 0.73774183*noiseFilter_y[2];
+
+				noiseFilter_x[2] = noiseFilter_x[1];
+				noiseFilter_x[1] = noiseFilter_x[0];
+
+				noiseFilter_y[2] = noiseFilter_y[1];
+				noiseFilter_y[1] = noiseFilter_y[0];
+			}
+#elif(FILT == 2)
+			for(i = 0; i < bufferSize; i++)
+			{
+				//if(j == 0)
+				{
+					couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+					couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
+
+					lp_x[0] = couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
+					hp_x[0] = couplingFilter_y[0]; // get input data for BD0 from process input
+
+					couplingFilter_x[2] = couplingFilter_x[1];
+					couplingFilter_x[1] = couplingFilter_x[0];
+
+					couplingFilter_y[2] = couplingFilter_y[1];
+					couplingFilter_y[1] = couplingFilter_y[0];
+
+				}
+				/*else
+				{
+					lp_x[j][0] = procOutputBuffer[j-1].buffer[i];//hp_y[j-1][0]; // get input data for higher BDs from previous BD output
+					hp_x[j][0] = procOutputBuffer[j-1].buffer[i];//hp_y[j-1][0]; // get input data for higher BDs from previous BD output
+				}*/
+				//*********************Band Divider (BD): Lowpass filter ********************
+
+				lp_y[0] = lp_a[0]*lp_x[0] + lp_a[1]*lp_x[1] + lp_a[2]*lp_x[2] + lp_a[3]*lp_x[3] - lp_b[1]*lp_y[1] - lp_b[2]*lp_y[2] - lp_b[3]*lp_y[3];
+
+				//if(j == 0)
+				{
+					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = lp_y[0];
+					//processBufferSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+				}
+				/*else if(j == 1)
+				{
+					procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i] = lp_y[j][0];
+					processBufferSample(procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[1]]);
+				}*/
+
+				lp_x[3] = lp_x[2];
+				lp_x[2] = lp_x[1];
+				lp_x[1] = lp_x[0];
+
+				lp_y[3] = lp_y[2];
+				lp_y[2] = lp_y[1];
+				lp_y[1] = lp_y[0];
+
+				//outputBuffer[0][i] = inputBuffer[0][i];
+				//*********************Band Divider (BD): Highpass filter ********************
+				//hp_x[j][0] = inputBuffer[0][i];
+
+				hp_y[0] = hp_a[0]*hp_x[0] + hp_a[1]*hp_x[1] + hp_a[2]*hp_x[2] + hp_a[3]*hp_x[3] - hp_b[1]*hp_y[1] - hp_b[2]*hp_y[2] - hp_b[3]*hp_y[3];
+
+				procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i] = hp_y[0];
+				procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = 0.0000;
+				//procOutputBuffer[j].buffer[i] = hp_y[j][0];
+				// j = 0 case is processed above
+				/*if(j == 1)
+				{
+					noiseFilter_x[0] = hp_y[j][0];
+					noiseFilter_y[0] = 0.01870016*noiseFilter_x[0] + 0.00304999*noiseFilter_x[1] + 0.01870016*noiseFilter_x[2] - (-1.69729152)*noiseFilter_y[1] - 0.73774183*noiseFilter_y[2];
+
+					//procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = hp_y[j][0];
+					procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = noiseFilter_y[0];
+					processBufferSample(procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[2]]);
+
+					noiseFilter_x[2] = noiseFilter_x[1];
+					noiseFilter_x[1] = noiseFilter_x[0];
+
+					noiseFilter_y[2] = noiseFilter_y[1];
+					noiseFilter_y[1] = noiseFilter_y[0];
+				}*/
+
+				//hp_x[j][4] = hp_x[j][3];
+				hp_x[3] = hp_x[2];
+				hp_x[2] = hp_x[1];
+				hp_x[1] = hp_x[0];
+
+				//hp_y[4] = hp_y[3];
+				hp_y[3] = hp_y[2];
+				hp_y[2] = hp_y[1];
+				hp_y[1] = hp_y[0];
+				//outputBuffer[2][i] = inputBuffer[0][i];
+			}
+#else
+
+#endif
+		}
+
+
+
+		contextIndex = 0;
+
+		for(j = 0; j < 3; j++)
+		{
+			((float *)procEvent->processContext)[contextIndex++] = lp_x[j];
+			((float *)procEvent->processContext)[contextIndex++] = lp_y[j];
+		}
+		for(j = 0; j < 5; j++)
+		{
+			((float *)procEvent->processContext)[contextIndex++] = bp_x[j];
+			((float *)procEvent->processContext)[contextIndex++] = bp_y[j];
+		}
+		for(j = 0; j < 3; j++)
+		{
+			((float *)procEvent->processContext)[contextIndex++] = hp_x[j];
+			((float *)procEvent->processContext)[contextIndex++] = hp_y[j];
+		}
+
+
+		for(j = 0; j < 3; j++)
+		{
+			((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = couplingFilter_x[j];
+			((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = couplingFilter_y[j];
+		}
+		for(j = 0; j < 3; j++)
+		{
+			 ((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = noiseFilter_x[j];
+			 ((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = noiseFilter_y[j];
+		}
+
+		/*getBufferAvgs(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+		getBufferAvgs(&procBufferArray[procEvent->outputBufferIndexes[1]]);
+		getBufferAvgs(&procBufferArray[procEvent->outputBufferIndexes[2]]);*/
+
+		procEvent->internalData[0] = procBufferArray[procEvent->outputBufferIndexes[0]].ampPositivePeak
+				- procBufferArray[procEvent->outputBufferIndexes[0]].ampNegativePeak;
+		procEvent->internalData[1] = procBufferArray[procEvent->outputBufferIndexes[1]].ampPositivePeak
+				- procBufferArray[procEvent->outputBufferIndexes[1]].ampNegativePeak;
+		procEvent->internalData[2] = procBufferArray[procEvent->outputBufferIndexes[2]].ampPositivePeak
+				- procBufferArray[procEvent->outputBufferIndexes[2]].ampNegativePeak;
+
+
+		procEvent->processFinished = true;
+		procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+		procBufferArray[procEvent->outputBufferIndexes[1]].ready = 1;
+		procBufferArray[procEvent->outputBufferIndexes[2]].ready = 1;
+		return 0;
+	}
+	else if(action == 2)
+	{
+		return 0;
+	}
+	else if(action == 3)
+	{
+		if(procEvent->processContext == NULL)
+		{
+			std::cout << "filter3bb2 processContext missing." << std::endl;
+		}
+		else
+		{
+			free(procEvent->processContext);
+			procEvent->processFinished = false;
+		}
+		return 0;
+	}
+	else
+	{
+		std::cout << "filter3bb2: invalid actiond: " << action << std::endl;
+		return 0;
+	}
+
+
+}
+
+
+#define dbg 0
+int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+	unsigned int i,j;
+
+	if(action == 0)
+	{
+		procEvent->processContext = (float *)calloc(50, sizeof(float));
+		if(procEvent->processContext == NULL)
+		{
+			std::cout << "lohifilterb calloc failed." << std::endl;
+		}
+		for(i = 0; i < 50; i++)
+		{
+			((float *)procEvent->processContext)[i] = 0.00;
+		}
+		procEvent->processFinished = false;
+		for(i = 0; i < 256; i++)
+		{
+			procEvent->internalData[i] = 0.0;
+		}
+
+		return 0;
+	}
+	else if(action == 1)
+	{
+
+		int contextIndex = 0;
+		float lp_a[NUMBER_OF_BANDS][4], lp_b[NUMBER_OF_BANDS][4];
+		float lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+
+		float hp_a[NUMBER_OF_BANDS][4], hp_b[NUMBER_OF_BANDS][4];
+		float hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+
+
+		//for(int i = 0; i < 1; i++)
+		i = 0;
+		{
+			for(j = 0; j < 4; j++)
+			{
+				lp_x[i][j] = ((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+				//std::cout << "start: lp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(15) << procEvent->processContext[i*8+j*4] << std::endl;
+				lp_y[i][j] = ((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+				//std::cout << "start: lp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << lp_y[i][j] << std::endl;
+				hp_x[i][j] = ((float *)procEvent->processContext)[/*i*8+j*4+2*/contextIndex++];
+				//std::cout << "start: hp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_x[i][j] << std::endl;
+				hp_y[i][j] = ((float *)procEvent->processContext)[/*i*8+j*4+3*/contextIndex++];
+				//std::cout << "start: hp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_y[i][j] << std::endl;
+			}
+		}
+		clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+		clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[1]]);
+
+		int tempIndex = procEvent->parameters[0];
+		/*cout << "procEvent->parameters[0]: " << procEvent->parameters[0];
+		cout << "procEvent->parameters[1]: " << procEvent->parameters[1];
+		cout << "procEvent->parameters[2]: " << procEvent->parameters[2] << endl;*/
+
+		//for(i = 0; i < NUMBER_OF_BANDS; i++)
+#if(dbg == 1)
+		cout << "lohifilterb procEvent->parameters: ";
+#endif
+
+		i = 0;
+		{
+#if(dbg == 1)
+				cout << procEvent->parameters[i] << ", ";
+#endif
+			lp_a[i][0] = lp[tempIndex][0];
+			lp_a[i][1] = lp[tempIndex][1];
+			lp_a[i][2] = lp[tempIndex][2];
+			lp_a[i][3] = lp[tempIndex][3];
+			//lp_a[i][4] = lp[tempIndex][4];
+			lp_b[i][1] = lp[tempIndex][5];
+			lp_b[i][2] = lp[tempIndex][6];
+			lp_b[i][3] = lp[tempIndex][7];
+			//lp_b[i][4] = lp[tempIndex][9];
+
+			hp_a[i][0] = hp[tempIndex][0];
+			hp_a[i][1] = hp[tempIndex][1];
+			hp_a[i][2] = hp[tempIndex][2];
+			hp_a[i][3] = hp[tempIndex][3];
+			//hp_a[i][4] = hp[tempIndex][4];
+			hp_b[i][1] = hp[tempIndex][5];
+			hp_b[i][2] = hp[tempIndex][6];
+			hp_b[i][3] = hp[tempIndex][7];
+			//hp_b[i][4] = hp[tempIndex][9];
+		}
+#if(dbg == 1)
+		cout << endl;
+#endif
+
+		//for(j = 0; j < NUMBER_OF_BANDS; j++)
+		j = 0;
+		{
+			for(i = 0; i < bufferSize; i++)
+			{
+				if(footswitchStatus[procEvent->footswitchNumber] == 0)//(input[i] > 0.00000)
+				{
+					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+					processBufferSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+					procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i] = 0.00;
+					processBufferSample(procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[1]]);
+				}
+			    else
+			    {
+					/********************* Lowpass filter ********************/
+					lp_x[j][0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+
+					lp_y[j][0] = lp_a[j][0]*lp_x[j][0] + lp_a[j][1]*lp_x[j][1] + lp_a[j][2]*lp_x[j][2] + lp_a[j][3]*lp_x[j][3] - lp_b[j][1]*lp_y[j][1] - lp_b[j][2]*lp_y[j][2] - lp_b[j][3]*lp_y[j][3];
+
+					if(j == 0)
+					{
+						procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = lp_y[j][0];
+						processBufferSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+					}
+
+					//lp_x[j][4] = lp_x[j][3];
+					lp_x[j][3] = lp_x[j][2];
+					lp_x[j][2] = lp_x[j][1];
+					lp_x[j][1] = lp_x[j][0];
+
+					//lp_y[j][4] = lp_y[j][3];
+					lp_y[j][3] = lp_y[j][2];
+					lp_y[j][2] = lp_y[j][1];
+					lp_y[j][1] = lp_y[j][0];
+
+					//low_output[i] = input[i];
+					/********************* Highpass filter ********************/
+					hp_x[j][0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+
+					hp_y[j][0] = hp_a[j][0]*hp_x[j][0] + hp_a[j][1]*hp_x[j][1] + hp_a[j][2]*hp_x[j][2] + hp_a[j][3]*hp_x[j][3] - hp_b[j][1]*hp_y[j][1] - hp_b[j][2]*hp_y[j][2] - hp_b[j][3]*hp_y[j][3];
+
+					if(j == 0)
+					{
+						procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i] = hp_y[j][0];
+						processBufferSample(procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[1]]);
+					}
+
+					hp_x[j][3] = hp_x[j][2];
+					hp_x[j][2] = hp_x[j][1];
+					hp_x[j][1] = hp_x[j][0];
+
+					hp_y[j][3] = hp_y[j][2];
+					hp_y[j][2] = hp_y[j][1];
+					hp_y[j][1] = hp_y[j][0];
+					//high_output[i] = input[i];
+			    }
+			}
+		}
+		contextIndex = 0;
+		procEvent->internalData[0] = procBufferArray[procEvent->outputBufferIndexes[0]].ampPositivePeak
+				- procBufferArray[procEvent->outputBufferIndexes[0]].ampNegativePeak;
+		procEvent->internalData[1] = procBufferArray[procEvent->outputBufferIndexes[1]].ampPositivePeak
+				- procBufferArray[procEvent->outputBufferIndexes[1]].ampNegativePeak;
+
+		//for(int i = 0; i < NUMBER_OF_BANDS; i++)
+		i = 0;
+		{
+			for(j = 0; j < 4; j++)
+			{
+				((float *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = lp_x[i][j];
+				((float *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = lp_y[i][j];
+				((float *)procEvent->processContext)[/*i*8+j*4+2*/contextIndex++] = hp_x[i][j];
+				((float *)procEvent->processContext)[/*i*8+j*4+3*/contextIndex++] = hp_y[i][j];
+			}
+		}
+
+		procEvent->processFinished = true;
+		procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+		procBufferArray[procEvent->outputBufferIndexes[1]].ready = 1;
+
+		return 0;
+	}
+	else if(action == 2)
+	{
+		return 0;
+	}
+	else if(action == 3)
+	{
+		if(procEvent->processContext == NULL)
+		{
+			std::cout << "lohifilterb processContext missing." << std::endl;
+		}
+		else
+		{
+			free(procEvent->processContext);
+			procEvent->processFinished = false;
+		}
+		return 0;
+	}
+	else
+	{
+		std::cout << "lohifilterb: invalid actiond: " << action << std::endl;
+		return 0;
+	}
+}
+
+int mixerb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+	unsigned int i,j;
+	if(action == 0)
+	{
+		procEvent->processFinished = false;
+		for(i = 0; i < 256; i++)
+		{
+			procEvent->internalData[i] = 0.0;
+		}
+		return 0;
+	}
+	else if(action == 1)
+	{
+		float level1 = logAmp[procEvent->parameters[0]];
+		float level2 =  logAmp[procEvent->parameters[1]];
+		float level3 =  logAmp[procEvent->parameters[2]];
+		float levelOut =  logAmp[procEvent->parameters[3]];
+
+		clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+
+		for(i = 0; i < bufferSize; i++)
+		{
+			if(footswitchStatus[procEvent->footswitchNumber] == 0)
+			{
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+			}
+			else
+			{
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = levelOut*(level1*procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] + level2*procBufferArray[procEvent->inputBufferIndexes[1]].buffer[i] + level3*procBufferArray[procEvent->inputBufferIndexes[2]].buffer[i]);
+			}
+
+			processBufferSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+		}
+		getBufferAvgs(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+
+		procEvent->processFinished = true;
+		procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+
+
+		procEvent->internalData[0] = procBufferArray[procEvent->outputBufferIndexes[0]].ampPositivePeak
+				- procBufferArray[procEvent->outputBufferIndexes[0]].ampNegativePeak;
+
+		return 0;
+	}
+	else if(action == 2)
+	{
+		return 0;
+	}
+	else if(action == 3)
+	{
+		//free(procEvent->processContext);
+		procEvent->processFinished = false;
+		return 0;
+	}
+	else
+	{
+		std::cout << "mixerb: invalid actiond: " << action << std::endl;
+		return 0;
+	}
+}
+
+int volumeb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+	unsigned int i,j;
+
+	if(action == 0)
+	{
+		procEvent->processFinished = false;
+		for(i = 0; i < 256; i++)
+		{
+			procEvent->internalData[i] = 0.0;
+		}
+		return 0;
+	}
+	else if(action == 1)
+	{
+		float vol = logAmp[procEvent->parameters[0]];
+
+		for(i = 0; i < bufferSize; i++)
+		{
+			if(footswitchStatus[procEvent->footswitchNumber] == 0)
+			{
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+			}
+			else
+			{
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = vol*procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+			}
+		}
+		procEvent->processFinished = true;
+		procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+
+		return 0;
+	}
+	else if(action == 2)
+	{
+		return 0;
+	}
+	else if(action == 3)
+	{
+		procEvent->processFinished = false;
+		free(procEvent->processContext);
+
+		return 0;
+	}
+	else
+	{
+		std::cout << "volumeb: invalid actiond: " << action << std::endl;
+		return 0;
+	}
+}
+
+int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+	unsigned int i,j;
+
+	if(action == 0)
+	{
+		procEvent->processContext = (float *)calloc(50, sizeof(float));
+		if(procEvent->processContext == NULL)
+		{
+			std::cout << "waveshaperb calloc failed." << std::endl;
+		}
+		for(i = 0; i < 50; i++)
+		{
+			((float *)procEvent->processContext)[i] = 0.00;
+		}
+
+		const float r1 = 1000.0;
+		const float r2 = 3000.0;
+		const float r3 = 100.0;
+		const float r4 = 20.0;
+		int contextIndex = 0;
+		/* Calculate constants for waveshaper algorithm */
+		((float *)procEvent->processContext)[contextIndex++] = 0.0;
+
+		((float *)procEvent->processContext)[contextIndex++] = r2*r3*r4;
+		((float *)procEvent->processContext)[contextIndex++] = r1*r3*r4;
+		((float *)procEvent->processContext)[contextIndex++] = r1*r2*r4;
+		((float *)procEvent->processContext)[contextIndex++] = r1*r2*r3;
+
+		((float *)procEvent->processContext)[contextIndex++] = r2*r3;
+		((float *)procEvent->processContext)[contextIndex++] = r1*r3;
+		((float *)procEvent->processContext)[contextIndex++] = r1*r2;
+		((float *)procEvent->processContext)[contextIndex++] = 0;
+
+		((float *)procEvent->processContext)[contextIndex++] = r2;
+		((float *)procEvent->processContext)[contextIndex++] = r1;
+		((float *)procEvent->processContext)[contextIndex++] = 0;
+		((float *)procEvent->processContext)[contextIndex++] = 0;
+
+		((float *)procEvent->processContext)[contextIndex++] = 1;
+		((float *)procEvent->processContext)[contextIndex++] = 0;
+		((float *)procEvent->processContext)[contextIndex++] = 0;
+		((float *)procEvent->processContext)[contextIndex++] = 0;
+
+		((float *)procEvent->processContext)[contextIndex++] = 0.200;
+		((float *)procEvent->processContext)[contextIndex++] = 0.350;
+		((float *)procEvent->processContext)[contextIndex++] = 0.60;
+		procEvent->processFinished = false;
+		for(i = 0; i < 256; i++)
+		{
+			procEvent->internalData[i] = 0.0;
+		}
+		procEvent->dataReadDone = true;
+		procEvent->dataReadReady = false;
+
+		return 0;
+	}
+	else if(action == 1)
+	{
+		float k[4][4];
+		float v[3];
+		int contextIndex = 0;
+		float outMeasure;
+
+		outMeasure = ((float *)procEvent->processContext)[contextIndex++];
+
+		k[3][0] = ((float *)procEvent->processContext)[contextIndex++];
+		k[3][1] = ((float *)procEvent->processContext)[contextIndex++];
+		k[3][2] = ((float *)procEvent->processContext)[contextIndex++];
+		k[3][3] = ((float *)procEvent->processContext)[contextIndex++];
+
+		k[2][0] = ((float *)procEvent->processContext)[contextIndex++];
+		k[2][1] = ((float *)procEvent->processContext)[contextIndex++];
+		k[2][2] = ((float *)procEvent->processContext)[contextIndex++];
+		k[2][3] = ((float *)procEvent->processContext)[contextIndex++];
+
+		k[1][0] = ((float *)procEvent->processContext)[contextIndex++];
+		k[1][1] = ((float *)procEvent->processContext)[contextIndex++];
+		k[1][2] = ((float *)procEvent->processContext)[contextIndex++];
+		k[1][3] = ((float *)procEvent->processContext)[contextIndex++];
+
+		k[0][0] = ((float *)procEvent->processContext)[contextIndex++];
+		k[0][1] = ((float *)procEvent->processContext)[contextIndex++];
+		k[0][2] = ((float *)procEvent->processContext)[contextIndex++];
+		k[0][3] = ((float *)procEvent->processContext)[contextIndex++];
+
+		v[0] = ((float *)procEvent->processContext)[contextIndex++];
+		v[1] = ((float *)procEvent->processContext)[contextIndex++];
+		v[2] = ((float *)procEvent->processContext)[contextIndex++];
+
+		float gain = logAmp[procEvent->parameters[0]]*10.0;
+		float k1,k2,k3,k4;
+		float v1,v2,v3;
+		int kIndex = 0;
+		//float out[2];
+		//static float lastOut;
+		//float floatIndex = 0.0;
+		//int dataIndex = 0;
+		procEvent->dataReadReady = false;
+
+		for(i = 0; i < bufferSize; i++)
+		{
+			if(footswitchStatus[procEvent->footswitchNumber] == 0)//(input[i] > 0.00000)
+			{
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+			}
+			else
+			{
+				if (v[2] < outMeasure) kIndex = 3;
+				else if (v[1] < outMeasure && outMeasure <= v[2]) kIndex = 2;
+				else if (v[0] < outMeasure && outMeasure <= v[1]) kIndex = 1;
+				else if (-v[0] < outMeasure && outMeasure <= v[0]) kIndex = 0;
+				else if (-v[1] < outMeasure && outMeasure <= -v[0]) kIndex = 1;
+				else if (-v[2] < outMeasure && outMeasure <= -v[1]) kIndex = 2;
+				else if (outMeasure <=-v[2]) kIndex = 3;
+
+				if(0.000 <= outMeasure)
+				{
+					v1 = v[0]; v2 = v[1]; v3 = v[2];
+				}
+				else
+				{
+					v1 = -v[0]; v2 = -v[1]; v3 = -v[2];
+				}
+				k1 = k[kIndex][0]; k2 = k[kIndex][1]; k3 = k[kIndex][2]; k4 = k[kIndex][3];
+
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = (procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i]*gain*k1 + v1*k2 + v2*k3 + v3*k4)/(k1 + k2 + k3 + k4);
+				processBufferSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+			}
+			{
+				outMeasure = procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
+			}
+			if(procEvent->dataReadDone == true && procEvent->dataReadReady == false)
+			{
+				/*if(dataIndex < 256)
+				{
+					procEvent->data[dataIndex++] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+					procEvent->data[dataIndex++] = procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
+				}
+				else
+				{
+					dataIndex = 0;
+					procEvent->dataReadReady = true;
+					procEvent->dataReadDone = false;
+				}*/
+				/*floatIndex = 100.0*procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				if(-126.0000 < floatIndex && floatIndex < 126.00000 )
+				{
+					procEvent->data[int(floatIndex)+128] = procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
+				}*/
+			}
+		}
+		procEvent->dataReadReady = true;
+		procEvent->dataReadDone = false;
+
+
+		((float *)procEvent->processContext)[0] = outMeasure;
+
+		procEvent->processFinished = true;
+		procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+
+		return 0;
+	}
+	else if(action == 2)
+	{
+		return 0;
+	}
+	else if(action == 3)
+	{
+		if(procEvent->processContext == NULL)
+		{
+			std::cout << "waveshaperb processContext missing." << std::endl;
+		}
+		else
+		{
+			procEvent->processFinished = false;
+			//free(procEvent->processContext); // for some reason, this causes a SIGABRT after a third combo selection
+		}
+		return 0;
+	}
+	else
+	{
+		std::cout << "waveshaperb: invalid actiond: " << action << std::endl;
+		return 0;
+	}
+}
+
+
+
