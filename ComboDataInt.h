@@ -76,7 +76,7 @@ private:
 	std::vector<string> getProcessInputs(string processName);
 	std::vector<string> getProcessOutputs(string processName);
 	int getConnectionDestinationIndex(string destinationProcessName);
-	void fillUnsequencedProcessList();
+	int fillUnsequencedProcessList();
 	string getFirstProcess();
 	string getNextProcess();
 	std::vector<IndexedParameter> tempParameterArray;
@@ -85,9 +85,9 @@ private:
 	//int addNextConnectionToConnectionList(string srcProcess, string srcPort);
 	//bool checkConnectionListDestinationsAgainstUnsequencedProcessInputs(string processName);
 	bool areDataBuffersReadyForProcessInputs(string processName);
-	void transferProcessToSequencedProcessList(string processName);
+	int transferProcessToSequencedProcessList(string processName);
 	//void deleteConnectionsFromConnectionListContainingProcessInputs(string processName);
-	void addOutputConnectionsToDataReadyList(string processName);
+	int addOutputConnectionsToDataReadyList(string processName);
 	bool isUnsequencedProcessListEmpty();
 	bool isOutputInDataReadyList(Connector output);
 	//int getParameterArray();
@@ -129,6 +129,7 @@ public:
 	int getCombo(char *comboName); //get JSON data and parse into effectComboJson
 	int getPedalUi(void); // setup pedalUiJson using effectComboJson
 	int getConnections(void); // setup connectionsJson using effectComboJson
+	int getConnections2(void);
 	int getProcesses(void); // setup processesStruct and unsortedParameterArray using effectComboJson
 	int getControls(void);	// setup controlsStruct and controlParameterArray using effectComboJson
 	int getControlConnections(void);  // setup controlConnectionsStruct using effectComboJson
