@@ -494,9 +494,9 @@ int loadCombo(void)
 
 	if(status == 0)
 	{
-		if(comboData.getConnections() != 0)
+		if(comboData.getConnections2() != 0)
 		{
-			status = 1;
+			status = -1;
 #if(dbg==1)
 			printf("getConnections failed.\n");
 #endif
@@ -517,7 +517,7 @@ int loadCombo(void)
 	{
 		if(comboData.getProcesses() != 0)
 		{
-			status = 1;
+			status = -1;
 #if(dbg==1)
 			printf("getProcesses failed.\n");
 #endif
@@ -533,7 +533,7 @@ int loadCombo(void)
 	{
 		if(comboData.getControlConnections() != 0)
 		{
-			status = 1;
+			status = -1;
 #if(dbg==1)
 			printf("getControlConnections failed.\n");
 #endif
@@ -549,7 +549,7 @@ int loadCombo(void)
 	{
 		if(comboData.getControls() != 0)
 		{
-			status = 1;
+			status = -1;
 #if(dbg==1)
 			printf("getControls failed.\n");
 #endif
@@ -566,7 +566,13 @@ int loadCombo(void)
 #if(dbg==1)
 	else printf("skipping getProcesses.\n");
 #endif
-	procCont.load(comboData.processesStruct, comboData.connectionsJson, comboData.controlsStruct, comboData.controlConnectionsStruct);//loadCombo();
+	if(status == 0)
+	{
+		if(procCont.load(comboData.processesStruct, comboData.connectionsJson, comboData.controlsStruct, comboData.controlConnectionsStruct) != 0)//loadCombo();
+		{
+			status = -1;
+		}
+	}
 
 
 	stopTimer("loadCombo");

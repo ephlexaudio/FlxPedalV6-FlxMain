@@ -44,7 +44,7 @@ int UsbInt::newData(void)
 		return 1;
 	}
 	else
-		return 0;
+		return size_read;
 
 #if(dbg >= 1)
 	cout << "***** EXITING: UsbInt::newData" << endl;

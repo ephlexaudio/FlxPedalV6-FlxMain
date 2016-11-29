@@ -13,6 +13,7 @@ using std::endl;
 #define BUFFER_SIZE 1024
 #define TEST_PROCESS_COUNT 6
 #define SIGNAL_DELTA_THRESHOLD 0.03
+#define TIMING_DBG 0
 extern struct _processingParams processingParams;
 //struct ProcessEvent this->processSequence[10];
 
@@ -320,7 +321,9 @@ int Combo::audioCallback(jack_nframes_t nframes,
 	//cout << "ENTERING audioCallback:  " << endl;
 #endif
 
+#if(TIMING_DBG == 1)
 	startTimer();
+#endif
 	int process = 0;
 	for(unsigned int i = 0; i < bufferSize; i++)
 	{
@@ -604,8 +607,10 @@ int Combo::audioCallback(jack_nframes_t nframes,
 			outBufs[1][i] = this->procBufferArray[1].buffer[i];*/
 		}
 	}
-
+#if(TIMING_DBG == 1)
 	stopTimer("audio processing");
+#endif
+
 #if(dbg == 1)
 	//cout << "EXITING audioCallback:  " << endl;
 #endif

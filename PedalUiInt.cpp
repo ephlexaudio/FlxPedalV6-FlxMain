@@ -47,7 +47,7 @@ PedalUiInt::~PedalUiInt()
 	cout << "~PedalUiInt" << endl;
 }
 
-#define dbg 0
+#define dbg 1
 
 int PedalUiInt::checkForNewPedalData(void)
 {

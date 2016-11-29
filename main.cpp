@@ -13,7 +13,7 @@
 #define testingPedalUi 0
 #define usbOnly 0
 #define hostUiDbg 0
-#define pedalUiDbg 0
+#define pedalUiDbg 1
 
 
 #include <stdint.h>
@@ -64,7 +64,7 @@ using namespace std;
 #define HOST_SHARED_MEMORY_FILE_ADDRESS 32768
 #define HOST_SHARED_MEMORY_FILE_SIZE 16000
 
-#define HOST_UI_ACTIVE_COUNT 3000
+#define HOST_UI_ACTIVE_COUNT 1500
 
 #define OFX_MAIN_READY 45
 
@@ -86,7 +86,6 @@ std::vector<string> comboNameList;
 
 static void signal_handler(int sig)
 {
-
 	//system("echo \"0\" > /sys/class/gpio/gpio13/value");
 	fprintf(stderr, "signal received:%d, OfxMain exiting ...\n", sig);
 	exit(0);
@@ -109,7 +108,7 @@ extern GPIOClass footswitch[2];
 int footswitchStatusArray[10] = {0,0,0,0,0,0,0,0,0,0};
 int wrapperParamData[10] = {1,0,0,0,0,0,0,0,0,0};
 bool inputsSwitched;
-
+int opLogFD = open("/home/opLog.txt",O_WRONLY);
 struct _jackParams jackParams;
 struct _processingParams processingParams;
 extern ProcessingControl procCont;
@@ -397,14 +396,20 @@ int main(int argc, char *argv[])
 								cout << "sent hostUiJson" << endl;
 #endif
 							}
+							if(loadCombo() == 0)
+							{
+								runCombo();
+								sleep(1);
+								comboRunning = true;
+								//server.sendCurrentData();
 
-							loadCombo();
-							runCombo();
-							sleep(1);
-							comboRunning = true;
-							//server.sendCurrentData();
+								strcpy(ofxMainStatus,"combo running");
 
-							strcpy(ofxMainStatus,"combo running");
+							}
+							else
+							{
+								strcpy(ofxMainStatus,"load failed");
+							}
 						}
 						else
 						{
@@ -943,7 +948,7 @@ int main(int argc, char *argv[])
 								{
 									if(comboData.getPedalUi() != 0)
 									{
-										status = 1;
+										status = -1;
 									}
 									else
 									{
@@ -957,13 +962,20 @@ int main(int argc, char *argv[])
 										stopCombo();
 										comboRunning = false;
 									}
-									loadCombo();
-									runCombo();
-									sleep(1);
-									comboRunning = true;
-									//server.sendCurrentData();
+									if(loadCombo() == 0)
+									{
+										runCombo();
+										sleep(1);
+										comboRunning = true;
+										//server.sendCurrentData();
 
-									strcpy(ofxMainStatus,"combo running");
+										strcpy(ofxMainStatus,"combo running");
+
+									}
+									else
+									{
+										strcpy(ofxMainStatus,"load failed");
+									}
 								}
 							}
 						}

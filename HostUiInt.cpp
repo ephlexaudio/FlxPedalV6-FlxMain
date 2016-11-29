@@ -246,7 +246,7 @@ int HostUiInt::getComboFromHost(string comboData)
 			if(saveCombo(string(filteredComboData)) != 0)
 			{
 				cout << "error saving combo." << endl;
-				status = 1;
+				status = -1;
 			}
 		}
 	}
