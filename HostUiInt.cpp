@@ -142,7 +142,7 @@ int HostUiInt::sendCurrentData(vector<IndexedParameter> currentParams)
 	return status;
 }
 
-#define dbg 0
+#define dbg 2
 int HostUiInt::sendComboToHost(string comboName)
 {
 	#if(dbg >= 1)
@@ -150,25 +150,39 @@ int HostUiInt::sendComboToHost(string comboName)
 	#endif
 
 	int status = 0;
+	string comboString;
 
 	clearBuffer(this->hostUiResponseCharArray,16000);
 	//strcpy(this->hostUiResponseCharArray, getComboData(comboName).c_str());
-	sprintf(this->hostUiResponseCharArray,"ComboData:%s",getComboData(comboName).c_str());
-#if(dbg >= 2)
-	cout << "Data retrieved, sending to host...." << this->hostUiResponseCharArray << endl;
-#endif
 
-	if(usb.writeData(this->hostUiResponseCharArray) >= 0)
+	comboString = getComboData(comboName);
+	if(comboString.empty() == false)
 	{
-#if(dbg >= 2)
-		cout << "combo data: " << this->hostUiResponseCharArray << endl;
-#endif
+
+		sprintf(this->hostUiResponseCharArray,"ComboData:%s",comboString.c_str());
+
+	#if(dbg >= 2)
+		cout << "Data retrieved, sending to host...." << this->hostUiResponseCharArray << endl;
+	#endif
+
+		if(usb.writeData(this->hostUiResponseCharArray) >= 0)
+		{
+	#if(dbg >= 2)
+			cout << "combo data: " << this->hostUiResponseCharArray << endl;
+	#endif
+
+		}
+		else
+		{
+			cout << "error sending data to host" << endl;
+			status = -1;
+		}
 
 	}
 	else
 	{
-		cout << "error sending data to host" << endl;
 		status = -1;
+		cout << "error reading data" << endl;
 	}
 
 	//clearBuffer(this->hostUiResponseCharArray,16000);
@@ -187,7 +201,8 @@ int HostUiInt::getComboFromHost(string comboData)
 		cout << "***** ENTERING: HostUiInt::getComboFromHost" << endl;
 	#endif
 
-	clearBuffer(this->hostUiResponseCharArray,16000);
+		clearBuffer(this->hostUiResponseCharArray,16000);
+		clearBuffer(this->hostUiRawRequestCharArray,16000);
 
 	char filteredComboData[SHARED_MEMORY_FILE_SIZE];
 	int status = 0;
@@ -235,7 +250,6 @@ int HostUiInt::getComboFromHost(string comboData)
 		#endif
 					filteredDataIndex++;
 				}
-
 			}
 #if(dbg >= 2)
 			cout << "data filtered" << endl;

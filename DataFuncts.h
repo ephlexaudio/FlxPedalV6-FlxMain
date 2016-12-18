@@ -10,6 +10,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <array>
@@ -18,10 +19,13 @@
 #include <json/json.h>
 #include <errno.h>
 
+#include "utilityFunctions.h"
 
 using namespace std;
 
 
+int validateJsonString(std::string jsonString);
+int validateJsonBuffer(char *jsonBuffer);
 
 std::vector<string> getComponentList(void);
 std::string getComponentData(std::string componentName);

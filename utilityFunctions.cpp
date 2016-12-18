@@ -7,6 +7,8 @@
 
 #include "utilityFunctions.h"
 
+
+
 void delay(unsigned long delay)
 {
  unsigned long i;
@@ -54,3 +56,27 @@ void cleanString(char* src, char* dest)
 	}
 	dest[destIndex] = 0;
 }
+
+void printAsciiNumbers(char *charArrayData)
+{
+	int charArrayLength = strlen(charArrayData);
+
+	cout << endl;
+	for(int i = 0; i < charArrayLength; i++)
+	{
+		cout << charArrayData[i] << ',';
+	}
+	cout << endl;
+}
+
+void printAsciiNumbers(string stringData)
+{
+	cout << endl;
+	for(int i = 0; i < stringData.length(); i++)
+	{
+		cout << (int)(stringData[i]) << ',';
+	}
+	cout << endl;
+
+}
+

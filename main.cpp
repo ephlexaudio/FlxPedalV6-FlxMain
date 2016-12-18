@@ -13,7 +13,7 @@
 #define testingPedalUi 0
 #define usbOnly 0
 #define hostUiDbg 0
-#define pedalUiDbg 1
+#define pedalUiDbg 0
 
 
 #include <stdint.h>
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 	cout << "starting..." << endl;
 	int exit = 0;
 	int count = 0;
-	bool enteringLoop = false;
+	bool enteringLoop = false;//true;
 	uint8_t status = 0;
 	char procOutput[15];
 	char sharedMemoryBuffer[1000];
@@ -543,8 +543,14 @@ int main(int argc, char *argv[])
 				{
 					//comboData.saveCombo();//saveCombo(requestData);
 					hostUi.getComboFromHost(hostUiRequestData);
-					strcpy(simpleResponseStr,"SavedCombo");
-					hostUi.sendSimpleResponse(simpleResponseStr);
+					comboNameList = getComboList();
+					string comboNameArray;
+					for(unsigned int i = 0; i < comboNameList.size(); i++)
+					{
+						comboNameArray.append(comboNameList.at(i).c_str());
+						if(i < comboNameList.size()-1) comboNameArray.append(",");
+					}
+					hostUi.sendComboList(comboNameArray);
 					strcpy(ofxMainStatus,"combo saved");
 				}
 				else if(hostUiRequestCommand.compare("deleteCombo") == 0)
@@ -554,8 +560,8 @@ int main(int argc, char *argv[])
 					sprintf(cliString, "rm /home/Combos/%s.txt", hostUiRequestData.c_str());
 #if(hostUiDbg == 1)
 					cout << "CLI string for delete: " << cliString << endl;
-					cout << "delete result: " << strerror(system(cliString)) << endl;
 #endif
+					cout << "delete result: " << strerror(system(cliString)) << endl;
 
 					comboNameList = getComboList();
 					string comboNameArray;
@@ -611,9 +617,6 @@ int main(int argc, char *argv[])
 			hostUiRequest.clear();
 			hostUiRequestCommand.clear();
 			hostUiRequestData.clear();
-			hostUiRequest.resize(16000);
-			hostUiRequestData.resize(16000);
-
         }
 		//************* Process requests from PCB UI Interface  *************
 
@@ -623,6 +626,7 @@ int main(int argc, char *argv[])
         	//enteringLoop = false;
 
 #if(pedalUiDbg >= 1)
+        	cout << "*********************************** START **********************************************" << endl;
 			//cout << "section index: " << smSectionIndex << endl;
 #endif
 			/*if(smSectionIndex == 2)
@@ -962,6 +966,7 @@ int main(int argc, char *argv[])
 										stopCombo();
 										comboRunning = false;
 									}
+
 									if(loadCombo() == 0)
 									{
 										runCombo();
@@ -975,7 +980,13 @@ int main(int argc, char *argv[])
 									else
 									{
 										strcpy(ofxMainStatus,"load failed");
+										status = -1;
 									}
+								}
+								else
+								{
+									strcpy(ofxMainStatus,"combo not found");
+									status = -1;
 								}
 							}
 						}
@@ -1079,15 +1090,18 @@ int main(int argc, char *argv[])
 			}
 
 			//baseUi.clearSharedMemorySection();
-
+#if(pedalUiDbg >= 1)
+        	cout << "*********************************** END **********************************************" << endl;
+#endif
 			baseUi.dataProcessingStatus(1);
 			baseUi.waitForAccessRelease();
 			baseUi.dataProcessingStatus(0);
+
 			/*pedalUi->dataProcessingStatus(1);
 			pedalUi->waitForAccessRelease();
 			pedalUi->dataProcessingStatus(0);*/
 		}
-
+        //usleep(100000);
 
 
 

@@ -8,12 +8,14 @@
 #include "ComboDataInt.h"
 #include "utilityFunctions.h"
 #include "ProcessingControl.h"
+#include "DataFuncts.h"
 
 extern int procCount;
 extern int effectCount;
 extern int comboIndex;
 extern std::vector<string> comboNameList;
-
+#define JSON_BUFFER_LENGTH 16000
+extern int validateJsonBuffer(char *jsonBuffer);
 
 ComboDataInt::ComboDataInt()
 {
@@ -619,12 +621,18 @@ string ComboDataInt::getFirstProcess()
 
 	for(std::vector<Json::Value>::size_type connIndex = 0; connIndex < this->unsequencedConnectionListJson.size(); connIndex++)
 	{
-		if(srcProcess.compare(this->unsequencedConnectionListJson[connIndex]["srcProcess"].asString()) == 0 &&
+		cout << "comparing: ";
+		cout << srcProcess << " vs " << this->unsequencedConnectionListJson[connIndex]["srcProcess"];
+		cout << "\t and \t";
+		cout << srcPort << " vs " << this->unsequencedConnectionListJson[connIndex]["srcPort"] << endl;
+
+		if(((srcProcess.compare(this->unsequencedConnectionListJson[connIndex]["srcProcess"].asString()) == 0) ||
+				(srcProcess.compare(this->unsequencedConnectionListJson[connIndex]["srcEffect"].asString()) == 0)) &&
 				srcPort.compare(this->unsequencedConnectionListJson[connIndex]["srcPort"].asString()) == 0)
 		{
-			Connector tempConn;
+			/*Connector tempConn;
 			tempConn.process = this->unsequencedConnectionListJson[connIndex]["srcProcess"].asString();
-			tempConn.port = this->unsequencedConnectionListJson[connIndex]["srcPort"].asString();
+			tempConn.port = this->unsequencedConnectionListJson[connIndex]["srcPort"].asString();*/
 			//if(foundNextProcess == false)
 			{
 				firstProcess = this->unsequencedConnectionListJson[connIndex]["destProcess"].asString();
@@ -952,77 +960,84 @@ int ComboDataInt::getCombo(char *comboName)
 #if(dbg >= 1)
     cout << "reading JSON file into jsonString." << endl;
 #endif
-    //char jsonString[20000];
-    clearBuffer(this->jsonString,20000);
-    clearBuffer(this->fileNameString,20);
+    //char jsonString[JSON_BUFFER_LENGTH];
+    clearBuffer(this->jsonBuffer,JSON_BUFFER_LENGTH);
+    clearBuffer(this->fileNameBuffer,20);
 	/* open combo file */
-    strncpy(this->fileNameString, comboName, 19);
-    sprintf(this->fileNamePathString,"/home/Combos/%s.txt", this->fileNameString);
-    this->comboFD = open(fileNamePathString,O_RDWR);
+    strncpy(this->fileNameBuffer, comboName, 19);
+    sprintf(this->fileNamePathBuffer,"/home/Combos/%s.txt", this->fileNameBuffer);
+    this->comboFD = open(fileNamePathBuffer,O_RDONLY);
 	/* read file into temp string */
     if(this->comboFD >= 0)
     {
-    	if(read(this->comboFD, this->jsonString, 20000) >= 0)
+    	if(read(this->comboFD, this->jsonBuffer, JSON_BUFFER_LENGTH) >= 0)
     	{
 #if(dbg >= 1)
-	cout << "parsing jsonString in effectComboJson" << endl;
+    		cout << "parsing jsonString in effectComboJson" << endl;
 
 #endif
-			this->effectComboJson.clear();
+    		int result = validateJsonBuffer(this->jsonBuffer);
+    		if(result == 0) // file needed to cleaned, so replacing file
+    		{
+    			cout << "file needed cleaning, so replacing with cleaned file" << endl;
+    			cout << "new file: " << this->jsonBuffer << endl;
+    			close(this->comboFD);
+    			/*char command[50];
+    			sprintf(command,"rm %s", fileNamePathBuffer);
+    			cout << "command: " << command << endl;
+    			system(command);*/
+    			this->comboFD = open(fileNamePathBuffer, O_WRONLY|O_CREAT|O_TRUNC, 0666);
 
-			boolStatus = this->comboReader.parse(this->jsonString, this->effectComboJson);
-	#if(dbg >= 1)
-			cout << "getting combo index" << endl;
-	#endif
-			string compCombo = this->effectComboJson["name"].asString();
-			for(std::vector<string>::size_type i = 0; i < comboNameList.size(); i++)
-			{
-				if(comboNameList.at(i).compare(compCombo)==0)
-				{
-					comboIndex = i;
-					break;
-				}
-			}
-			absParamIndex = 0;
+    			if(write(this->comboFD,this->jsonBuffer,strlen(this->jsonBuffer)) == -1)
+    			{
+    				clearBuffer(this->jsonBuffer,JSON_BUFFER_LENGTH);
+    				cout << "error writing jsonBufferString back to combo file." << endl;
+    			}
 
-			/*Json::Value tempEffects = this->effectComboJson["effectArray"];
-			effectCount = tempEffects.size();
-		#if(dbg >= 1)
-			cout << "getting effects" << endl;
-		#endif
-			for(int effectIndex = 0; (effectIndex < effectCount); effectIndex++)
-			{
-				effectParamIndex = 0;
-				effectString = tempEffects[effectIndex]["name"].asString();
+    		}
+    		if(result >= 0)
+    		{
+    			this->effectComboJson.clear();
+
+    			boolStatus = this->comboReader.parse(this->jsonBuffer, this->effectComboJson);
+    	#if(dbg >= 1)
+    			cout << "getting combo index" << endl;
+    	#endif
+    			string compCombo = this->effectComboJson["name"].asString();
+    			for(std::vector<string>::size_type i = 0; i < comboNameList.size(); i++)
+    			{
+    				if(comboNameList.at(i).compare(compCombo)==0)
+    				{
+    					comboIndex = i;
+    					break;
+    				}
+    			}
+    			absParamIndex = 0;
 
 
-				Json::Value tempControlConnections = tempEffects[effectIndex]["controlConnectionArray"];
-				int tempControlConnectionCount = tempControlConnections.size();
-				for(int controlConnectionIndex = 0; controlConnectionIndex < tempControlConnectionCount; controlConnectionIndex++)
-				{
-					ControlConnection tempContConn;
-					tempContConn.src = tempControlConnections[controlConnectionIndex]["src"]["name"].asString();
-					tempContConn.dest = tempControlConnections[controlConnectionIndex]["dest"]["name"].asString();
-					this->controlConnectionsStruct.push_back(tempContConn);
-				}
-			}*/
-			//procCount++; // add one more for wrapper
+    			//procCount++; // add one more for wrapper
 
-			if(boolStatus == false)
-			{
+    			if(boolStatus == false)
+    			{
+    				status = -1;
+    				cout << "JSON parse failed." << endl;
+    			}
+    		}
+    		else
+    		{
 				status = -1;
-				printf("JSON parse failed.\n");
-			}
+				cout << "JSON parse failed." << endl;
+    		}
     	}
     	else
     	{
-    		cout << "failed to read file: " << fileNamePathString << endl;
+    		cout << "failed to read file: " << fileNamePathBuffer << endl;
     		status = -1;
     	}
     }
     else
     {
-    	cout << "failed to open file: " << fileNamePathString << endl;
+    	cout << "failed to open file: " << fileNamePathBuffer << endl;
     	status = -1;
     }
 
@@ -1755,7 +1770,31 @@ int ComboDataInt::getConnections2(void)
 			cout << mergedConnections[mergedConnIndex]["destEffect"] << "/";
 			cout << mergedConnections[mergedConnIndex]["destProcess"] << ":";
 			cout << mergedConnections[mergedConnIndex]["destPort"] << endl;
-			this->unsequencedConnectionListJson.push_back(mergedConnections[mergedConnIndex]);
+			Json::Value tempConn;
+			if(mergedConnections[mergedConnIndex]["srcEffect"].compare("system") == 0)
+			{
+				tempConn["srcProcess"] = mergedConnections[mergedConnIndex]["srcEffect"];
+			}
+			else
+			{
+				tempConn["srcProcess"] = mergedConnections[mergedConnIndex]["srcProcess"];
+			}
+
+			tempConn["srcPort"] = mergedConnections[mergedConnIndex]["srcPort"];
+
+			if(mergedConnections[mergedConnIndex]["destEffect"].compare("system") == 0)
+			{
+				tempConn["destProcess"] = mergedConnections[mergedConnIndex]["destEffect"];
+			}
+			else
+			{
+				tempConn["destProcess"] = mergedConnections[mergedConnIndex]["destProcess"];
+			}
+
+
+			tempConn["destPort"] = mergedConnections[mergedConnIndex]["destPort"];
+
+			this->unsequencedConnectionListJson.push_back(tempConn);
         }
 #endif
 
@@ -1896,7 +1935,6 @@ int ComboDataInt::getProcesses(void)
         {
             try
             {
-
     			cout << "fillUnsequencedProcessList" << endl;
     			this->dataReadyList.clear();
     			Connector tempConn;
@@ -1931,6 +1969,7 @@ int ComboDataInt::getProcesses(void)
 						if(process.empty() == true)
 						{
 							status = -1;
+							break;
 						}
 						else
 						{
@@ -1944,6 +1983,7 @@ int ComboDataInt::getProcesses(void)
 						if(process.empty() == true)
 						{
 							status = -1;
+							break;
 						}
 					}
 					//if(process.length() > 1)
@@ -1951,10 +1991,12 @@ int ComboDataInt::getProcesses(void)
 						if(this->addOutputConnectionsToDataReadyList(process) != 0)
 						{
 							status = -1;
+							break;
 						}
 						if(this->transferProcessToSequencedProcessList(process) != 0)
 						{
 							status = -1;
+							break;
 						}
 					}
 					if(breakLoopCount++ >= 100)
@@ -1992,6 +2034,7 @@ int ComboDataInt::getProcesses(void)
                 				this->connectionsJson.push_back(connection);
                 				this->unsequencedConnectionListJson.erase(this->unsequencedConnectionListJson.begin() + connIndex);
                 			}
+
                 		}
                 	}
                 }
@@ -2372,26 +2415,26 @@ int ComboDataInt::saveCombo(void/*Json::Value combo*/)
 
 
     /***** Store effectComboJson ********************************************/
-    clearBuffer(this->jsonString,20000);
+    clearBuffer(this->jsonBuffer,JSON_BUFFER_LENGTH);
 	/* open combo file */
-    sprintf(this->fileNamePathString,"/home/Combos/%s.txt", fileNameString);
-	this->comboFD = open(this->fileNamePathString,O_WRONLY);
+    sprintf(this->fileNamePathBuffer,"/home/Combos/%s.txt", fileNameBuffer);
+	this->comboFD = open(this->fileNamePathBuffer,O_WRONLY|O_CREAT|O_TRUNC, 0666);
 	/* read file into temp string */
 	string tempJsonString = this->comboWriter.write(this->effectComboJson);
 #if(dbg==1)
 	cout << "tempJsonString: " << tempJsonString << endl;
 #endif
-	strncpy(this->jsonString, tempJsonString.c_str(), tempJsonString.length());
-	writeSize = write(this->comboFD, this->jsonString, strlen(this->jsonString));
+	strncpy(this->jsonBuffer, tempJsonString.c_str(), tempJsonString.length());
+	writeSize = write(this->comboFD, this->jsonBuffer, strlen(this->jsonBuffer));
 #if(dbg==1)
 	cerr << "tempJsonString.length(): " << tempJsonString.length() << endl;
-	cerr << "strlen(this->jsonString): " << strlen(this->jsonString) << endl;
+	cerr << "strlen(this->jsonBuffer): " << strlen(this->jsonBuffer) << endl;
 	cerr << "writeSize: " << writeSize << endl;
 #endif
 	cout << this->comboWriter.write(this->effectComboJson);
 
 
-	if(writeSize < strlen(this->jsonString))
+	if(writeSize < strlen(this->jsonBuffer))
 	{
 		status = 1;
 		printf("JSON write failed.\n");

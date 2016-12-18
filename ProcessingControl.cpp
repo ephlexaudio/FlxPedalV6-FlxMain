@@ -139,6 +139,10 @@ int ProcessingControl::load(vector<Process> processesStruct, vector<Json::Value>
 		targetConn.process = comboData.connectionsJson[connIndex]["destProcess"].asString();
 		targetConn.port = comboData.connectionsJson[connIndex]["destPort"].asString();
 
+		cout << "************************************************************" << endl;
+		cout << "conn: " << conn.process << ":" << conn.port << endl;
+		cout << "targetConn: " << targetConn.process << ":" << targetConn.port << endl;
+
 		int bufferIndex = 0;
 		for(bufferIndex = 0; bufferIndex < this->combo->bufferCount; bufferIndex++)
 		{

@@ -54,7 +54,6 @@ int closeJack(void);
 int openIPCFiles(void);
 int closeIPCFiles(void);*/
 
-
 int getRunningProcesses(void);
 int initializePedal(char *fileName);
 int loadCombo(void);

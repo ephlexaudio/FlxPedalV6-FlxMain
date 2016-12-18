@@ -51,7 +51,7 @@ struct effectIO{
 	string outputPort[2];
 };
 
-
+#define JSON_BUFFER_LENGTH 16000
 class ComboDataInt
 {
 
@@ -63,11 +63,12 @@ private:
 	};*/
 
 	int comboFD;
+	//FILE * comboFD;
 	Json::Reader comboReader;
 	Json::FastWriter comboWriter;
-	char jsonString[20000];
-	char fileNameString[20];
-	char fileNamePathString[40];
+	char jsonBuffer[JSON_BUFFER_LENGTH];
+	char fileNameBuffer[20];
+	char fileNamePathBuffer[40];
 
 	std::vector<Connector> dataReadyList;
 	string currentTargetProcess;
