@@ -10,16 +10,32 @@
 using std::cout;
 using std::endl;
 
+
+/**************************************
+#if(dbg >= 1)
+	cout << "***** ENTERING: Combo2::" << endl;
+#endif
+
+#if(dbg >= 1)
+	cout << "***** EXITING: Combo2::" << endl;
+#endif
+
+#if(dbg >=2)
+#endif
+********************************************/
 #define BUFFER_SIZE 1024
 #define TEST_PROCESS_COUNT 6
 #define SIGNAL_DELTA_THRESHOLD 0.03
 #define TIMING_DBG 0
+#define SIGPROC_DBG 0
+#define AVE_ARRAY_SIZE 16
 extern struct _processingParams processingParams;
 //struct ProcessEvent this->processSequence[10];
 
 //extern ComboDataInt comboData;
 extern bool inputsSwitched;
 extern unsigned int bufferSize;
+int comboTime;
 
 Combo::Combo():JackCpp::AudioIO("combo", 2,2)
 {
@@ -163,8 +179,6 @@ int Combo::initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::V
 	tempConn.port = string("capture_2");
 	bufferNameArray.push_back(tempConn);
 	
-#if(dbg == 1)
-#endif
 
 	// loop through connectionsJson and create list of process output buffers
 	for(std::vector<Json::Value>::size_type connectionsJsonIndex = 0; connectionsJsonIndex < connectionsJson.size(); connectionsJsonIndex++)
@@ -173,7 +187,7 @@ int Combo::initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::V
 		string compConnectionProc = connectionsJson[connectionsJsonIndex]["srcProcess"].asString();
 		string compConnectionPort = connectionsJson[connectionsJsonIndex]["srcPort"].asString();
 
-#if(dbg == 1)
+#if(dbg >= 2)
 		cout << "[" << connectionsJsonIndex << "]:" << compConnectionProc << ":" << compConnectionPort << endl;
 		cout << endl;
 		cout << "OUTPUT BUFFERS: " << endl;
@@ -200,14 +214,15 @@ int Combo::initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::V
 			//tempConn.port = bufferNameArray[bufferNameArrayIndex].port;
 
 			// compare connection output (source) process:port to listed buffer process:port
-#if(dbg == 1)
+#if(dbg >=2)
 			cout << "comparing: " << bufferNameArray[bufferNameArrayIndex].process << ":" << bufferNameArray[bufferNameArrayIndex].port;
 			cout << " & " << compConnectionProc << ":" << compConnectionPort << endl;
 #endif
+
 			if(compConnectionProc.compare(bufferNameArray[bufferNameArrayIndex].process) == 0 &&
 					compConnectionPort.compare(bufferNameArray[bufferNameArrayIndex].port) == 0)
 			{
-#if(dbg == 1)
+#if(dbg >= 2)
 				cout << "MATCH: " << compConnectionProc << ":" << compConnectionPort << " already in list." << endl;
 #endif
 				bufferAlreadyInList = true;
@@ -217,13 +232,13 @@ int Combo::initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::V
 		if(bufferAlreadyInList == false) // connection output was not in list, so add to list
 		{
 			bufferNameArray.push_back(tempConn);
-#if(dbg == 1)
+#if(dbg >= 2)
 			cout << "NO MATCH: adding " << tempConn.process << ":" << tempConn.port << " to list." << endl;
 #endif
 		}
 	}
 
-#if(dbg == 1)
+#if(dbg >= 2)
 	cout << endl;
 	cout << "OUTPUT BUFFERS: " << endl;
 	cout << "bufferNameArray size: " << bufferNameArray.size() << endl;
@@ -231,14 +246,14 @@ int Combo::initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::V
 	this->bufferCount = bufferNameArray.size();
 	for(int bufferNameArrayIndex = 0; bufferNameArrayIndex < this->bufferCount; bufferNameArrayIndex++)
 	{
-#if(dbg == 1)
+#if(dbg >= 2)
 		cout << "procBuffer[" << bufferNameArrayIndex << "]: " << bufferNameArray[bufferNameArrayIndex].process;
 		cout << ":" << bufferNameArray[bufferNameArrayIndex].port << endl;
 #endif
 		bufferArray[bufferNameArrayIndex].processName = bufferNameArray[bufferNameArrayIndex].process;
 		bufferArray[bufferNameArrayIndex].portName = bufferNameArray[bufferNameArrayIndex].port;
 	}
-#if(dbg == 1)
+#if(dbg >= 2)
 	cout << endl;
 #endif
 
@@ -254,6 +269,7 @@ int Combo::loadEffects()
 	int outputBufferIndex = 1;
 	int connectBufferIndex = 0;*/
 
+	this->aveArrayIndex = 0;
 	initProcBuffers(this->procBufferArray); // reset all data ready flags to 0.
 
 	cout << "Control Count: " << this->controlCount << endl;
@@ -292,13 +308,18 @@ int Combo::loadEffects()
 		}
 	}
 
+
+
+	for(int bufferIndex = 0; bufferIndex < this->bufferCount; bufferIndex++)
+	{
+		initBufferAveParameters(&this->procBufferArray[bufferIndex]);
+	}
+
 	return status;
 }
 
 
 
-extern void startTimer(void);
-extern void stopTimer(const char *description);
 float testBuffer[10][BUFFER_SIZE];
 #define dbg 0
 int Combo::audioCallback(jack_nframes_t nframes,
@@ -321,9 +342,9 @@ int Combo::audioCallback(jack_nframes_t nframes,
 	//cout << "ENTERING audioCallback:  " << endl;
 #endif
 
-#if(TIMING_DBG == 1)
+//#if(TIMING_DBG == 1)
 	startTimer();
-#endif
+//#endif
 	int process = 0;
 	for(unsigned int i = 0; i < bufferSize; i++)
 	{
@@ -333,18 +354,12 @@ int Combo::audioCallback(jack_nframes_t nframes,
 		{
 			this->procBufferArray[this->inputProcBufferIndex[0]].buffer[i] = inBufs[1][i];//*this->inputLevel;
 			this->procBufferArray[this->inputProcBufferIndex[1]].buffer[i] = inBufs[0][i];//*this->inputLevel;
-			/*this->procBufferArray[0].buffer[i] = inBufs[1][i];//*this->inputLevel;
-			this->procBufferArray[1].buffer[i] = inBufs[0][i];//*this->inputLevel;*/
 		}
 		else
 		{
 			this->procBufferArray[this->inputProcBufferIndex[0]].buffer[i] = inBufs[0][i];//*this->inputLevel;
 			this->procBufferArray[this->inputProcBufferIndex[1]].buffer[i] = inBufs[1][i];//*this->inputLevel;
-			/*this->procBufferArray[0].buffer[i] = inBufs[0][i];//*this->inputLevel;
-			this->procBufferArray[1].buffer[i] = inBufs[1][i];//*this->inputLevel;*/
 		}
-		//if(internalPosPeak[0] < this->procBufferArray[this->inputProcBufferIndex[0]].buffer[i]) internalPosPeak[0] = this->procBufferArray[this->inputProcBufferIndex[0]].buffer[i];
-		//if(internalNegPeak[0] > this->procBufferArray[this->inputProcBufferIndex[0]].buffer[i]) internalNegPeak[0] = this->procBufferArray[this->inputProcBufferIndex[0]].buffer[i];
 		if(internalPosPeak[0] < inBufs[0][i]) internalPosPeak[0] = inBufs[0][i];
 		if(internalNegPeak[0] > inBufs[0][i]) internalNegPeak[0] = inBufs[0][i];
 		if(internalPosPeak[1] < inBufs[1][i]) internalPosPeak[1] = inBufs[1][i];
@@ -607,8 +622,38 @@ int Combo::audioCallback(jack_nframes_t nframes,
 			outBufs[1][i] = this->procBufferArray[1].buffer[i];*/
 		}
 	}
+
+	/*float tempAve;
+	for(int bufferIndex = 0; bufferIndex < this->bufferCount; bufferIndex++)
+	{
+		this->procBufferArray[bufferIndex].aveBuffer[this->aveArrayIndex] = this->procBufferArray[bufferIndex].offset;
+		tempAve = 0.00000;
+
+		for(int arrayIndex = 0; arrayIndex < AVE_ARRAY_SIZE; arrayIndex++)
+		{
+			tempAve += this->procBufferArray[bufferIndex].aveBuffer[arrayIndex];
+		}
+
+		this->procBufferArray[bufferIndex].offset = tempAve/AVE_ARRAY_SIZE;
+	}
+	this->aveArrayIndex++;
+	if(this->aveArrayIndex == AVE_ARRAY_SIZE) this->aveArrayIndex = 0;*/
+
+#if(SIGPROC_DBG)
+	int bufferIndex;
+	cout << "BUFFER AVERAGES: " << endl;
+	for(bufferIndex = 0; bufferIndex < this->bufferCount; bufferIndex++)
+	{
+		cout << this->procBufferArray[bufferIndex].average << ", ";
+	}
+	cout << endl;
+#endif
+
+
 #if(TIMING_DBG == 1)
-	stopTimer("audio processing");
+	comboTime = stopTimer("audio processing");
+#else
+	comboTime = stopTimer(NULL);
 #endif
 
 #if(dbg == 1)
@@ -690,7 +735,7 @@ int Combo::updateFootswitch(int *footswitchStatus)
 {
 	int status = 0;
 
-#if(dbg >= 2)
+#if(dbg >= 1)
 	cout << "ENTERING: Combo::updateFootswitch" << endl;
 #endif
 
@@ -708,7 +753,7 @@ int Combo::updateFootswitch(int *footswitchStatus)
 	cout << endl;
 #endif
 
-#if(dbg >= 2)
+#if(dbg >= 1)
 	cout << "EXITING: Combo::updateFootswitch" << endl;
 #endif
 	return status;
@@ -755,7 +800,7 @@ int Combo::updateProcessParameter(string processName, int parameterIndex, int pa
 	return status;
 }
 
-#define dbg 1
+#define dbg 0
 int Combo::updateControlParameter(string controlName, int parameterIndex, int parameterValue)
 {
 #if(dbg==1)
@@ -779,11 +824,13 @@ int Combo::updateControlParameter(string controlName, int parameterIndex, int pa
 			break;
 		}
 	}
-#if(dbg==1)
+#if(dbg>=2)
 	std::cout << "\t\tcontrolName: " << controlName  << "parameterIndex: " << parameterIndex  << "\tparameterValue: " << this->controlSequence[controlIndex].parameter[parameterIndex] << std::endl;
 	std::cout << "\t\ttargetProcessIndex: " << this->controlSequence[controlIndex].paramContConnection[0].processIndex;
 	std::cout << "\t\ttargetProcessName: " << this->processSequence[this->controlSequence[controlIndex].paramContConnection[0].processIndex].processName;
 	std::cout << "\t\ttargetProcessParameterIndex: " << this->controlSequence[controlIndex].paramContConnection[0].processParamIndex << endl;
+#endif
+#if(dbg>=1)
 	cout << "EXITING: Combo::updateControlParameter" << endl;
 #endif
 	return status;

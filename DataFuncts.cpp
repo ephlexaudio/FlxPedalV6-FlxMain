@@ -15,26 +15,44 @@ extern std::vector<string> jsonProcessList;*/
 
 /**********************************************************************************/
 /**********************************************************************************/
-/**********************************************************************************/
-#define JSON_BUFFER_LENGTH 16000
+/**************************************
+#if(dbg >= 1)
+	cout << "***** ENTERING: DataFuncts::" << endl;
+#endif
 
+#if(dbg >= 1)
+	cout << "***** EXITING: DataFuncts::" << endl;
+#endif
+
+#if(dbg >=2)
+#endif
+********************************************/
+#define JSON_BUFFER_LENGTH 32000
+#define FILE_SIZE 32000
+
+
+#define dbg 0
 int validateJsonString(std::string jsonString)
 {
+#if(dbg >= 1)
+	cout << "***** ENTERING: DataFuncts::validateJsonString" << endl;
+#endif
+
 	int status = 0;
 	Json::Value jsonClean;
 	int newlineIndex =0;
 	Json::Reader jsonDirtyReader;
 	Json::FastWriter jsonCleanWriter;
 
-	char dirtyBuffer[16000];
+	char dirtyBuffer[FILE_SIZE];
 	string dirtyBufferString;
-	char cleanBuffer[16000];
+	char cleanBuffer[FILE_SIZE];
 	string cleanBufferString;
 	string tempBufferString;
-	//char outputBuffer[20000];
+	//char outputBuffer[FILE_SIZE];
 
-	clearBuffer(dirtyBuffer,16000);
-	clearBuffer(cleanBuffer,16000);
+	clearBuffer(dirtyBuffer,FILE_SIZE);
+	clearBuffer(cleanBuffer,FILE_SIZE);
 
 	tempBufferString.assign(jsonString);
 	/************ SANITIZE IN CASE OF CORRUPTION *********************/
@@ -43,23 +61,32 @@ int validateJsonString(std::string jsonString)
 	if(newlineIndex != std::string::npos)
 	{
 		cout << "newline found" << endl;
+#if(dbg >=2)
+#endif
 		dirtyBufferString = tempBufferString.substr(0,newlineIndex);
 	}
 	else
 	{
 		cout << "no newline found" << endl;
+#if(dbg >=2)
+#endif
 		dirtyBufferString.assign(tempBufferString);
 	}
 
 
+#if(dbg >=2)
 	cout << "Dirty string: " << dirtyBufferString << endl;
 	cout << "Dirty string length: " << dirtyBufferString.size() << endl;
+#endif
 	if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 	{
 		cout << "JSON name: " << jsonClean["name"] << endl;
 		cleanBufferString = jsonCleanWriter.write(jsonClean);
+
+#if(dbg >=2)
 		cout << "Clean string: " << cleanBufferString << endl;
 		cout << "Clean string length: " << cleanBufferString.size() << endl;
+#endif
 
 		if(dirtyBufferString.size() == cleanBufferString.size())
 		{
@@ -82,8 +109,10 @@ int validateJsonString(std::string jsonString)
 				{
 					cout << "JSON name2: " << jsonClean["name"] << endl;
 					cleanBufferString = jsonCleanWriter.write(jsonClean);
+#if(dbg >=2)
 					cout << "Clean string2: " << cleanBufferString << endl;
 					cout << "Clean string length2: " << cleanBufferString.size() << endl;
+#endif
 
 					if(dirtyBufferString.size() == cleanBufferString.size() ||
 							dirtyBufferString.size() == cleanBufferString.size()-1)
@@ -118,34 +147,43 @@ int validateJsonString(std::string jsonString)
 		jsonString.clear();
 	}
 
+#if(dbg >= 1)
+	cout << "***** EXITING: DataFuncts::validateJsonString" << endl;
+#endif
 
 	return status;
 }
 
 int validateJsonBuffer(char *jsonBuffer)
 {
+#if(dbg >= 1)
+	cout << "***** ENTERING: DataFuncts::validateJsonBuffer" << endl;
+#endif
+
 	int status = 0;
 	Json::Value jsonClean;
 	int newlineIndex =0;
 	Json::Reader jsonDirtyReader;
 	Json::FastWriter jsonCleanWriter;
 
-	char dirtyBuffer[16000];
+	char dirtyBuffer[FILE_SIZE];
 	string dirtyBufferString;
-	char cleanBuffer[16000];
+	char cleanBuffer[FILE_SIZE];
 	string cleanBufferString;
 	string tempBufferString;
-	//char outputBuffer[20000];
+	//char outputBuffer[FILE_SIZE];
 
-	clearBuffer(dirtyBuffer,16000);
-	clearBuffer(cleanBuffer,16000);
+	clearBuffer(dirtyBuffer,FILE_SIZE);
+	clearBuffer(cleanBuffer,FILE_SIZE);
 
 	tempBufferString = string(jsonBuffer);
 	/************ SANITIZE IN CASE OF CORRUPTION *********************/
 
 	newlineIndex = tempBufferString.find("\n");
+#if(dbg >=2)
 	cout << "tempBufferString: " << tempBufferString << endl;
 	cout << "tempBufferString length: " << tempBufferString.size() << endl;
+#endif
 	cout << "newline found at: " << newlineIndex << endl;
 	if(newlineIndex == (tempBufferString.length()-1)) newlineIndex = std::string::npos; // ignore newline at end of string
 	if((newlineIndex != std::string::npos))
@@ -161,8 +199,10 @@ int validateJsonBuffer(char *jsonBuffer)
 	dirtyBufferString.erase(remove(dirtyBufferString.begin(),dirtyBufferString.end(),'\n'),dirtyBufferString.end());
 
 
+#if(dbg >=2)
 	cout << "Dirty string: " << dirtyBufferString << endl;
 	cout << "Dirty string length: " << dirtyBufferString.size() << endl;
+#endif
 
 	//printAsciiNumbers(dirtyBufferString);
 
@@ -171,8 +211,10 @@ int validateJsonBuffer(char *jsonBuffer)
 		cout << "JSON name: " << jsonClean["name"] << endl;
 		cleanBufferString = jsonCleanWriter.write(jsonClean);
 		cleanBufferString.erase(remove(cleanBufferString.begin(),cleanBufferString.end(),'\n'),cleanBufferString.end());
+#if(dbg >=2)
 		cout << "Clean string: " << cleanBufferString << endl;
 		cout << "Clean string length: " << cleanBufferString.size() << endl;
+#endif
 
 		//printAsciiNumbers(cleanBufferString);
 
@@ -198,8 +240,10 @@ int validateJsonBuffer(char *jsonBuffer)
 					cout << "JSON name: " << jsonClean["name"] << endl;
 					cleanBufferString = jsonCleanWriter.write(jsonClean);
 					cleanBufferString.erase(remove(cleanBufferString.begin(),cleanBufferString.end(),'\n'),cleanBufferString.end());
+#if(dbg >=2)
 					cout << "Clean string: " << cleanBufferString << endl;
 					cout << "Clean string length: " << cleanBufferString.size() << endl;
+#endif
 
 					if(dirtyBufferString.size() == cleanBufferString.size())
 					{
@@ -230,6 +274,9 @@ int validateJsonBuffer(char *jsonBuffer)
 		cout << "jsonString could not be parsed" << endl;
 		status = -1;
 	}
+#if(dbg >= 1)
+	cout << "***** EXITING: DataFuncts::validateJsonBuffer" << endl;
+#endif
 
 
 	return status;
@@ -239,8 +286,8 @@ Json::Reader dataReader;
 #define dbg 0
 std::vector<string> getComponentList(void)
 {
-#if(dbg>=1)
-		fprintf(stderr,"entering OfxMain/DataFuncts.cpp getComponentList.\n");
+#if(dbg >= 1)
+	cout << "***** ENTERING: DataFuncts::getComponentList" << endl;
 #endif
 	std::vector<string> compList;
 	FILE *fdCompList = popen("ls /home/Components","r");
@@ -281,8 +328,8 @@ std::vector<string> getComponentList(void)
 	}
 
 	if(fdCompList != NULL) pclose(fdCompList);
-#if(dbg>=1)
-		fprintf(stderr,"exiting OfxMain/DataFuncts.cpp getComponentList.\n");
+#if(dbg >= 1)
+	cout << "***** EXITING: DataFuncts::getComponentList" << endl;
 #endif
 	return compList;
 }
@@ -291,8 +338,8 @@ std::vector<string> getComponentList(void)
 #define dbg 0
 std::string getComponentData(std::string componentName)
 {
-#if(dbg>=1)
-		fprintf(stderr,"entering OfxMain/DataFuncts.cpp getComponentList.\n");
+#if(dbg >= 1)
+	cout << "***** ENTERING: DataFuncts::getComponentData" << endl;
 #endif
 	char compString[50];
 	sprintf(compString,"/home/Components/%s.txt", componentName.c_str());
@@ -313,8 +360,8 @@ std::string getComponentData(std::string componentName)
 		}
 	}
 	fclose(fdComp);
-#if(dbg>=1)
-		fprintf(stderr,"exiting OfxMain/DataFuncts.cpp getComponentList.\n");
+#if(dbg >= 1)
+	cout << "***** EXITING: DataFuncts::getComponentData" << endl;
 #endif
 	return std::string(outputString);
 }
@@ -330,8 +377,8 @@ std::string getComponentData(std::string componentName)
 #define dbg 2
 std::vector<string> getComboList(void)
 {
-#if(dbg>=1)
-		cout << "entering OfxMain/DataFuncts.cpp getComponentList." << endl;
+#if(dbg >= 1)
+	cout << "***** ENTERING: DataFuncts::getComboList" << endl;
 #endif
 
 	std::vector<string> comList;
@@ -369,8 +416,8 @@ std::vector<string> getComboList(void)
 	}
 
 	if(fdComboList != NULL) pclose(fdComboList);
-#if(dbg>=1)
-	cout << "exiting OfxMain/DataFuncts.cpp getComponentList." << endl;
+#if(dbg >= 1)
+	cout << "***** EXITING: DataFuncts::getComboList" << endl;
 #endif
 	return comList;
 }
@@ -380,19 +427,19 @@ std::vector<string> getComboList(void)
 #define dbg 0
 std::string getComboData(std::string comboName)
 {
-#if(dbg>=1)
-		fprintf(stderr,"entering OfxMain/DataFuncts.cpp getComponentList.\n");
+#if(dbg >= 1)
+	cout << "***** ENTERING: DataFuncts::getComboData" << endl;
 #endif
 	errno = 0;
 	char comboString[50];
-	char jsonBuffer[16000];
+	char jsonBuffer[FILE_SIZE];
 	string jsonBufferString;
 
 	sprintf(comboString,"/home/Combos/%s.txt", comboName.c_str());
 #if(dbg>=1)
 	printf("comboString: %s\n", comboString);
 #endif
-	clearBuffer(jsonBuffer,16000);
+	clearBuffer(jsonBuffer,FILE_SIZE);
 	FILE *fdCombo = fopen(comboString, "r");
 	if(fdCombo == NULL)
 	{
@@ -403,7 +450,7 @@ std::string getComboData(std::string comboName)
 	}
 	else
 	{
-		while(fgets(jsonBuffer,16000,fdCombo) != NULL)
+		while(fgets(jsonBuffer,FILE_SIZE,fdCombo) != NULL)
 		{
 			puts(jsonBuffer);
 		}
@@ -429,8 +476,8 @@ std::string getComboData(std::string comboName)
 		}
 		fclose(fdCombo);
 	}
-#if(dbg>=1)
-		fprintf(stderr,"exiting OfxMain/DataFuncts.cpp getComponentList.\n");
+#if(dbg >= 1)
+	cout << "***** EXITING: DataFuncts::getComboData" << endl;
 #endif
 	return jsonBufferString;
 }
@@ -438,40 +485,40 @@ std::string getComboData(std::string comboName)
 #define dbg 2
 int saveCombo(std::string comboData)
 {
-#if(dbg>=1)
-		cout << "entering OfxMain/DataFuncts.cpp saveCombo." << endl;
+#if(dbg >= 1)
+	cout << "***** ENTERING: DataFuncts::saveCombo" << endl;
 #endif
 	int status = 0;
 	FILE *saveComboFD;
 	Json::Value tempJsonCombo;
 	int charCount = 0;
-	char comboDataString[16000];
+	char comboDataBuffer[FILE_SIZE];
 
-	char parsedComboDataString[16000];
-	for(int i = 0; i < 16000; i++)
+	char parsedComboDataBuffer[FILE_SIZE];
+	for(int i = 0; i < FILE_SIZE; i++)
 	{
-		comboDataString[i]=0;
-		parsedComboDataString[i]=0;
+		comboDataBuffer[i]=0;
+		parsedComboDataBuffer[i]=0;
 	}
-	char fileNameString[40];
+	char fileNameBuffer[40];
 
 	cout << "pre parsed JSON string: " << comboData.c_str() << endl;
 	if(dataReader.parse(comboData.c_str(), tempJsonCombo))
 	{
-		sprintf(fileNameString, "/home/Combos/%s.txt", tempJsonCombo["name"].asString().c_str());
+		sprintf(fileNameBuffer, "/home/Combos/%s.txt", tempJsonCombo["name"].asString().c_str());
 #if(dbg>=2)
-		std::cout << "saveCombo: " << fileNameString << '\n';
+		std::cout << "saveCombo: " << fileNameBuffer << '\n';
 #endif
 		//saveComboFD = fopen(fileNameString,"w");
-		if((saveComboFD = fopen(fileNameString,"w")) != NULL )
+		if((saveComboFD = fopen(fileNameBuffer,"w")) != NULL )
 		{
-			strcpy(comboDataString, comboData.c_str());
-			for(int i = 0; comboDataString[i] != 0; i++) charCount++;
-			strncpy(parsedComboDataString, comboDataString, charCount);
+			strcpy(comboDataBuffer, comboData.c_str());
+			for(int i = 0; comboDataBuffer[i] != 0; i++) charCount++;
+			strncpy(parsedComboDataBuffer, comboDataBuffer, charCount);
 #if(dbg>=2)
-			std::cout << "OfxMain/DataFuncts/saveCombo size: " << strlen(parsedComboDataString) << endl;
+			std::cout << "OfxMain/DataFuncts/saveCombo size: " << strlen(parsedComboDataBuffer) << endl;
 #endif
-			int bytesWritten = fwrite(parsedComboDataString,1,charCount,saveComboFD);
+			int bytesWritten = fwrite(parsedComboDataBuffer,1,charCount,saveComboFD);
 #if(dbg>=2)
 			std::cout << "OfxMain/DataFuncts/saveCombo bytes written: " << bytesWritten << endl;
 #endif
@@ -489,8 +536,8 @@ int saveCombo(std::string comboData)
 		status = 1;
 	}
 
-#if(dbg>=1)
-	std::cout << "exiting OfxMain/DataFuncts.cpp saveCombo: " << endl;
+#if(dbg >= 1)
+	cout << "***** EXITING: DataFuncts::saveCombo" << endl;
 #endif
 	return status;
 }

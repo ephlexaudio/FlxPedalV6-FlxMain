@@ -23,6 +23,7 @@
 //#include "Process.h"
 #include "Effects2.h"
 #include "ComboDataInt.h"
+#include "utilityFunctions.h"
 #include "jackaudioio.h"
 #define BUFFER_SIZE 1024
 
@@ -89,6 +90,7 @@ private:
 	int signalDeltaFilterIndex;
 	int signalDeltaPositiveCount;
 	int signalDeltaNegativeCount;
+	int aveArrayIndex;
 
 public:
 	/*struct */ProcessEvent processSequence[20]; // do these 5 variables/structs need to be public ??

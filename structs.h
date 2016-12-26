@@ -23,7 +23,7 @@ using namespace std;
 
 #define BUFFER_SIZE 1024
 #define DELAY_BUFFER_LENGTH 40000
-
+#define AVE_ARRAY_SIZE 16
 /*************** CONTROL CONTEXTS ************************/
 struct EnvGenContext{
 	int envStage; //0:attack, 1:decay, 2:sustain, 3:release
@@ -146,18 +146,10 @@ typedef  void (*GetAvgs)(struct ProcessBuffer *);
 struct ProcessBuffer{
 	string processName;
 	string portName;
-	float ampPositiveSum;
-	float ampPositivePeak;
-	int ampPositiveCount;
-	float ampPositiveAvg;
-	float ampPositiveMeasWindow[8];
-	int ampPositiveMeasWindowIndex;
-	float ampNegativeSum;
-	float ampNegativePeak;
-	int ampNegativeCount;
-	float ampNegativeAvg;
-	float ampNegativeMeasWindow[8];
-	int ampNegativeMeasWindowIndex;
+	float bufferSum;
+	float aveArray[AVE_ARRAY_SIZE];
+	float offset;
+	int aveArrayIndex;
 	float buffer[BUFFER_SIZE]; // for real-time processing
 	int ready;
 	int processed;

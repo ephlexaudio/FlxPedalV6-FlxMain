@@ -28,7 +28,7 @@
 //#define SHARED_MEMORY_PROCESSED "12"
 #define TX_BUFFER_SIZE 1500
 #define RX_BUFFER_SIZE 1500
-#define HOST_SHARED_MEMORY_FILE_SIZE 16000
+#define HOST_SHARED_MEMORY_FILE_SIZE 32000
 //static void pabort(const char *s);
 
 /*struct Request {

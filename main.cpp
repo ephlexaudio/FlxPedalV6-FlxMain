@@ -58,11 +58,11 @@ using namespace std;
 #define CM0_SHARED_MEMORY_SECTION_ADDRESS 4096
 #define CM0_SHARED_MEMORY_SECTION_SIZE 4096
 
-#define HOST_SHARED_MEMORY_SECTION_ADDRESS 8192
-#define HOST_SHARED_MEMORY_SECTION_SIZE 4096
+//#define HOST_SHARED_MEMORY_SECTION_ADDRESS 8192
+//#define HOST_SHARED_MEMORY_SECTION_SIZE 4096
 
-#define HOST_SHARED_MEMORY_FILE_ADDRESS 32768
-#define HOST_SHARED_MEMORY_FILE_SIZE 16000
+//#define HOST_SHARED_MEMORY_FILE_ADDRESS 32768
+#define FILE_SIZE 32000
 
 #define HOST_UI_ACTIVE_COUNT 1500
 
@@ -112,6 +112,7 @@ int opLogFD = open("/home/opLog.txt",O_WRONLY);
 struct _jackParams jackParams;
 struct _processingParams processingParams;
 extern ProcessingControl procCont;
+extern int comboTime;
 
 #define dbg 1
 int main(int argc, char *argv[])
@@ -135,7 +136,7 @@ int main(int argc, char *argv[])
 	uint8_t gpioStatus = 0;
 	string pinString;
 	bool newDataFromServer = false;
-	long hostUiActiveCount = 0;
+	//long hostUiActiveCount = 0;
 	char gpioStr[5];
 	char simpleResponseStr[20];
 	string comboName;
@@ -155,14 +156,14 @@ int main(int argc, char *argv[])
 			HOST_SHARED_MEMORY_SECTION_ADDRESS,HOST_SHARED_MEMORY_SECTION_SIZE);*/
 	HostUiInt hostUi;
 	/*int hostUiFD = open("/dev/ttyGS0", O_RDWR | O_NONBLOCK);
-	char hostUiRawRequestCharArray[16000];
-	char hostUiRequestCharArray[16000];
-	char hostUiResponseCharArray[16000];*/
+	char hostUiRawRequestCharArray[FILE_SIZE];
+	char hostUiRequestCharArray[FILE_SIZE];
+	char hostUiResponseCharArray[FILE_SIZE];*/
 	string hostUiRequest;
 	string hostUiRequestCommand;
 	string hostUiRequestData;
-	hostUiRequest.resize(16000);
-	hostUiRequestData.resize(16000);
+	hostUiRequest.resize(FILE_SIZE);
+	hostUiRequestData.resize(FILE_SIZE);
 	bool hostUiRequestIsValid = false;
 
 	string footswitch1Status;
@@ -300,474 +301,163 @@ int main(int argc, char *argv[])
 	while(exit == 0)
 	{
 		//************* Process requests from Host UI Interface  *************
-		/*clearBuffer(hostUiRawRequestCharArray,16000);
-		clearBuffer(hostUiRequestCharArray,16000);
-		clearBuffer(hostUiResponseCharArray,16000);
-    	ssize_t size_read = read(hostUiFD, hostUiRawRequestCharArray, 16000);*/
+		/*clearBuffer(hostUiRawRequestCharArray,FILE_SIZE);
+		clearBuffer(hostUiRequestCharArray,FILE_SIZE);
+		clearBuffer(hostUiResponseCharArray,FILE_SIZE);
+    	ssize_t size_read = read(hostUiFD, hostUiRawRequestCharArray, FILE_SIZE);*/
 
-        if(hostUi.checkForNewHostData() == 1)
-        {
-        	//enteringLoop = false;
-        	hostUiRequest = hostUi.getUserRequest();
-        	//cout << "usb data received: " << hostUiRequestCharArray << endl;
-        	//cout << "usb data size: " << strlen(hostUiRequestCharArray) << endl;
-        	/*cleanString(hostUiRawRequestCharArray,hostUiRequestCharArray);
-        	strcpy(hostUiResponseCharArray,"received: ");
-        	strncat(hostUiResponseCharArray, (const char*)hostUiRequestCharArray, 16000);
-        	hostUiRequest = hostUiRequestCharArray;*/
-#if(hostUiDbg >= 1)
-			cout << "HOST UI REQUEST: " << hostUiRequest << endl;
-			cout << "hostUiRequest size: " << hostUiRequest.size() << endl;
-			/*for(int charIndex = 0; charIndex < hostUiRequest.size(); charIndex++)
-			{
-				cout << hostUiRequest[charIndex] << ',';
-			}
-			cout << endl;*/
-#endif
-			hostUiRequestIsValid = true;
-			hostUiRequest.erase(remove(hostUiRequest.begin(), hostUiRequest.end(), '\n'), hostUiRequest.end());
-			hostUiRequest.erase(std::remove(hostUiRequest.begin(), hostUiRequest.end(), '\r'), hostUiRequest.end());
-			for(unsigned int charIndex = 0; charIndex < hostUiRequest.size(); charIndex++)
-			{
-				if((hostUiRequest[charIndex] < ' ' || '~' < hostUiRequest[charIndex]))
-				{
-					hostUiRequestIsValid = false;
-					break;
-				}
-			}
-
-			if(hostUiRequestIsValid)
-			{
-				uint8_t colonPosition = hostUiRequest.find(":");
-				//cout << "hostUiRequest: " << hostUiRequest << endl;
-				if(0 < colonPosition && colonPosition < hostUiRequest.length())
-				{
-					hostUiRequestCommand = hostUiRequest.substr(0,colonPosition);
-					hostUiRequestData = hostUiRequest.substr(colonPosition+1);
-				}
-				else hostUiRequestCommand = hostUiRequest;
-
-				if(hostUiRequestCommand.compare("listCombos") == 0)
-				{
-					//hostUi.sendComboUiData(combo.hostUiJson);
-					comboNameList = getComboList();
-					string comboNameArray;
-					for(unsigned int i = 0; i < comboNameList.size(); i++)
-					{
-						comboNameArray.append(comboNameList.at(i).c_str());
-						if(i < comboNameList.size()-1) comboNameArray.append(",");
-					}
-					hostUi.sendComboList(comboNameArray);
-					//strcpy(hostUiResponseCharArray, comboNameArray.c_str());
-
-#if(hostUiDbg == 1)
-					cout << comboNameArray << endl;
-					cout << "sent listCombos" << endl;
-#endif
-				}
-				else if(hostUiRequestCommand.compare("getCombo") == 0)
-				{
-					//bypassAll();
-
-					if(hostUiRequestData.size() > 1)
-					{
-						if(comboData.getCombo((char *)hostUiRequestData.c_str()) == 0)
-						{
-							if(comboRunning == true)
-							{
-								stopCombo();
-								comboRunning = false;
-							}
-							//hostUiRequestData = string(initComboName);
-#if(hostUiDbg == 1)
-							cout << "requested Combo: " << hostUiRequestData << endl;
-#endif
-#if(hostUiDbg == 1)
-							cout << "after getCombo: effectCount:"<<effectCount<<"\tprocCount:"<<procCount<<endl;
-#endif
-							//									if(comboData.getPedalUi() != 0)
-							//									{
-							//										status = 1;
-							//									}
-							//									else
-							{
-								hostUi.sendComboToHost(hostUiRequestData);
-#if(hostUiDbg == 1)
-								cout << "sent hostUiJson" << endl;
-#endif
-							}
-							if(loadCombo() == 0)
-							{
-								runCombo();
-								sleep(1);
-								comboRunning = true;
-								//server.sendCurrentData();
-
-								strcpy(ofxMainStatus,"combo running");
-
-							}
-							else
-							{
-								strcpy(ofxMainStatus,"load failed");
-							}
-						}
-						else
-						{
-							cout << "could not get combo" << endl;
-						}
-					}
-				}
-				else if(hostUiRequestCommand.compare("changeValue") == 0)
-				{
-					//uint8_t colon = 0;
-					//uint8_t equals = 0;
-
-					string procContString, paramString, valueString, procParamString;
-					volatile int absParamIndex;
-					volatile int valueIndex;
-					//int size = hostUiRequestData.size();
-
-					//colon = requestData.find(":");
-					/*equals = hostUiRequestData.find("=");
-					if(equals < size ) // error check to make sure "colon" and "equals" aren't
-						// screwed up.*/
-					if(hostUiJsonReader.parse(hostUiRequestData.c_str(),hostUiJsonData) == true)
-					{
-						//effectString = requestData.substr(0,colon);
-
-						// get control parameter index and value
-						/*paramString = hostUiRequestData.substr(0,equals);
-						valueString = hostUiRequestData.substr(equals+1);
-						absParamIndex = atoi(paramString.c_str());
-						valueIndex = atoi(valueString.c_str());*/
-						if(hostUiJsonData["control"].isNull() == false)
-						{
-							procContString = hostUiJsonData["control"].asString();
-							paramString = hostUiJsonData["parameter"].asString();
-							valueString = hostUiJsonData["value"].asString();
-
-							cout << "control: " << procContString;
-							cout << "\tparameter: " << paramString;
-							cout << "\tvalue: " << valueString << endl;
-
-							absParamIndex = comboData.getControlParameterIndex(procContString, paramString);
-							valueIndex = atoi(valueString.c_str());
-							if((absParamIndex >= 0) && (0 <= valueIndex && valueIndex <= 255))
-							{
-
-								comboData.updateControl(absParamIndex, valueIndex);
-								//// enter into controlsStruct element
-
-								procCont.updateControlParameter(absParamIndex, valueIndex);
-								//comboData.updateProcess(absParamIndex, valueIndex);
-								//procCont.updateProcessParameter(absParamIndex, valueIndex);
-								cout << "paramString: " << paramString << '\t' << "valueString: " << valueString << endl;
-								//sprintf(procParamString, "%s:%d", paramName.c_str(), valueIndex);
-	#if(hostUiDbg == 1)
-								cout << "controlParamString: " << paramString.c_str() << ":" << valueIndex << endl;
-	#endif
-								//updateCombo(paramIndex,valueIndex);
-							}
-							else
-							{
-								cout << "absParamIndex and/or valueIndex are out of range." << endl;
-							}
-
-
-						}
-						else if(hostUiJsonData["process"].isNull() == false)
-						{
-							procContString = hostUiJsonData["process"].asString();
-							paramString = hostUiJsonData["parameter"].asString();
-							valueString = hostUiJsonData["value"].asString();
-
-							cout << "process: " << procContString;
-							cout << "\tparameter: " << paramString;
-							cout << "\tvalue: " << valueString << endl;
-
-							absParamIndex = comboData.getProcessParameterIndex(procContString, paramString);
-							valueIndex = atoi(valueString.c_str());
-							if((absParamIndex >= 0) && (0 <= valueIndex && valueIndex <= 255))
-							{
-								comboData.updateProcess(absParamIndex, valueIndex);
-								//// enter into controlsStruct element
-
-								procCont.updateProcessParameter(absParamIndex, valueIndex);
-								//comboData.updateProcess(absParamIndex, valueIndex);
-								//procCont.updateProcessParameter(absParamIndex, valueIndex);
-								cout << "paramString: " << paramString << '\t' << "valueString: " << valueString << endl;
-								//sprintf(procParamString, "%s:%d", paramName.c_str(), valueIndex);
-	#if(hostUiDbg == 1)
-								cout << "controlParamString: " << paramString.c_str() << ":" << valueIndex << endl;
-	#endif
-								//updateCombo(paramIndex,valueIndex);
-							}
-							else
-							{
-								cout << "absParamIndex and/or valueIndex are out of range." << endl;
-							}
-						}
-						else
-						{
-							cout << "invalid value change request." << endl;
-						}
-
-						// find corresponding controller and enter index and value into Control struct
-						// (control will write value to process parameter during process run)
-
-						/*if((absParamIndex >= 0) && (0 <= valueIndex && valueIndex <= 255))
-						{
-							comboData.updateControl(absParamIndex, valueIndex);
-							//// enter into controlsStruct element
-
-							procCont.updateControlParameter(absParamIndex, valueIndex);
-							//comboData.updateProcess(absParamIndex, valueIndex);
-							//procCont.updateProcessParameter(absParamIndex, valueIndex);
-							cout << "paramString: " << paramString << '\t' << "valueString: " << valueString << endl;
-							//sprintf(procParamString, "%s:%d", paramName.c_str(), valueIndex);
-#if(dbg == 1)
-							cout << "controlParamString: " << paramString.c_str() << ":" << valueIndex << endl;
-#endif
-							//updateCombo(paramIndex,valueIndex);
-						}
-						else
-						{
-							cout << "absParamIndex and/or valueIndex are out of range." << endl;
-						}*/
-
-					}
-					strcpy(simpleResponseStr,"ChangedValue");
-					hostUi.sendSimpleResponse(simpleResponseStr);
-				}
-				else if(hostUiRequestCommand.compare("saveCombo") == 0)
-				{
-					//comboData.saveCombo();//saveCombo(requestData);
-					hostUi.getComboFromHost(hostUiRequestData);
-					comboNameList = getComboList();
-					string comboNameArray;
-					for(unsigned int i = 0; i < comboNameList.size(); i++)
-					{
-						comboNameArray.append(comboNameList.at(i).c_str());
-						if(i < comboNameList.size()-1) comboNameArray.append(",");
-					}
-					hostUi.sendComboList(comboNameArray);
-					strcpy(ofxMainStatus,"combo saved");
-				}
-				else if(hostUiRequestCommand.compare("deleteCombo") == 0)
-				{
-					//comboData.saveCombo();//saveCombo(requestData);
-					char cliString[50];
-					sprintf(cliString, "rm /home/Combos/%s.txt", hostUiRequestData.c_str());
-#if(hostUiDbg == 1)
-					cout << "CLI string for delete: " << cliString << endl;
-#endif
-					cout << "delete result: " << strerror(system(cliString)) << endl;
-
-					comboNameList = getComboList();
-					string comboNameArray;
-					for(unsigned int i = 0; i < comboNameList.size(); i++)
-					{
-						comboNameArray.append(comboNameList.at(i).c_str());
-						if(i < comboNameList.size()-1) comboNameArray.append(",");
-					}
-					hostUi.sendComboList(comboNameArray);
-					strcpy(ofxMainStatus,"combo deleted");
-				}
-				else if(hostUiRequestCommand.compare("getCurrentValues") == 0)
-				{
-					if(newDataFromServer)
-					{
-						newDataFromServer = false;
-					}
-					hostUiActiveCount = HOST_UI_ACTIVE_COUNT;
-					hostUi.sendCurrentData(comboData.unsortedParameterArray);
-#if(pedalUiDbg >= 1)
-					cout << "sent current data to HOST " << endl;
-#endif
-				}
-				else if(hostUiRequestCommand.compare("getCurrentStatus") == 0)
-				{
-					if(newDataFromServer)
-					{
-						newDataFromServer = false;
-					}
-					hostUi.sendCurrentStatus(ofxMainStatus);
-					pedalUi.sendCurrentStatus(ofxMainStatus); // keep pedal UI receiving status
-					//pedalUi->sendCurrentStatus(ofxMainStatus); // keep pedal UI receiving status
-					//strcpy(ofxMainStatus," ");
-					hostUiActiveCount = HOST_UI_ACTIVE_COUNT;
-#if(pedalUiDbg >= 1)
-					cout << "sent current status to HOST: " << ofxMainStatus << endl;
-#endif
-				}
-				else if(hostUiRequestCommand.compare("hostUiActive") == 0)
-				{
-					hostUiActiveCount = HOST_UI_ACTIVE_COUNT;
-				}
-
-				else
-				{
-					cout << "sent nothing to host" << endl;
-				}
-			}
-			else
-			{
-				cout << "hostUiRequest is invalid or corrupted." << endl;
-			}
-			hostUiRequest.clear();
-			hostUiRequestCommand.clear();
-			hostUiRequestData.clear();
-        }
-		//************* Process requests from PCB UI Interface  *************
-
-        else if(((smSectionIndex = baseUi.checkForNewData()) > 0))
-        //else if(((smSectionIndex = pedalUi->checkForNewPedalData()) > 0))
+		if(hostGuiActive == true)
 		{
-        	//enteringLoop = false;
-
-#if(pedalUiDbg >= 1)
-        	cout << "*********************************** START **********************************************" << endl;
-			//cout << "section index: " << smSectionIndex << endl;
-#endif
-			/*if(smSectionIndex == 2)
-			{
-				if(hostUi.checkForNewHostData() == 1)
+	        if(hostUi.checkForNewHostData() == 1)
+	        {
+	        	//enteringLoop = false;
+	        	hostUiRequest = hostUi.getUserRequest();
+	        	//cout << "usb data received: " << hostUiRequestCharArray << endl;
+	        	//cout << "usb data size: " << strlen(hostUiRequestCharArray) << endl;
+	        	/*cleanString(hostUiRawRequestCharArray,hostUiRequestCharArray);
+	        	strcpy(hostUiResponseCharArray,"received: ");
+	        	strncat(hostUiResponseCharArray, (const char*)hostUiRequestCharArray, FILE_SIZE);
+	        	hostUiRequest = hostUiRequestCharArray;*/
+	#if(hostUiDbg >= 1)
+				cout << "HOST UI REQUEST: " << hostUiRequest << endl;
+				cout << "hostUiRequest size: " << hostUiRequest.size() << endl;
+				/*for(int charIndex = 0; charIndex < hostUiRequest.size(); charIndex++)
 				{
-#if(dbg >= 1)
-					cout << "*************** NEW DATA FROM HOST *****************" << endl;
-#endif
-					hostUi.dataProcessingStatus(0);
-					hostUiRequest = hostUi.getUserRequest();
-					// validate request (make sure it isn't corrupted)
-					hostUiRequestIsValid = true;
-
-#if(dbg >= 1)
-					cout << "hostUiRequest size: " << hostUiRequest.size() << endl;
-					for(int charIndex = 0; charIndex < hostUiRequest.size(); charIndex++)
+					cout << hostUiRequest[charIndex] << ',';
+				}
+				cout << endl;*/
+	#endif
+				hostUiRequestIsValid = true;
+				hostUiRequest.erase(remove(hostUiRequest.begin(), hostUiRequest.end(), '\n'), hostUiRequest.end());
+				hostUiRequest.erase(std::remove(hostUiRequest.begin(), hostUiRequest.end(), '\r'), hostUiRequest.end());
+				for(unsigned int charIndex = 0; charIndex < hostUiRequest.size(); charIndex++)
+				{
+					if((hostUiRequest[charIndex] < ' ' || '~' < hostUiRequest[charIndex]))
 					{
-						cout << hostUiRequest[charIndex] << ',';
+						hostUiRequestIsValid = false;
+						break;
 					}
-					cout << endl;
-#endif
+				}
 
-					for(int charIndex = 0; charIndex < hostUiRequest.size(); charIndex++)
+				if(hostUiRequestIsValid)
+				{
+					uint8_t colonPosition = hostUiRequest.find(":");
+					//cout << "hostUiRequest: " << hostUiRequest << endl;
+					if(0 < colonPosition && colonPosition < hostUiRequest.length())
 					{
-						if(hostUiRequest[charIndex] < ' ' || '~' < hostUiRequest[charIndex])
-						{
-							hostUiRequestIsValid = false;
-							break;
-						}
+						hostUiRequestCommand = hostUiRequest.substr(0,colonPosition);
+						hostUiRequestData = hostUiRequest.substr(colonPosition+1);
 					}
+					else hostUiRequestCommand = hostUiRequest;
 
-					if(hostUiRequestIsValid)
+					if(hostUiRequestCommand.compare("listCombos") == 0)
 					{
-						uint8_t colonPosition = hostUiRequest.find(":");
-						//cout << "hostUiRequest: " << hostUiRequest << endl;
-						if(0 < colonPosition && colonPosition < hostUiRequest.length())
+						//hostUi.sendComboUiData(combo.hostUiJson);
+						comboNameList = getComboList();
+						string comboNameArray;
+						for(unsigned int i = 0; i < comboNameList.size(); i++)
 						{
-							hostUiRequestCommand = hostUiRequest.substr(0,colonPosition);
-							hostUiRequestData = hostUiRequest.substr(colonPosition+1);
+							comboNameArray.append(comboNameList.at(i).c_str());
+							if(i < comboNameList.size()-1) comboNameArray.append(",");
 						}
-						else hostUiRequestCommand = hostUiRequest;
+						hostUi.sendComboList(comboNameArray);
+						//strcpy(hostUiResponseCharArray, comboNameArray.c_str());
 
-						if(hostUiRequestCommand.compare("listCombos") == 0)
+	#if(hostUiDbg == 1)
+						cout << comboNameArray << endl;
+						cout << "sent listCombos" << endl;
+	#endif
+					}
+					else if(hostUiRequestCommand.compare("getCombo") == 0)
+					{
+						//bypassAll();
+
+						if(hostUiRequestData.size() > 1)
 						{
-#if(dbg == 1)
-							cout << "HOST UI REQUEST: " << hostUiRequest << endl;
-#endif
-							//hostUi.sendComboUiData(combo.hostUiJson);
-							comboNameList = getComboList();
-							string comboNameArray;
-							for(int i = 0; i < comboNameList.size(); i++)
+							if(comboData.getCombo((char *)hostUiRequestData.c_str()) == 0)
 							{
-								comboNameArray.append(comboNameList.at(i).c_str());
-								if(i < comboNameList.size()-1) comboNameArray.append(",");
-							}
-							hostUi.sendComboList(comboNameArray);
-
-#if(dbg == 1)
-							cout << comboNameArray << endl;
-							cout << "sent listCombos" << endl;
-#endif
-						}
-						else if(hostUiRequestCommand.compare("getCombo") == 0)
-						{
-#if(dbg == 1)
-							cout << "HOST UI REQUEST: " << hostUiRequest << endl;
-#endif
-							//bypassAll();
-
-							if(comboRunning == true)
-							{
-								stopCombo();
-								comboRunning = false;
-							}
-							//hostUiRequestData = string(initComboName);
-#if(dbg == 1)
-							cout << "requested Combo: " << hostUiRequestData << endl;
-#endif
-							if(hostUiRequestData.size() > 1)
-							{
-								if(comboData.getCombo((char *)hostUiRequestData.c_str()) == 0)
+								if(comboRunning == true)
 								{
-#if(dbg == 1)
-									cout << "after getCombo: effectCount:"<<effectCount<<"\tprocCount:"<<procCount<<endl;
-#endif
-									//									if(comboData.getPedalUi() != 0)
-									//									{
-									//										status = 1;
-									//									}
-									//									else
-									{
-										hostUi.sendComboToHost(hostUiRequestData);
-#if(dbg == 1)
-										cout << "sent hostUiJson" << endl;
-#endif
-									}
-
-									loadCombo();
+									stopCombo();
+									comboRunning = false;
+								}
+								//hostUiRequestData = string(initComboName);
+	#if(hostUiDbg == 1)
+								cout << "requested Combo: " << hostUiRequestData << endl;
+	#endif
+	#if(hostUiDbg == 1)
+								cout << "after getCombo: effectCount:"<<effectCount<<"\tprocCount:"<<procCount<<endl;
+	#endif
+								//									if(comboData.getPedalUi() != 0)
+								//									{
+								//										status = 1;
+								//									}
+								//									else
+								{
+									hostUi.sendComboToHost(hostUiRequestData);
+	#if(hostUiDbg == 1)
+									cout << "sent hostUiJson" << endl;
+	#endif
+								}
+								if(loadCombo() == 0)
+								{
 									runCombo();
 									sleep(1);
 									comboRunning = true;
 									//server.sendCurrentData();
 
 									strcpy(ofxMainStatus,"combo running");
+
 								}
 								else
 								{
-									cout << "could not get combo" << endl;
+									strcpy(ofxMainStatus,"load failed");
 								}
 							}
-						}
-						else if(hostUiRequestCommand.compare("changeValue") == 0)
-						{
-#if(dbg == 1)
-							cout << "HOST UI REQUEST: " << hostUiRequest << endl;
-#endif
-							uint8_t colon = 0;
-							uint8_t equals = 0;
-
-							string effectString, paramString, valueString, procParamString;
-							volatile int absParamIndex;
-							volatile int valueIndex;
-							int size = hostUiRequestData.size();
-							//colon = requestData.find(":");
-							equals = hostUiRequestData.find("=");
-							if(equals < size ) // error check to make sure "colon" and "equals" aren't
-								// screwed up.
+							else
 							{
-								//effectString = requestData.substr(0,colon);
+								cout << "could not get combo" << endl;
+							}
+						}
+					}
+					else if(hostUiRequestCommand.compare("changeValue") == 0)
+					{
+						//uint8_t colon = 0;
+						//uint8_t equals = 0;
 
-								// get control parameter index and value
-								paramString = hostUiRequestData.substr(0,equals);
-								valueString = hostUiRequestData.substr(equals+1);
-								absParamIndex = atoi(paramString.c_str());
+						string procContString, paramString, valueString, procParamString;
+						volatile int absParamIndex;
+						volatile int valueIndex;
+						//int size = hostUiRequestData.size();
+
+						//colon = requestData.find(":");
+						/*equals = hostUiRequestData.find("=");
+						if(equals < size ) // error check to make sure "colon" and "equals" aren't
+							// screwed up.*/
+						if(hostUiJsonReader.parse(hostUiRequestData.c_str(),hostUiJsonData) == true)
+						{
+							//effectString = requestData.substr(0,colon);
+
+							// get control parameter index and value
+							/*paramString = hostUiRequestData.substr(0,equals);
+							valueString = hostUiRequestData.substr(equals+1);
+							absParamIndex = atoi(paramString.c_str());
+							valueIndex = atoi(valueString.c_str());*/
+							if(hostUiJsonData["control"].isNull() == false)
+							{
+								procContString = hostUiJsonData["control"].asString();
+								paramString = hostUiJsonData["parameter"].asString();
+								valueString = hostUiJsonData["value"].asString();
+
+								cout << "control: " << procContString;
+								cout << "\tparameter: " << paramString;
+								cout << "\tvalue: " << valueString << endl;
+
+								absParamIndex = comboData.getControlParameterIndex(procContString, paramString);
 								valueIndex = atoi(valueString.c_str());
-								// find corresponding controller and enter index and value into Control struct
-								// (control will write value to process parameter during process run)
-
-								if((absParamIndex >= 0) && (0 <= valueIndex && valueIndex <= 255))
+								if((0 <= absParamIndex && absParamIndex < comboData.controlParameterArray.size()) && (0 <= valueIndex && valueIndex <= 255))
 								{
+
 									comboData.updateControl(absParamIndex, valueIndex);
 									//// enter into controlsStruct element
 
@@ -776,9 +466,9 @@ int main(int argc, char *argv[])
 									//procCont.updateProcessParameter(absParamIndex, valueIndex);
 									cout << "paramString: " << paramString << '\t' << "valueString: " << valueString << endl;
 									//sprintf(procParamString, "%s:%d", paramName.c_str(), valueIndex);
-#if(dbg == 1)
+		#if(hostUiDbg == 1)
 									cout << "controlParamString: " << paramString.c_str() << ":" << valueIndex << endl;
-#endif
+		#endif
 									//updateCombo(paramIndex,valueIndex);
 								}
 								else
@@ -786,93 +476,166 @@ int main(int argc, char *argv[])
 									cout << "absParamIndex and/or valueIndex are out of range." << endl;
 								}
 
-							}
-						}
-						else if(hostUiRequestCommand.compare("saveCombo") == 0)
-						{
-#if(dbg == 1)
-							cout << "HOST UI REQUEST: " << hostUiRequestData << endl;
-#endif
-							//comboData.saveCombo();//saveCombo(requestData);
-							hostUi.getComboFromHost(hostUiRequestData);
-							strcpy(ofxMainStatus,"combo saved");
-						}
-						else if(hostUiRequestCommand.compare("deleteCombo") == 0)
-						{
-#if(dbg == 1)
-							cout << "HOST UI REQUEST: " << hostUiRequestData << endl;
-#endif
-							//comboData.saveCombo();//saveCombo(requestData);
-							char cliString[50];
-							sprintf(cliString, "rm /home/Combos/%s.txt", hostUiRequestData.c_str());
-#if(dbg == 1)
-							cout << "CLI string for delete: " << cliString << endl;
-#endif
-							cout << "delete result: " << strerror(system(cliString)) << endl;
 
-//							comboNameList = getComboList();
-//							string comboNameArray;
-//							for(int i = 0; i < comboNameList.size(); i++)
-//							{
-//								comboNameArray.append(comboNameList.at(i).c_str());
-//								if(i < comboNameList.size()-1) comboNameArray.append(",");
-//							}
-//							hostUi.sendComboList(comboNameArray);
-							strcpy(ofxMainStatus,"combo deleted");
-						}
-						else if(hostUiRequestCommand.compare("getCurrentValues") == 0)
-						{
-							if(newDataFromServer)
-							{
-								newDataFromServer = false;
 							}
-							hostUi.sendCurrentData(comboData.unsortedParameterArray);
-							//cout << "sent current data" << endl;
-						}
-						else if(hostUiRequestCommand.compare("getCurrentStatus") == 0)
-						{
-							if(newDataFromServer)
+							else if(hostUiJsonData["process"].isNull() == false)
 							{
-								newDataFromServer = false;
+								procContString = hostUiJsonData["process"].asString();
+								paramString = hostUiJsonData["parameter"].asString();
+								valueString = hostUiJsonData["value"].asString();
+
+								cout << "process: " << procContString;
+								cout << "\tparameter: " << paramString;
+								cout << "\tvalue: " << valueString << endl;
+
+								absParamIndex = comboData.getProcessParameterIndex(procContString, paramString);
+								valueIndex = atoi(valueString.c_str());
+								if((absParamIndex >= 0) && (0 <= valueIndex && valueIndex <= 255))
+								{
+									comboData.updateProcess(absParamIndex, valueIndex);
+									//// enter into controlsStruct element
+
+									procCont.updateProcessParameter(absParamIndex, valueIndex);
+									//comboData.updateProcess(absParamIndex, valueIndex);
+									//procCont.updateProcessParameter(absParamIndex, valueIndex);
+									cout << "paramString: " << paramString << '\t' << "valueString: " << valueString << endl;
+									//sprintf(procParamString, "%s:%d", paramName.c_str(), valueIndex);
+		#if(hostUiDbg == 1)
+									cout << "controlParamString: " << paramString.c_str() << ":" << valueIndex << endl;
+		#endif
+									//updateCombo(paramIndex,valueIndex);
+								}
+								else
+								{
+									cout << "absParamIndex and/or valueIndex are out of range." << endl;
+								}
 							}
-							hostUi.sendCurrentStatus(ofxMainStatus);
-							strcpy(ofxMainStatus," ");
-							//cout << "sent current data" << endl;
+							else
+							{
+								cout << "invalid value change request." << endl;
+							}
+
+							// find corresponding controller and enter index and value into Control struct
+							// (control will write value to process parameter during process run)
+
+							/*if((absParamIndex >= 0) && (0 <= valueIndex && valueIndex <= 255))
+							{
+								comboData.updateControl(absParamIndex, valueIndex);
+								//// enter into controlsStruct element
+
+								procCont.updateControlParameter(absParamIndex, valueIndex);
+								//comboData.updateProcess(absParamIndex, valueIndex);
+								//procCont.updateProcessParameter(absParamIndex, valueIndex);
+								cout << "paramString: " << paramString << '\t' << "valueString: " << valueString << endl;
+								//sprintf(procParamString, "%s:%d", paramName.c_str(), valueIndex);
+	#if(dbg == 1)
+								cout << "controlParamString: " << paramString.c_str() << ":" << valueIndex << endl;
+	#endif
+								//updateCombo(paramIndex,valueIndex);
+							}
+							else
+							{
+								cout << "absParamIndex and/or valueIndex are out of range." << endl;
+							}*/
+
 						}
-						else
-						{
-							cout << "sent nothing to host" << endl;
-						}
-						cout << "Host request processed" << endl;
+						strcpy(simpleResponseStr,"ChangedValue");
+						hostUi.sendSimpleResponse(simpleResponseStr);
 					}
+					else if(hostUiRequestCommand.compare("saveCombo") == 0)
+					{
+						//comboData.saveCombo();//saveCombo(requestData);
+						hostUi.getComboFromHost(hostUiRequestData);
+						comboNameList = getComboList();
+						string comboNameArray;
+						for(unsigned int i = 0; i < comboNameList.size(); i++)
+						{
+							comboNameArray.append(comboNameList.at(i).c_str());
+							if(i < comboNameList.size()-1) comboNameArray.append(",");
+						}
+						hostUi.sendComboList(comboNameArray);
+						strcpy(ofxMainStatus,"combo saved");
+					}
+					else if(hostUiRequestCommand.compare("deleteCombo") == 0)
+					{
+						//comboData.saveCombo();//saveCombo(requestData);
+						char cliString[50];
+						sprintf(cliString, "rm /home/Combos/%s.txt", hostUiRequestData.c_str());
+	#if(hostUiDbg == 1)
+						cout << "CLI string for delete: " << cliString << endl;
+	#endif
+						cout << "delete result: " << strerror(system(cliString)) << endl;
+
+						comboNameList = getComboList();
+						string comboNameArray;
+						for(unsigned int i = 0; i < comboNameList.size(); i++)
+						{
+							comboNameArray.append(comboNameList.at(i).c_str());
+							if(i < comboNameList.size()-1) comboNameArray.append(",");
+						}
+						hostUi.sendComboList(comboNameArray);
+						strcpy(ofxMainStatus,"combo deleted");
+					}
+					else if(hostUiRequestCommand.compare("getCurrentValues") == 0)
+					{
+						if(newDataFromServer)
+						{
+							newDataFromServer = false;
+						}
+						//hostUiActiveCount = HOST_UI_ACTIVE_COUNT;
+						hostUi.sendCurrentData(comboData.unsortedParameterArray);
+	#if(pedalUiDbg >= 1)
+						cout << "sent current data to HOST " << endl;
+	#endif
+					}
+					else if(hostUiRequestCommand.compare("getCurrentStatus") == 0)
+					{
+						if(newDataFromServer)
+						{
+							newDataFromServer = false;
+						}
+						hostUi.sendCurrentStatus(ofxMainStatus);
+						pedalUi.sendCurrentStatus(ofxMainStatus); // keep pedal UI receiving status
+						//pedalUi->sendCurrentStatus(ofxMainStatus); // keep pedal UI receiving status
+						//strcpy(ofxMainStatus," ");
+						//hostUiActiveCount = HOST_UI_ACTIVE_COUNT;
+	#if(pedalUiDbg >= 1)
+						cout << "sent current status to HOST: " << ofxMainStatus << endl;
+	#endif
+					}
+					else if(hostUiRequestCommand.compare("hostUiActive") == 0)
+					{
+						//hostUiActiveCount = HOST_UI_ACTIVE_COUNT;
+					}
+
 					else
 					{
-						cout << "hostUiRequest is invalid or corrupted." << endl;
+						cout << "sent nothing to host" << endl;
 					}
-
-					hostUiRequest.clear();
-					hostUiRequestCommand.clear();
-					hostUiRequestData.clear();
-
-					//					// since hostUi and pedalUi classes are based off of shared memory class,
-					//					// hostUi dataProcessingStatus and checkForNewData are already done with pedalUi below
-					//					hostUi.dataProcessingStatus(1);
-					//		#if(testing == 0)
-					//					while(hostUi.checkForNewHostData() == 1)
-					//					{;}
-					//		#endif
-					//					hostUi.dataProcessingStatus(0);
-
-					//					//hostUi.clearSharedMemorySection();
-					//
-					//					hostUi.dataProcessingStatus(1);
-					//					hostUi.waitForAccessRelease();
-					//					hostUi.dataProcessingStatus(0);
 				}
-#define dbg 1
-			}
-			else if(smSectionIndex == 1)*/
-			{
+				else
+				{
+					cout << "hostUiRequest is invalid or corrupted." << endl;
+				}
+				hostUiRequest.clear();
+				hostUiRequestCommand.clear();
+				hostUiRequestData.clear();
+	        }
+
+	        usleep(100000);
+		}
+		//************* Process requests from PCB UI Interface  *************
+
+        if(((smSectionIndex = baseUi.checkForNewData()) > 0))
+        //else if(((smSectionIndex = pedalUi->checkForNewPedalData()) > 0))
+		{
+        	//enteringLoop = false;
+
+#if(pedalUiDbg >= 1)
+        	cout << "*********************************** START **********************************************" << endl;
+			//cout << "section index: " << smSectionIndex << endl;
+#endif
+        	{
 				if((pedalUi.checkForNewPedalData() == 1))
 				//if((pedalUi->checkForNewPedalData() == 1))
 				{
@@ -1014,7 +777,7 @@ int main(int argc, char *argv[])
 								// find corresponding controller and enter index and value into Control struct
 								// (control will write value to process parameter during process run)
 
-								if((absParamIndex >= 0) && (0 <= valueIndex && valueIndex <= 255))
+								if((0 <= absParamIndex && absParamIndex < comboData.controlParameterArray.size()) && (0 <= valueIndex && valueIndex <= 255))
 								{
 									comboData.updateControl(absParamIndex, valueIndex);
 									//// enter into controlsStruct element
@@ -1032,6 +795,7 @@ int main(int argc, char *argv[])
 								else
 								{
 									cout << "absParamIndex and/or valueIndex are out of range." << endl;
+									cout << "absParamIndex: " << absParamIndex << "\tvalueIndex: " << valueIndex << endl;
 								}
 							}
 						}
@@ -1056,6 +820,12 @@ int main(int argc, char *argv[])
 							{
 								newDataFromServer = false;
 							}
+							if(pedalUiRequestData.compare("host") == 0)
+							{
+								hostGuiActive = true;
+							}
+							else hostGuiActive = false;
+							cout << "combo processing time: " << comboTime << endl;
 							pedalUi.sendCurrentStatus(ofxMainStatus);
 							//pedalUi->sendCurrentStatus(ofxMainStatus);
 							//strcpy(ofxMainStatus," ");
@@ -1128,7 +898,7 @@ int main(int argc, char *argv[])
 		cout << "********************* end PROCESS DATA BUFFERS ****************************" << endl;
 		 */
 
-		if(hostUiActiveCount > 0)
+		/*if(hostUiActiveCount > 0)
 		{
 			//cout << "hostUiActiveCount: " << hostUiActiveCount << endl;
 			hostUiActiveCount--;
@@ -1141,7 +911,7 @@ int main(int argc, char *argv[])
 				cout << "**** HOST GUI DE-ACTIVATED." << endl;
 			}
 			hostGuiActive = false;
-		}
+		}*/
 		readFootswitches();
 		if(comboRunning == true)
 		{

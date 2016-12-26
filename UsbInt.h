@@ -21,12 +21,13 @@
 #include <iostream>
 #include "utilityFunctions.h"
 
+#define FILE_SIZE 32000
 using namespace std;
 
 class UsbInt {
 private:
-	char usbInputBuffer[16000];
-	char usbOutputBuffer[16000];
+	char usbInputBuffer[FILE_SIZE];
+	char usbOutputBuffer[FILE_SIZE];
 	int hostUiFD;
 public:
 	UsbInt();

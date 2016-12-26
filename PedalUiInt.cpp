@@ -20,7 +20,7 @@
 #define CM0_SHARED_MEMORY_SECTION_SIZE 4096
 
 #define HOST_SHARED_MEMORY_SECTION_ADDRESS 32768
-#define HOST_SHARED_MEMORY_SECTION_SIZE 16000
+//#define HOST_SHARED_MEMORY_SECTION_SIZE 32000
 
 #define TX_BUFFER_SIZE 1500
 #define RX_BUFFER_SIZE 1500
@@ -73,7 +73,7 @@ int PedalUiInt::checkForNewPedalData(void)
 }
 
 
-#define dbg 0
+#define dbg 1
 
 int PedalUiInt::sendComboUiData(Json::Value uiData)
 {

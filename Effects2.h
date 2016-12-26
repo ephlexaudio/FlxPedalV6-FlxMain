@@ -84,9 +84,10 @@ int control(int action, bool envTrigger, struct ControlEvent *controlEvent, stru
 
 
 //************************ processing *************************************************
-void clearBufferParameters(struct ProcessBuffer *bufferArray);
-int processBufferSample(float sample, struct ProcessBuffer *bufferArray);
-void getBufferAvgs(struct ProcessBuffer *bufferArray);
+void initBufferAveParameters(struct ProcessBuffer *bufferArray);
+void resetBufferAve(struct ProcessBuffer *bufferArray);
+int processBufferAveSample(float sample, struct ProcessBuffer *bufferArray);
+void updateBufferOffset(struct ProcessBuffer *bufferArray);
 
 int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
 

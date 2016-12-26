@@ -52,7 +52,7 @@ ProcessingControl::~ProcessingControl()
 
 
 
-#define dbg 2
+#define dbg 0
 int ProcessingControl::load(vector<Process> processesStruct, vector<Json::Value> connectionsJson,
 		vector<Control> controlsStruct, vector<ControlConnection> controlConnectionsStruct) // load parameters for processes
 {
@@ -139,17 +139,20 @@ int ProcessingControl::load(vector<Process> processesStruct, vector<Json::Value>
 		targetConn.process = comboData.connectionsJson[connIndex]["destProcess"].asString();
 		targetConn.port = comboData.connectionsJson[connIndex]["destPort"].asString();
 
+#if(dbg >= 2)
 		cout << "************************************************************" << endl;
 		cout << "conn: " << conn.process << ":" << conn.port << endl;
 		cout << "targetConn: " << targetConn.process << ":" << targetConn.port << endl;
-
+#endif
 		int bufferIndex = 0;
 		for(bufferIndex = 0; bufferIndex < this->combo->bufferCount; bufferIndex++)
 		{
 			if(this->combo->procBufferArray[bufferIndex].processName.compare(conn.process) == 0 &&
 					this->combo->procBufferArray[bufferIndex].portName.compare(conn.port) == 0)
 			{
+#if(dbg >= 2)
 				cout << "found buffer index for " << conn.process << ": " << bufferIndex << endl;
+#endif
 				break; // found input process:port index
 			}
 		}
@@ -322,8 +325,9 @@ int ProcessingControl::load(vector<Process> processesStruct, vector<Json::Value>
 
 	//loop through controlsStruct vector
 	this->combo->controlCount = comboData.controlsStruct.size();
-
+#if(dbg >= 2)
 	cout << "CONTROL EVENT:" << endl;
+#endif
 	for(int controlIndex = 0; controlIndex < this->combo->controlCount; controlIndex++)
 	{
 		this->combo->controlSequence[controlIndex].paramContConnectionCount = 0;
@@ -336,33 +340,43 @@ int ProcessingControl::load(vector<Process> processesStruct, vector<Json::Value>
 		else if(comboData.controlsStruct[controlIndex].type.compare("LFO") == 0)
 			this->combo->controlSequence[controlIndex].type = 2;
 
+#if(dbg >= 2)
 		cout << "name: " << this->combo->controlSequence[controlIndex].name << endl;
 		cout << "type: " << this->combo->controlSequence[controlIndex].type << endl;
-
+#endif
 		// enter the parameter values
 		for(unsigned int paramIndex = 0; paramIndex < comboData.controlsStruct[controlIndex].params.size(); paramIndex++)
 		{
 			this->combo->controlSequence[controlIndex].parameter[paramIndex] = comboData.controlsStruct[controlIndex].params[paramIndex].value;
+#if(dbg >= 2)
 			cout << "\tcontrolSequence[" << controlIndex << "].parameter[" << paramIndex << "]: " << this->combo->controlSequence[controlIndex].parameter[paramIndex] << endl;
+#endif
 		}
 
 		// enter the process and parameter index, using controlsStruct absProcessParameterIndexes as indexing for sortedParameterArray
-
+#if(dbg >= 2)
+#endif
 		for(unsigned int paramIndex = 0; paramIndex < comboData.controlsStruct[controlIndex].absProcessParameterIndexes.size(); paramIndex++)
 		{
 			// get absolute process parameter index
 			int absIndex = comboData.controlsStruct[controlIndex].absProcessParameterIndexes[paramIndex];
+#if(dbg >= 2)
 			cout << "absIndex: " << absIndex << endl;
+#endif
 			// use absolute parameter index to enter absolute process index from sortedParameterArray into controlSequence connected process
 			this->combo->controlSequence[controlIndex].paramContConnection[paramIndex].processIndex =
 					comboData.sortedParameterArray[absIndex].absProcessIndex;
+#if(dbg >= 2)
 			cout << "\tcontrolSequence[" << controlIndex << "].paramContConnection[" << paramIndex << "].processIndex: "
 					<< this->combo->controlSequence[controlIndex].paramContConnection[paramIndex].processIndex << endl;
+#endif
 			// use absolute parameter index to enter process parameter index from sortedParameterArray into controlSequence connected process parameter
 			this->combo->controlSequence[controlIndex].paramContConnection[paramIndex].processParamIndex =
 					comboData.sortedParameterArray[absIndex].processParamIndex;
+#if(dbg >= 2)
 			cout << "\tcontrolSequence[" << controlIndex << "].paramContConnection[" << paramIndex << "].processParamIndex: "
 					<< this->combo->controlSequence[controlIndex].paramContConnection[paramIndex].processParamIndex << endl;
+#endif
 			this->combo->controlSequence[controlIndex].paramContConnectionCount++;
 		}
 	}
@@ -588,7 +602,7 @@ int ProcessingControl::updateProcessParameter(int parameterIndex, int parameterV
 	string processName = parameter.processName; // need to use process name instead of index because process index
 											// in parameterArray does not correspond to process index in processSequence
 
-#if(dbg == 0)
+#if(dbg >= 2)
 	cout << "processName: " << comboData.sortedParameterArray[parameterIndex].processName
 			<< "\t\tabsProcessIndex: " << comboData.sortedParameterArray[parameterIndex].absProcessIndex
 			<< "\t\tparamName: " << comboData.sortedParameterArray[parameterIndex].paramName
@@ -600,7 +614,7 @@ int ProcessingControl::updateProcessParameter(int parameterIndex, int parameterV
 
 
 	int processParameterIndex = parameter.processParamIndex;
-#if(dbg == 1)
+#if(dbg >= 2)
 	cout << "process: " << processName << "\t\tparameter: " << parameter.paramName << endl;
 #endif
 	this->combo->updateProcessParameter(processName, processParameterIndex, parameterValue);

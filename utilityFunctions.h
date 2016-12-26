@@ -14,9 +14,15 @@
 #include <unistd.h>
 #include <string>
 #include <cstring>
+#include <time.h>
+#include <sys/time.h>
+
 #include <linux/types.h>
 
 using namespace std;
+
+void startTimer(void);
+int stopTimer(const char *description);
 
 void pabort(const char *s);
 void delay(unsigned long delay);

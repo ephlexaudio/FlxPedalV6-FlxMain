@@ -6,6 +6,7 @@
  */
 
 #include "UsbInt.h"
+#define FILE_SIZE 32000
 /*
 #if(dbg >= 1)
 	cout << "***** ENTERING: UsbInt::" << endl;
@@ -33,9 +34,9 @@ int UsbInt::newData(void)
 #if(dbg >= 1)
 	cout << "***** ENTERING: UsbInt::newData" << endl;
 #endif
-	clearBuffer(this->usbInputBuffer,16000);
+	clearBuffer(this->usbInputBuffer,FILE_SIZE);
 
-	ssize_t size_read = read(hostUiFD, this->usbInputBuffer, 16000);
+	ssize_t size_read = read(hostUiFD, this->usbInputBuffer, FILE_SIZE);
 	if(size_read > 1)
 	{
 #if(dbg >= 1)
@@ -65,7 +66,7 @@ char *UsbInt::readData(void)
 int UsbInt::writeData(char *input)
 {
 	int status = 0;
-	clearBuffer(this->usbOutputBuffer,16000);
+	clearBuffer(this->usbOutputBuffer,FILE_SIZE);
 
 	sprintf(this->usbOutputBuffer,"%s\r\n", input);
 

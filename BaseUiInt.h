@@ -26,7 +26,7 @@
 #include "ComboDataInt.h"
 #define TX_BUFFER_SIZE 1500
 #define RX_BUFFER_SIZE 1500
-
+#define SEND_BUFFER_SIZE 250
 
 
 //static void pabort(const char *s);
@@ -51,7 +51,7 @@ private:
 protected:
 	char uiData[TX_BUFFER_SIZE];
 	char request[RX_BUFFER_SIZE];
-	char sendBuffer[200];
+	char sendBuffer[SEND_BUFFER_SIZE];
 	//uint8_t status;
 
 public:

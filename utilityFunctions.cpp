@@ -8,6 +8,28 @@
 #include "utilityFunctions.h"
 
 
+long startStamp;
+long stopStamp;
+struct timeval tv;
+
+
+void startTimer(void)
+{
+	gettimeofday(&tv, NULL);
+	startStamp = 1000000*tv.tv_sec+tv.tv_usec;
+}
+
+int stopTimer(const char *description)
+{
+	gettimeofday(&tv, NULL);
+	stopStamp = 1000000*tv.tv_sec+tv.tv_usec;
+	if(description != NULL)
+	{
+		cout << "******" << description << "time: " << stopStamp - startStamp << endl;
+	}
+
+	return (int)(stopStamp - startStamp);
+}
 
 void delay(unsigned long delay)
 {

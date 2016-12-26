@@ -13,15 +13,15 @@
 #include "DataFuncts.h"
 #include "GPIOClass.h"
 //using namespace std;
-
+#define FILE_SIZE 32000
 class HostUiInt
 {
 private:
-	//char comboData[16000];
+	//char comboData[FILE_SIZE];
 	UsbInt usb;
-	char hostUiRawRequestCharArray[16000];
-	char hostUiRequestCharArray[16000];
-	char hostUiResponseCharArray[16000];
+	char hostUiRawRequestCharArray[FILE_SIZE];
+	char hostUiRequestCharArray[FILE_SIZE];
+	char hostUiResponseCharArray[FILE_SIZE];
 
 
 public:

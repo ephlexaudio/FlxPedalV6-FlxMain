@@ -67,6 +67,7 @@ extern int childPgid;
 extern int procCount;
 extern bool startUp;
 extern int footswitchStatusArray[10];
+extern int effectCount;
 extern int wrapperParamData[10];
 ProcessingControl procCont;
 
@@ -79,24 +80,7 @@ extern int fromProcFD;*/
 
 #define dbg 0
 
-long startStamp;
-long stopStamp;
-struct timeval tv;
 
-
-void startTimer(void)
-{
-	gettimeofday(&tv, NULL);
-	startStamp = 1000000*tv.tv_sec+tv.tv_usec;
-}
-
-void stopTimer(const char *description)
-{
-	gettimeofday(&tv, NULL);
-	stopStamp = 1000000*tv.tv_sec+tv.tv_usec;
-	cout << "******" << description << "time: " << stopStamp - startStamp << endl;
-
-}
 
 int openJack(void)
 {
@@ -454,7 +438,7 @@ int getRunningProcesses(void)
 
 
 
-#define dbg 0
+#define dbg 1
 int loadCombo(void)
 {
 	int status = 0;
@@ -468,7 +452,7 @@ int loadCombo(void)
 #if(dbg==1)
 	printf("combo title: %s\n", (const char*)(comboData.pedalUiJson["title"].asString().c_str()));
 #endif
-	//int effectCount = comboData.pedalUiJson["effects"].size();
+	effectCount = comboData.pedalUiJson["effects"].size();
 #if(dbg==1)
 	printf("number of effects:%d\n", effectCount);
 #endif

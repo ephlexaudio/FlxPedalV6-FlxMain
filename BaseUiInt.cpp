@@ -9,7 +9,7 @@
 //#include "ComboDataInt.h"
 #include "utilityFunctions.h"
 
-
+extern int comboTime;
 /*
 #if(dbg >= 1)
 	cout << "***** ENTERING: BaseUiInt::" << endl;
@@ -26,6 +26,7 @@
 #define CM0_SHARED_MEMORY_SECTION_INDEX 1*/
 #define TX_BUFFER_SIZE 1500
 #define RX_BUFFER_SIZE 1500
+#define SEND_BUFFER_SIZE 250
 
 #define RQST_DATA_FILTER_COUNT 5
 
@@ -320,8 +321,8 @@ int BaseUiInt::processUserRequest(char *request)
 					{
 						strcat((char *)this->uiData, "{");
 						char paramStringBuffer[15];
-						char stringBuffer[200];
-						clearBuffer(stringBuffer,200);
+						char stringBuffer[SEND_BUFFER_SIZE];
+						clearBuffer(stringBuffer,SEND_BUFFER_SIZE);
 
 						clearBuffer(paramStringBuffer, 15);
 						strcpy(paramStringBuffer, uiData["effects"][effectIndex]["params"][guiParamIndex]["abbr"].asString().c_str());
@@ -402,8 +403,8 @@ int BaseUiInt::sendComboList(string comboList)
 #endif
 	uint8_t status = 0;
 
-	for(int i = 0; i < 200; i++) this->sendBuffer[i] = 0;
-	strncpy(this->sendBuffer, (char *)comboList.c_str(),199);
+	for(int i = 0; i < SEND_BUFFER_SIZE; i++) this->sendBuffer[i] = 0;
+	strncpy(this->sendBuffer, (char *)comboList.c_str(),SEND_BUFFER_SIZE-1);
 	this->sendData(this->uiSectionStartAddress, this->sendBuffer, 150);
 
 #if(dbg >= 1)
@@ -443,6 +444,9 @@ int BaseUiInt::sendCurrentStatus(char *currentStatus)
 
 	char hostUiStatusString[20];
 	sprintf(hostUiStatusString,"|hostUiStatus:%d", (hostGuiActive?1:0));
+	strcat(this->uiData, hostUiStatusString);
+	clearBuffer(hostUiStatusString,20);
+	sprintf(hostUiStatusString,"|comboTime:%d", comboTime);
 	strcat(this->uiData, hostUiStatusString);
 
 #if(dbg >= 2)

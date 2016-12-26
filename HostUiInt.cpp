@@ -9,7 +9,8 @@
 #include "HostUiInt.h"
 
 
-#define SHARED_MEMORY_FILE_SIZE 16000
+#define FILE_SIZE 32000
+//#define JSON_STRING_SIZE 32000
 #define SHARED_MEMORY_FILE_ADDRESS 32768
 
 /*
@@ -27,9 +28,9 @@ HostUiInt::HostUiInt()
 {
 	// TODO Auto-generated constructor stub
 	UsbInt usb = UsbInt();
-	clearBuffer(this->hostUiRawRequestCharArray,16000);
-	clearBuffer(this->hostUiRequestCharArray,16000);
-	clearBuffer(this->hostUiResponseCharArray,16000);
+	clearBuffer(this->hostUiRawRequestCharArray,FILE_SIZE);
+	clearBuffer(this->hostUiRequestCharArray,FILE_SIZE);
+	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 
 }
 
@@ -66,7 +67,7 @@ int HostUiInt::sendComboList(string comboLists)
 	cout << "***** ENTERING: HostUiInt::sendComboList" << endl;
 #endif
 
-	clearBuffer(this->hostUiResponseCharArray,16000);
+	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 	sprintf(this->hostUiResponseCharArray,"ComboList:%s",(char *)comboLists.c_str());
 	if(usb.writeData(this->hostUiResponseCharArray) >= 0)
 	{
@@ -94,7 +95,7 @@ int HostUiInt::sendCurrentStatus(char *currentStatus)
 	cout << "***** ENTERING: HostUiInt::sendCurrentStatus" << endl;
 #endif
 
-	clearBuffer(this->hostUiResponseCharArray,16000);
+	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 	sprintf(this->hostUiResponseCharArray,"CurrentStatus:%s",currentStatus);
 	if(usb.writeData(this->hostUiResponseCharArray) >= 0)
 	{
@@ -152,7 +153,7 @@ int HostUiInt::sendComboToHost(string comboName)
 	int status = 0;
 	string comboString;
 
-	clearBuffer(this->hostUiResponseCharArray,16000);
+	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 	//strcpy(this->hostUiResponseCharArray, getComboData(comboName).c_str());
 
 	comboString = getComboData(comboName);
@@ -185,7 +186,7 @@ int HostUiInt::sendComboToHost(string comboName)
 		cout << "error reading data" << endl;
 	}
 
-	//clearBuffer(this->hostUiResponseCharArray,16000);
+	//clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 
 	#if(dbg >= 1)
 		cout << "***** EXITING: HostUiInt::sendComboToHost" << endl;
@@ -201,10 +202,10 @@ int HostUiInt::getComboFromHost(string comboData)
 		cout << "***** ENTERING: HostUiInt::getComboFromHost" << endl;
 	#endif
 
-		clearBuffer(this->hostUiResponseCharArray,16000);
-		clearBuffer(this->hostUiRawRequestCharArray,16000);
+		clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
+		clearBuffer(this->hostUiRawRequestCharArray,FILE_SIZE);
 
-	char filteredComboData[SHARED_MEMORY_FILE_SIZE];
+	char filteredComboData[FILE_SIZE];
 	int status = 0;
 
 
@@ -240,7 +241,7 @@ int HostUiInt::getComboFromHost(string comboData)
 	#if(dbg >= 2)
 				cout << "filtering data" << endl;
 	#endif
-			for(int dataIndex = 0; this->hostUiRawRequestCharArray[dataIndex] != 0 && dataIndex < SHARED_MEMORY_FILE_SIZE; dataIndex++)
+			for(int dataIndex = 0; this->hostUiRawRequestCharArray[dataIndex] != 0 && dataIndex < FILE_SIZE; dataIndex++)
 			{
 				if(' ' <= this->hostUiRawRequestCharArray[dataIndex] && this->hostUiRawRequestCharArray[dataIndex] <= '~')
 				{
@@ -268,7 +269,7 @@ int HostUiInt::getComboFromHost(string comboData)
 
 	cout << "combo data: " << this->hostUiRawRequestCharArray << endl;
 
-	clearBuffer(this->hostUiResponseCharArray,16000);
+	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 
 	#if(dbg >= 1)
 		cout << "***** EXITING: HostUiInt::getComboFromHost" << endl;

@@ -51,7 +51,7 @@ struct effectIO{
 	string outputPort[2];
 };
 
-#define JSON_BUFFER_LENGTH 16000
+#define JSON_BUFFER_LENGTH 32000
 class ComboDataInt
 {
 

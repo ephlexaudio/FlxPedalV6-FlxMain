@@ -13,13 +13,13 @@
 #define SHARED_MEMORY_SECTION_SIZE 4096
 
 //#define SHARED_MEMORY_FILE_ADDRESS 32768
-//#define SHARED_MEMORY_FILE_SIZE 16000
+//#define SHARED_MEMORY_FILE_SIZE 32000
 
 #define HOST_SHARED_MEMORY_SECTION_ADDRESS 8192
 #define HOST_SHARED_MEMORY_SECTION_SIZE 4096
 
 #define HOST_SHARED_MEMORY_FILE_ADDRESS 32768
-#define HOST_SHARED_MEMORY_FILE_SIZE 16000
+#define HOST_SHARED_MEMORY_FILE_SIZE 32000
 
 //#define SHARED_MEMORY_SUBSECTION_SIZE 2048
 #define TX_BUFFER_SIZE 1500
@@ -279,12 +279,12 @@ uint8_t SharedMemoryInt::sendData(uint16_t address, char *data, uint16_t length)
 		this->sharedMemoryTxBuffer[3] = 0; // status byte on MCU, keep blank here
 
 		if(length > TX_BUFFER_SIZE - 10) length -= 10;
-		memcpy(this->sharedMemoryTxBuffer+4,data,/*length*/200);
+		memcpy(this->sharedMemoryTxBuffer+4,data,length);
 		this->sharedMemoryTxBuffer[length+4] = 255;
 
 		spi.tx_buf        = (unsigned long)(this->sharedMemoryTxBuffer); // transmit from "txBuffer"
 		spi.rx_buf        = (unsigned long)(this->sharedMemoryRxBuffer); // receive into "rxBuffer"
-		spi.len           = 204;//length+10;//sizeof(this->rxBuffer);
+		spi.len           = length+5;//204;//sizeof(this->rxBuffer);
 		spi.delay_usecs   = 0;
 		spi.speed_hz      = speed;
 		spi.bits_per_word = bits;
