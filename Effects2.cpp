@@ -1592,25 +1592,35 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 		}
 
 		const float r1 = 1000.0;
-		const float r2 = 3000.0;
-		const float r3 = 100.0;
-		const float r4 = 20.0;
+		const float r2 = 2000.0;
+		const float r3 = 500.0;
+		const float r4 = 120.0;
+		const float r5 = 50.0;
 		int contextIndex = 0;
 		/* Calculate constants for waveshaper algorithm */
 		((float *)procEvent->processContext)[contextIndex++] = 0.0;
+
+		((float *)procEvent->processContext)[contextIndex++] = r2*r3*r4*r5;
+		((float *)procEvent->processContext)[contextIndex++] = r1*r3*r4*r5;
+		((float *)procEvent->processContext)[contextIndex++] = r1*r2*r4*r5;
+		((float *)procEvent->processContext)[contextIndex++] = r1*r2*r3*r5;
+		((float *)procEvent->processContext)[contextIndex++] = r1*r2*r3*r4;
 
 		((float *)procEvent->processContext)[contextIndex++] = r2*r3*r4;
 		((float *)procEvent->processContext)[contextIndex++] = r1*r3*r4;
 		((float *)procEvent->processContext)[contextIndex++] = r1*r2*r4;
 		((float *)procEvent->processContext)[contextIndex++] = r1*r2*r3;
+		((float *)procEvent->processContext)[contextIndex++] = 0;
 
 		((float *)procEvent->processContext)[contextIndex++] = r2*r3;
 		((float *)procEvent->processContext)[contextIndex++] = r1*r3;
 		((float *)procEvent->processContext)[contextIndex++] = r1*r2;
 		((float *)procEvent->processContext)[contextIndex++] = 0;
+		((float *)procEvent->processContext)[contextIndex++] = 0;
 
 		((float *)procEvent->processContext)[contextIndex++] = r2;
 		((float *)procEvent->processContext)[contextIndex++] = r1;
+		((float *)procEvent->processContext)[contextIndex++] = 0;
 		((float *)procEvent->processContext)[contextIndex++] = 0;
 		((float *)procEvent->processContext)[contextIndex++] = 0;
 
@@ -1618,10 +1628,12 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 		((float *)procEvent->processContext)[contextIndex++] = 0;
 		((float *)procEvent->processContext)[contextIndex++] = 0;
 		((float *)procEvent->processContext)[contextIndex++] = 0;
+		((float *)procEvent->processContext)[contextIndex++] = 0;
 
 		((float *)procEvent->processContext)[contextIndex++] = 0.200;
 		((float *)procEvent->processContext)[contextIndex++] = 0.350;
 		((float *)procEvent->processContext)[contextIndex++] = 0.60;
+		((float *)procEvent->processContext)[contextIndex++] = 0.80;
 		procEvent->processFinished = false;
 		for(i = 0; i < 256; i++)
 		{
@@ -1634,41 +1646,55 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 	}
 	else if(action == 1)
 	{
-		float k[4][4];
-		float v[3];
+		float k[5][5];
+		float v[4];
 		int contextIndex = 0;
 		float outMeasure;
 		float outputSum = 0.00000;
 
 		outMeasure = ((float *)procEvent->processContext)[contextIndex++];
 
+		k[4][0] = ((float *)procEvent->processContext)[contextIndex++];
+		k[4][1] = ((float *)procEvent->processContext)[contextIndex++];
+		k[4][2] = ((float *)procEvent->processContext)[contextIndex++];
+		k[4][3] = ((float *)procEvent->processContext)[contextIndex++];
+		k[4][4] = ((float *)procEvent->processContext)[contextIndex++];
+
 		k[3][0] = ((float *)procEvent->processContext)[contextIndex++];
 		k[3][1] = ((float *)procEvent->processContext)[contextIndex++];
 		k[3][2] = ((float *)procEvent->processContext)[contextIndex++];
 		k[3][3] = ((float *)procEvent->processContext)[contextIndex++];
+		k[3][4] = ((float *)procEvent->processContext)[contextIndex++];
 
 		k[2][0] = ((float *)procEvent->processContext)[contextIndex++];
 		k[2][1] = ((float *)procEvent->processContext)[contextIndex++];
 		k[2][2] = ((float *)procEvent->processContext)[contextIndex++];
 		k[2][3] = ((float *)procEvent->processContext)[contextIndex++];
+		k[2][4] = ((float *)procEvent->processContext)[contextIndex++];
 
 		k[1][0] = ((float *)procEvent->processContext)[contextIndex++];
 		k[1][1] = ((float *)procEvent->processContext)[contextIndex++];
 		k[1][2] = ((float *)procEvent->processContext)[contextIndex++];
 		k[1][3] = ((float *)procEvent->processContext)[contextIndex++];
+		k[1][4] = ((float *)procEvent->processContext)[contextIndex++];
 
 		k[0][0] = ((float *)procEvent->processContext)[contextIndex++];
 		k[0][1] = ((float *)procEvent->processContext)[contextIndex++];
 		k[0][2] = ((float *)procEvent->processContext)[contextIndex++];
 		k[0][3] = ((float *)procEvent->processContext)[contextIndex++];
+		k[0][4] = ((float *)procEvent->processContext)[contextIndex++];
 
-		v[0] = ((float *)procEvent->processContext)[contextIndex++];
-		v[1] = ((float *)procEvent->processContext)[contextIndex++];
-		v[2] = ((float *)procEvent->processContext)[contextIndex++];
+		int edge = procEvent->parameters[1];
+		v[0] = brkpt[edge][0];
+		v[1] = brkpt[edge][1];
+		v[2] = brkpt[edge][2];
+		v[3] = brkpt[edge][3];
 
-		float gain = logAmp[procEvent->parameters[0]]*10.0;
-		float k1,k2,k3,k4;
-		float v1,v2,v3;
+		float gain = logAmp[procEvent->parameters[0]]*5.0;
+		float mix = linAmp[procEvent->parameters[2]]*0.1;
+		float k1,k2,k3,k4,k5;
+		float v1,v2,v3,v4;
+		float clean, dist;
 		int kIndex = 0;
 		//float out[2];
 		//static float lastOut;
@@ -1685,49 +1711,35 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 			}
 			else
 			{
-				if (v[2] < outMeasure) kIndex = 3;
+				if (v[3] < outMeasure) kIndex = 4;
+				else if (v[2] < outMeasure && outMeasure <= v[3]) kIndex = 3;
 				else if (v[1] < outMeasure && outMeasure <= v[2]) kIndex = 2;
 				else if (v[0] < outMeasure && outMeasure <= v[1]) kIndex = 1;
 				else if (-v[0] < outMeasure && outMeasure <= v[0]) kIndex = 0;
 				else if (-v[1] < outMeasure && outMeasure <= -v[0]) kIndex = 1;
 				else if (-v[2] < outMeasure && outMeasure <= -v[1]) kIndex = 2;
-				else if (outMeasure <=-v[2]) kIndex = 3;
+				else if (-v[3] < outMeasure && outMeasure <= -v[2]) kIndex = 3;
+				else if (outMeasure <=-v[3]) kIndex = 4;
 
 				if(0.000 <= outMeasure)
 				{
-					v1 = v[0]; v2 = v[1]; v3 = v[2];
+					v1 = v[0]; v2 = v[1]; v3 = v[2]; v4 = v[3];
 				}
 				else
 				{
-					v1 = -v[0]; v2 = -v[1]; v3 = -v[2];
+					v1 = -v[0]; v2 = -v[1]; v3 = -v[2]; v4 = -v[3];
 				}
-				k1 = k[kIndex][0]; k2 = k[kIndex][1]; k3 = k[kIndex][2]; k4 = k[kIndex][3];
+				k1 = k[kIndex][0]; k2 = k[kIndex][1]; k3 = k[kIndex][2]; k4 = k[kIndex][3]; k5 = k[kIndex][4];
 
-				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = ((procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset)*gain*k1 + v1*k2 + v2*k3 + v3*k4)/(k1 + k2 + k3 + k4);
+				dist = ((procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset)*gain*k1 + v1*k2 + v2*k3 + v3*k4 + v4*k5)/(k1 + k2 + k3 + k4 + k5);
+				clean = (procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset);
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = (1.0 - mix)*clean + mix*dist;
 				//outputSum += procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
 			}
 			{
-				outMeasure = procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
+				outMeasure = dist;//procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
 			}
-			if(procEvent->dataReadDone == true && procEvent->dataReadReady == false)
-			{
-				/*if(dataIndex < 256)
-				{
-					procEvent->data[dataIndex++] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
-					procEvent->data[dataIndex++] = procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
-				}
-				else
-				{
-					dataIndex = 0;
-					procEvent->dataReadReady = true;
-					procEvent->dataReadDone = false;
-				}*/
-				/*floatIndex = 100.0*procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
-				if(-126.0000 < floatIndex && floatIndex < 126.00000 )
-				{
-					procEvent->data[int(floatIndex)+128] = procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
-				}*/
-			}
+
 			processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
 		}
 		//procBufferArray[procEvent->outputBufferIndexes[0]].offset = outputSum/bufferSize;
