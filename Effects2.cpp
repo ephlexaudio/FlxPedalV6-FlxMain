@@ -700,24 +700,24 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 #if(dbg == 1)
 				cout << procEvent->parameters[i] << ", ";
 #endif
-				lp_a[i][0] = lp[procEvent->parameters[i]][0];
-				lp_a[i][1] = lp[procEvent->parameters[i]][1];
-				lp_a[i][2] = lp[procEvent->parameters[i]][2];
-				lp_a[i][3] = lp[procEvent->parameters[i]][3];
+				lp_a[i][0] = lp2[procEvent->parameters[i]][0];
+				lp_a[i][1] = lp2[procEvent->parameters[i]][1];
+				lp_a[i][2] = lp2[procEvent->parameters[i]][2];
+				//lp_a[i][3] = lp2[procEvent->parameters[i]][3];
 				//lp_a[i][4] = lp[tempIndex][4];
-				lp_b[i][1] = lp[procEvent->parameters[i]][5];
-				lp_b[i][2] = lp[procEvent->parameters[i]][6];
-				lp_b[i][3] = lp[procEvent->parameters[i]][7];
+				lp_b[i][1] = lp2[procEvent->parameters[i]][4];
+				lp_b[i][2] = lp2[procEvent->parameters[i]][5];
+				//lp_b[i][3] = lp2[procEvent->parameters[i]][7];
 				//lp_b[i][4] = lp[tempIndex][9];
 
-				hp_a[i][0] = hp[procEvent->parameters[i]][0];
-				hp_a[i][1] = hp[procEvent->parameters[i]][1];
-				hp_a[i][2] = hp[procEvent->parameters[i]][2];
-				hp_a[i][3] = hp[procEvent->parameters[i]][3];
+				hp_a[i][0] = hp2[procEvent->parameters[i]][0];
+				hp_a[i][1] = hp2[procEvent->parameters[i]][1];
+				hp_a[i][2] = hp2[procEvent->parameters[i]][2];
+				//hp_a[i][3] = hp2[procEvent->parameters[i]][3];
 				//hp_a[i][4] = hp[tempIndex][4];
-				hp_b[i][1] = hp[procEvent->parameters[i]][5];
-				hp_b[i][2] = hp[procEvent->parameters[i]][6];
-				hp_b[i][3] = hp[procEvent->parameters[i]][7];
+				hp_b[i][1] = hp2[procEvent->parameters[i]][4];
+				hp_b[i][2] = hp2[procEvent->parameters[i]][5];
+				//hp_b[i][3] = hp2[procEvent->parameters[i]][7];
 				//hp_b[i][4] = hp[tempIndex][9];
 
 			}
@@ -795,7 +795,7 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 					}
 					//*********************Band Divider (BD): Lowpass filter ********************
 
-					lp_y[j][0] = lp_a[j][0]*lp_x[j][0] + lp_a[j][1]*lp_x[j][1] + lp_a[j][2]*lp_x[j][2] + lp_a[j][3]*lp_x[j][3] - lp_b[j][1]*lp_y[j][1] - lp_b[j][2]*lp_y[j][2] - lp_b[j][3]*lp_y[j][3];
+					lp_y[j][0] = lp_a[j][0]*lp_x[j][0] + lp_a[j][1]*lp_x[j][1] + lp_a[j][2]*lp_x[j][2]/* + lp_a[j][3]*lp_x[j][3]*/ - lp_b[j][1]*lp_y[j][1] - lp_b[j][2]*lp_y[j][2]/* - lp_b[j][3]*lp_y[j][3]*/;
 
 					if(j == 0)
 					{
@@ -810,11 +810,11 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 						outputSum[1] += procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i];
 					}
 
-					lp_x[j][3] = lp_x[j][2];
+					//lp_x[j][3] = lp_x[j][2];
 					lp_x[j][2] = lp_x[j][1];
 					lp_x[j][1] = lp_x[j][0];
 
-					lp_y[j][3] = lp_y[j][2];
+					//lp_y[j][3] = lp_y[j][2];
 					lp_y[j][2] = lp_y[j][1];
 					lp_y[j][1] = lp_y[j][0];
 
@@ -822,7 +822,7 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 					//*********************Band Divider (BD): Highpass filter ********************
 					//hp_x[j][0] = inputBuffer[0][i];
 
-					hp_y[j][0] = hp_a[j][0]*hp_x[j][0] + hp_a[j][1]*hp_x[j][1] + hp_a[j][2]*hp_x[j][2] + hp_a[j][3]*hp_x[j][3] - hp_b[j][1]*hp_y[j][1] - hp_b[j][2]*hp_y[j][2] - hp_b[j][3]*hp_y[j][3];
+					hp_y[j][0] = hp_a[j][0]*hp_x[j][0] + hp_a[j][1]*hp_x[j][1] + hp_a[j][2]*hp_x[j][2]/* + hp_a[j][3]*hp_x[j][3]*/ - hp_b[j][1]*hp_y[j][1] - hp_b[j][2]*hp_y[j][2];// - hp_b[j][3]*hp_y[j][3];
 
 					procOutputBuffer[j].buffer[i] = hp_y[j][0];
 					// j = 0 case is processed above
@@ -845,12 +845,12 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 					}
 
 					//hp_x[j][4] = hp_x[j][3];
-					hp_x[j][3] = hp_x[j][2];
+					//hp_x[j][3] = hp_x[j][2];
 					hp_x[j][2] = hp_x[j][1];
 					hp_x[j][1] = hp_x[j][0];
 
 					//hp_y[j][4] = hp_y[j][3];
-					hp_y[j][3] = hp_y[j][2];
+					//hp_y[j][3] = hp_y[j][2];
 					hp_y[j][2] = hp_y[j][1];
 					hp_y[j][1] = hp_y[j][0];
 					//outputBuffer[2][i] = inputBuffer[0][i];
