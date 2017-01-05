@@ -31,7 +31,7 @@ class ProcessingControl
 private:
 	Combo *combo;
 	//bool inputsSwitched;
-	//float inputLevel[4][2];
+	//double inputLevel[4][2];
 
 public:
 	GPIOClass portConSwitch[3];
@@ -44,8 +44,8 @@ public:
 			vector<Control> controlsStruct, vector<ControlConnection> controlConnectionsStruct);
 	int start();
 	int stop();
-	int getProcessData(int index, float *data);
-	int clearProcessData(int index, float *data);
+	int getProcessData(int index, double *data);
+	int clearProcessData(int index, double *data);
 	int updateFootswitch(int *footswitchStatus);
 	int bypassAllEffects();
 	int updateProcessParameter(int parameterIndex, int parameterValue);

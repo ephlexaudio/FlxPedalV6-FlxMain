@@ -27,16 +27,16 @@ using namespace std;
 /*************** CONTROL CONTEXTS ************************/
 struct EnvGenContext{
 	int envStage; //0:attack, 1:decay, 2:sustain, 3:release
-	float slewRate;
+	double slewRate;
 	int stageTimeValue;
 };
 
 
 struct LfoContext{
 	int  cycleTimeValueIndex; // let byte automatically recycle when it 255.
-	float cyclePositionValue;
+	double cyclePositionValue;
 	int int_cyclePositionValue;
-	float waveValue;
+	double waveValue;
 };
 
 
@@ -44,7 +44,7 @@ struct LfoContext{
 struct DelayContext{
 	unsigned int inputPtr;
 	unsigned int outputPtr;
-	float delayBuffer[DELAY_BUFFER_LENGTH];
+	double delayBuffer[DELAY_BUFFER_LENGTH];
 };
 
 
@@ -139,18 +139,18 @@ struct ParameterControlConnection{
 
 
 typedef  void (*ClearParameters)(struct ProcessBuffer *);
-typedef  int (*ProcessSample)(float sample, struct ProcessBuffer *);
+typedef  int (*ProcessSample)(double sample, struct ProcessBuffer *);
 typedef  void (*GetAvgs)(struct ProcessBuffer *);
 
 
 struct ProcessBuffer{
 	string processName;
 	string portName;
-	float bufferSum;
-	float aveArray[AVE_ARRAY_SIZE];
-	float offset;
+	double bufferSum;
+	double aveArray[AVE_ARRAY_SIZE];
+	double offset;
 	int aveArrayIndex;
-	float buffer[BUFFER_SIZE]; // for real-time processing
+	double buffer[BUFFER_SIZE]; // for real-time processing
 	int ready;
 	int processed;
 };
@@ -161,7 +161,7 @@ struct ProcessEvent{
 	int processTypeIndex;
 	int footswitchNumber;
 	int parameters[10];
-	float internalData[256]; // use to store curves, etc.
+	double internalData[256]; // use to store curves, etc.
 	int dataReadReady; // data buffer ready to be read by outside process
 	int dataReadDone; // outside process finished reading data
 	int processInputCount;
@@ -201,7 +201,7 @@ struct ControlEvent{
 	void *controlContext;
 	bool gateStatus;
 	bool envTriggerStatus;
-	float output;
+	double output;
 	unsigned int int_output;
 };
 

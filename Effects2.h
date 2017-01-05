@@ -42,7 +42,7 @@ using namespace std;
 /*struct ProcessBuffer{
 	string processName;
 	string portName;
-	float buffer[BUFFER_SIZE];
+	double buffer[BUFFER_SIZE];
 	int ready;
 	int processed;
 
@@ -86,7 +86,7 @@ int control(int action, bool envTrigger, struct ControlEvent *controlEvent, stru
 //************************ processing *************************************************
 void initBufferAveParameters(struct ProcessBuffer *bufferArray);
 void resetBufferAve(struct ProcessBuffer *bufferArray);
-int processBufferAveSample(float sample, struct ProcessBuffer *bufferArray);
+int processBufferAveSample(double sample, struct ProcessBuffer *bufferArray);
 void updateBufferOffset(struct ProcessBuffer *bufferArray);
 
 int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);

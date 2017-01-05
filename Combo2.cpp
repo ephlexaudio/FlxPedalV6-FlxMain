@@ -320,7 +320,7 @@ int Combo::loadEffects()
 
 
 
-float testBuffer[10][BUFFER_SIZE];
+double testBuffer[10][BUFFER_SIZE];
 #define dbg 0
 int Combo::audioCallback(jack_nframes_t nframes,
 				// A vector of pointers to each input port.
@@ -331,8 +331,8 @@ int Combo::audioCallback(jack_nframes_t nframes,
 	int status = 0;
 	//bool envTrigger = false;
 	bool processDone = false;
-	float internalPosPeak[2];
-	float internalNegPeak[2];
+	double internalPosPeak[2];
+	double internalNegPeak[2];
 
 	internalPosPeak[0] = 0.00;
 	internalNegPeak[0] = 0.00;
@@ -352,13 +352,13 @@ int Combo::audioCallback(jack_nframes_t nframes,
 		//outBufs[1][i] = inBufs[1][i];
 		if(inputsSwitched)
 		{
-			this->procBufferArray[this->inputProcBufferIndex[0]].buffer[i] = inBufs[1][i];//*this->inputLevel;
-			this->procBufferArray[this->inputProcBufferIndex[1]].buffer[i] = inBufs[0][i];//*this->inputLevel;
+			this->procBufferArray[this->inputProcBufferIndex[0]].buffer[i] = inBufs[1][i]*this->inputLevel;
+			this->procBufferArray[this->inputProcBufferIndex[1]].buffer[i] = inBufs[0][i]*this->inputLevel;
 		}
 		else
 		{
-			this->procBufferArray[this->inputProcBufferIndex[0]].buffer[i] = inBufs[0][i];//*this->inputLevel;
-			this->procBufferArray[this->inputProcBufferIndex[1]].buffer[i] = inBufs[1][i];//*this->inputLevel;
+			this->procBufferArray[this->inputProcBufferIndex[0]].buffer[i] = inBufs[0][i]*this->inputLevel;
+			this->procBufferArray[this->inputProcBufferIndex[1]].buffer[i] = inBufs[1][i]*this->inputLevel;
 		}
 		if(internalPosPeak[0] < inBufs[0][i]) internalPosPeak[0] = inBufs[0][i];
 		if(internalNegPeak[0] > inBufs[0][i]) internalNegPeak[0] = inBufs[0][i];
@@ -427,17 +427,11 @@ int Combo::audioCallback(jack_nframes_t nframes,
 
 
 
-#if(dbg >= 1)
+#if(dbg >= 2)
 	cout << "signal: " << this->signalLevel << ",signal delta: " << this->signalDeltaFilterOut << endl;
 #endif
 	//***************************** Envelope trigger function *********************************
 
-//#define dbg 2
-	//cout << "signalLevel: " << this->signalLevel << "\tsignalLevelLowPeak: " << this->signalLevelLowPeak << "\tsignalLevelHighPeak: " << this->signalLevelHighPeak << endl;
-
-#if(dbg >= 1)
-	//cout << "signal delta: " << this->signalDeltaFilterOut << "\tsignalDeltaPositiveCount: " << this->signalDeltaPositiveCount << "\tsignalDeltaNegativeCount: " << this->signalDeltaNegativeCount << endl;
-#endif
 	switch(this->gateEnvStatus)
 	{
 	case 0:	// noise gate on
@@ -623,7 +617,7 @@ int Combo::audioCallback(jack_nframes_t nframes,
 		}
 	}
 
-	/*float tempAve;
+	/*double tempAve;
 	for(int bufferIndex = 0; bufferIndex < this->bufferCount; bufferIndex++)
 	{
 		this->procBufferArray[bufferIndex].aveBuffer[this->aveArrayIndex] = this->procBufferArray[bufferIndex].offset;
@@ -663,7 +657,7 @@ int Combo::audioCallback(jack_nframes_t nframes,
 	return status;
 }
 
-int Combo::getProcessData(int index, float *data)
+int Combo::getProcessData(int index, double *data)
 {
 	int status = 0;
 	static int count;
@@ -679,7 +673,7 @@ int Combo::getProcessData(int index, float *data)
 	return status;
 }
 
-int Combo::clearProcessData(int index, float *data)
+int Combo::clearProcessData(int index, double *data)
 {
 	int status = 0;
 	static int count;

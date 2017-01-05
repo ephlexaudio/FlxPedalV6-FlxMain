@@ -28,20 +28,20 @@
 #define BUFFER_SIZE 1024
 
 /*typedef struct _processingParams{
-	float lowGateThres;
-	float highGateThres;
-	float gatedGain;
+	double lowGateThres;
+	double highGateThres;
+	double gatedGain;
 };*/
 
 struct _noiseGate {
-	float lowThres;
-	float highThres;
-	float gain;
+	double lowThres;
+	double highThres;
+	double gain;
 };
 
 struct _trigger {
-	float lowThres;
-	float highThres;
+	double lowThres;
+	double highThres;
 };
 
 struct _processingParams{
@@ -57,36 +57,36 @@ private:
 
 	ProcessBuffer outProcBuffer;
 	int switchedStatus = 0;
-	float gateOnThreshold = 0.01;
-	float gateOffThreshold = 0.30;
-	float posPeak[2];
-	float negPeak[2];
-	float maxAmp[2];
-	float prevMaxAmp[2];
-	float posPeakArray[4][2];
-	float negPeakArray[4][2];
+	double gateOnThreshold = 0.01;
+	double gateOffThreshold = 0.30;
+	double posPeak[2];
+	double negPeak[2];
+	double maxAmp[2];
+	double prevMaxAmp[2];
+	double posPeakArray[4][2];
+	double negPeakArray[4][2];
 	int chan1GndCount;
 	int chan2GndCount;
-	float comboInputBuffer[2][BUFFER_SIZE];
-	float comboOutputBuffer[2][BUFFER_SIZE];
-	float inputLevel = 0.01;
+	double comboInputBuffer[2][BUFFER_SIZE];
+	double comboOutputBuffer[2][BUFFER_SIZE];
+	double inputLevel = 0.01;
 	bool gateStatus;
-	float envGenTriggerMultiple = 5.0;
-	float triggerHighThreshold;
-	float triggerLowThreshold;
+	double envGenTriggerMultiple = 5.0;
+	double triggerHighThreshold;
+	double triggerLowThreshold;
 	bool envTrigger;
 	int envTriggerPeriods;
-	float maxAmpFilter[16];
-	float maxAmpFilterOut;
-	float prevMaxAmpFilterOut;
+	double maxAmpFilter[16];
+	double maxAmpFilterOut;
+	double prevMaxAmpFilterOut;
 	int maxAmpFilterIndex;
 	int gateEnvStatus;
-	float signalLevel;
-	float prevSignalLevel;
-	float signalLevelHighPeak;
-	float signalLevelLowPeak;
-	float signalDeltaFilter[16];
-	float signalDeltaFilterOut;
+	double signalLevel;
+	double prevSignalLevel;
+	double signalLevelHighPeak;
+	double signalLevelLowPeak;
+	double signalDeltaFilter[16];
+	double signalDeltaFilterOut;
 	int signalDeltaFilterIndex;
 	int signalDeltaPositiveCount;
 	int signalDeltaNegativeCount;
@@ -119,8 +119,8 @@ public:
 					audioBufVector inBufs,
 					// A vector of pointers to each output port.
 					audioBufVector outBufs);
-	int getProcessData(int index, float *data);
-	int clearProcessData(int index, float *data);
+	int getProcessData(int index, double *data);
+	int clearProcessData(int index, double *data);
 	int updateFootswitch(int footswitchStatus[]);
 	int bypassAll();
 	int updateProcessParameter(string processName, int parameterIndex, int parameterValue);

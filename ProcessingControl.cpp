@@ -558,7 +558,7 @@ int ProcessingControl::stop() // stop clients and disconnect them
 }
 
 
-int ProcessingControl::getProcessData(int index, float *data)
+int ProcessingControl::getProcessData(int index, double *data)
 {
 	int status = 0;
 
@@ -567,7 +567,7 @@ int ProcessingControl::getProcessData(int index, float *data)
 	return status;
 }
 
-int ProcessingControl::clearProcessData(int index, float *data)
+int ProcessingControl::clearProcessData(int index, double *data)
 {
 	int status = 0;
 

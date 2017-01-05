@@ -413,7 +413,7 @@ int BaseUiInt::sendComboList(string comboList)
 	return status;
 }
 
-#define dbg 2
+#define dbg 0
 int BaseUiInt::sendCurrentStatus(char *currentStatus)
 {
 #if(dbg >= 1)

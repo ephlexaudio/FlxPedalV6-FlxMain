@@ -14,6 +14,7 @@
 #define usbOnly 0
 #define hostUiDbg 0
 #define pedalUiDbg 0
+#define processingDbg 0
 
 
 #include <stdint.h>
@@ -825,7 +826,9 @@ int main(int argc, char *argv[])
 								hostGuiActive = true;
 							}
 							else hostGuiActive = false;
+#if(processingDbg >= 1)
 							cout << "combo processing time: " << comboTime << endl;
+#endif
 							pedalUi.sendCurrentStatus(ofxMainStatus);
 							//pedalUi->sendCurrentStatus(ofxMainStatus);
 							//strcpy(ofxMainStatus," ");
