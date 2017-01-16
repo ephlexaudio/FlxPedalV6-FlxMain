@@ -1,7 +1,6 @@
 /*
  * main.cpp
 
-
  *
  *  Created on: Dec 24, 2015
  *      Author: mike
@@ -13,7 +12,7 @@
 #define testingPedalUi 0
 #define usbOnly 0
 #define hostUiDbg 0
-#define pedalUiDbg 0
+#define pedalUiDbg 1
 #define processingDbg 0
 
 
@@ -30,6 +29,8 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+
+
 #include <json/json.h>
 #include <sys/ioctl.h>
 #include <linux/types.h>
@@ -75,7 +76,8 @@ struct linuxProcess {
 	char command[20];
 };
 
-
+ComboDataInt comboData[10];
+int globalComboIndex = 0;
 
 std::vector<linuxProcess> linuxProcessList;
 
@@ -89,18 +91,21 @@ static void signal_handler(int sig)
 {
 	//system("echo \"0\" > /sys/class/gpio/gpio13/value");
 	fprintf(stderr, "signal received:%d, OfxMain exiting ...\n", sig);
-	exit(0);
+	signal(sig, SIG_DFL);
+	kill(getpid(),sig);
+
+	//exit(0);
 }
 
 
 
-ComboDataInt comboData;
+//ComboDataInt comboData;
 //
 int ofxPid;
 int childPgid = 0;
 int procCount = 0;
 int effectCount = 0;
-int comboIndex = 0;
+//int comboIndex = 0;
 unsigned int bufferSize = 0;
 bool justPoweredUp = true;
 bool comboRunning = false;
@@ -118,7 +123,7 @@ extern int comboTime;
 #define dbg 1
 int main(int argc, char *argv[])
 {
-	int gitTestVar = 0;
+
 	cout << "starting..." << endl;
 	int exit = 0;
 	int count = 0;
@@ -141,7 +146,7 @@ int main(int argc, char *argv[])
 	char gpioStr[5];
 	char simpleResponseStr[20];
 	string comboName;
-
+	vector<string> comboList;
 	BaseUiInt baseUi;
 
 	PedalUiInt pedalUi(CM0_SHARED_MEMORY_SECTION_ADDRESS,CM0_SHARED_MEMORY_SECTION_SIZE,
@@ -278,13 +283,20 @@ int main(int argc, char *argv[])
 	initializePedal(initComboName);
 	/*****************START: Start up server and connect ***************/
 	//componentList = getComponentList();
-	//comboList = getComboList();
+	comboList = getComboList();
 
+	for(vector<string>::size_type comboListIndex = 0; comboListIndex < comboList.size(); comboListIndex++)
+	{
+		if(comboData[comboListIndex].loadComboStruct((char *)comboList[comboListIndex].c_str()) < 0)
+		{
+			cout << "failed to open file: " << (char *)comboList[comboListIndex].c_str();
+		}
+	}
 
 	char choice = 0;
 	openJack();
 	startJack();
-
+	procCont.start();
 	//std::string serverRequest;
 	char serverRequestData[20];
 
@@ -302,12 +314,8 @@ int main(int argc, char *argv[])
 	while(exit == 0)
 	{
 		//************* Process requests from Host UI Interface  *************
-		/*clearBuffer(hostUiRawRequestCharArray,FILE_SIZE);
-		clearBuffer(hostUiRequestCharArray,FILE_SIZE);
-		clearBuffer(hostUiResponseCharArray,FILE_SIZE);
-    	ssize_t size_read = read(hostUiFD, hostUiRawRequestCharArray, FILE_SIZE);*/
 
-		if(hostGuiActive == true)
+		/*if(hostGuiActive == true)
 		{
 	        if(hostUi.checkForNewHostData() == 1)
 	        {
@@ -315,18 +323,9 @@ int main(int argc, char *argv[])
 	        	hostUiRequest = hostUi.getUserRequest();
 	        	//cout << "usb data received: " << hostUiRequestCharArray << endl;
 	        	//cout << "usb data size: " << strlen(hostUiRequestCharArray) << endl;
-	        	/*cleanString(hostUiRawRequestCharArray,hostUiRequestCharArray);
-	        	strcpy(hostUiResponseCharArray,"received: ");
-	        	strncat(hostUiResponseCharArray, (const char*)hostUiRequestCharArray, FILE_SIZE);
-	        	hostUiRequest = hostUiRequestCharArray;*/
 	#if(hostUiDbg >= 1)
 				cout << "HOST UI REQUEST: " << hostUiRequest << endl;
 				cout << "hostUiRequest size: " << hostUiRequest.size() << endl;
-				/*for(int charIndex = 0; charIndex < hostUiRequest.size(); charIndex++)
-				{
-					cout << hostUiRequest[charIndex] << ',';
-				}
-				cout << endl;*/
 	#endif
 				hostUiRequestIsValid = true;
 				hostUiRequest.erase(remove(hostUiRequest.begin(), hostUiRequest.end(), '\n'), hostUiRequest.end());
@@ -432,18 +431,11 @@ int main(int argc, char *argv[])
 						//int size = hostUiRequestData.size();
 
 						//colon = requestData.find(":");
-						/*equals = hostUiRequestData.find("=");
-						if(equals < size ) // error check to make sure "colon" and "equals" aren't
-							// screwed up.*/
 						if(hostUiJsonReader.parse(hostUiRequestData.c_str(),hostUiJsonData) == true)
 						{
 							//effectString = requestData.substr(0,colon);
 
 							// get control parameter index and value
-							/*paramString = hostUiRequestData.substr(0,equals);
-							valueString = hostUiRequestData.substr(equals+1);
-							absParamIndex = atoi(paramString.c_str());
-							valueIndex = atoi(valueString.c_str());*/
 							if(hostUiJsonData["control"].isNull() == false)
 							{
 								procContString = hostUiJsonData["control"].asString();
@@ -515,29 +507,6 @@ int main(int argc, char *argv[])
 							{
 								cout << "invalid value change request." << endl;
 							}
-
-							// find corresponding controller and enter index and value into Control struct
-							// (control will write value to process parameter during process run)
-
-							/*if((absParamIndex >= 0) && (0 <= valueIndex && valueIndex <= 255))
-							{
-								comboData.updateControl(absParamIndex, valueIndex);
-								//// enter into controlsStruct element
-
-								procCont.updateControlParameter(absParamIndex, valueIndex);
-								//comboData.updateProcess(absParamIndex, valueIndex);
-								//procCont.updateProcessParameter(absParamIndex, valueIndex);
-								cout << "paramString: " << paramString << '\t' << "valueString: " << valueString << endl;
-								//sprintf(procParamString, "%s:%d", paramName.c_str(), valueIndex);
-	#if(dbg == 1)
-								cout << "controlParamString: " << paramString.c_str() << ":" << valueIndex << endl;
-	#endif
-								//updateCombo(paramIndex,valueIndex);
-							}
-							else
-							{
-								cout << "absParamIndex and/or valueIndex are out of range." << endl;
-							}*/
 
 						}
 						strcpy(simpleResponseStr,"ChangedValue");
@@ -624,7 +593,7 @@ int main(int argc, char *argv[])
 	        }
 
 	        usleep(100000);
-		}
+		}*/
 		//************* Process requests from PCB UI Interface  *************
 
         if(((smSectionIndex = baseUi.checkForNewData()) > 0))
@@ -648,13 +617,13 @@ int main(int argc, char *argv[])
 
 					pedalUi.dataProcessingStatus(0);
 					//pedalUi->dataProcessingStatus(0);
-					/*if(enteringLoop)
-					{
-						pedalUiRequest = "getCombo:";
-						pedalUiRequest.append(initComboName);
-						enteringLoop = false;
-					}
-					else*/
+//					if(enteringLoop)
+//					{
+//						pedalUiRequest = "getCombo:";
+//						pedalUiRequest.append(initComboName);
+//						enteringLoop = false;
+//					}
+//					else
 					{
 						pedalUiRequest = pedalUi.getUserRequest();
 						//pedalUiRequest = pedalUi->getUserRequest();
@@ -712,44 +681,27 @@ int main(int argc, char *argv[])
 							//pedalUiRequestData = string(initComboName);
 							if(pedalUiRequestData.size() > 1)
 							{
-								if(comboData.getCombo((char *)pedalUiRequestData.c_str()) == 0)
+								for(vector<string>::size_type i = 0; i < comboList.size(); i++)
 								{
-									if(comboData.getPedalUi() != 0)
+									if(comboList[i].compare(pedalUiRequestData) == 0)
 									{
-										status = -1;
+										globalComboIndex = i;
+										break;
 									}
-									else
-									{
-										pedalUi.sendComboUiData(comboData.pedalUiJson);
-										//pedalUi->sendComboUiData(comboData.pedalUiJson);
-										cout << "sent pedalUiJson" << endl;
-									}
+								}
+								cout << pedalUiRequestData << ":" << globalComboIndex << endl;
+								//if(comboData.getCombo((char *)pedalUiRequestData.c_str()) == 0)
+								if(procCont.load(globalComboIndex) >= 0)
+								{
+									pedalUi.sendComboUiData(comboData[globalComboIndex].pedalUiJson);
+									cout << "sent pedalUiJson" << endl;
 
-									if(comboRunning == true)
-									{
-										stopCombo();
-										comboRunning = false;
-									}
+									strcpy(ofxMainStatus,"combo running");
 
-									if(loadCombo() == 0)
-									{
-										runCombo();
-										sleep(1);
-										comboRunning = true;
-										//server.sendCurrentData();
-
-										strcpy(ofxMainStatus,"combo running");
-
-									}
-									else
-									{
-										strcpy(ofxMainStatus,"load failed");
-										status = -1;
-									}
 								}
 								else
 								{
-									strcpy(ofxMainStatus,"combo not found");
+									strcpy(ofxMainStatus,"load failed");
 									status = -1;
 								}
 							}
@@ -778,9 +730,9 @@ int main(int argc, char *argv[])
 								// find corresponding controller and enter index and value into Control struct
 								// (control will write value to process parameter during process run)
 
-								if((0 <= absParamIndex && absParamIndex < comboData.controlParameterArray.size()) && (0 <= valueIndex && valueIndex <= 255))
+								if((0 <= absParamIndex && absParamIndex < comboData[globalComboIndex].controlParameterArray.size()) && (0 <= valueIndex && valueIndex <= 255))
 								{
-									comboData.updateControl(absParamIndex, valueIndex);
+									comboData[globalComboIndex].updateControl(absParamIndex, valueIndex);
 									//// enter into controlsStruct element
 
 									procCont.updateControlParameter(absParamIndex, valueIndex);
@@ -802,7 +754,7 @@ int main(int argc, char *argv[])
 						}
 						else if(pedalUiRequestCommand.compare("saveCombo") == 0)
 						{
-							comboData.saveCombo();//saveCombo(requestData);
+							comboData[globalComboIndex].saveCombo();//saveCombo(requestData);
 							strcpy(ofxMainStatus,"combo saved");
 						}
 						else if(pedalUiRequestCommand.compare("getCurrentValues") == 0)
@@ -811,7 +763,7 @@ int main(int argc, char *argv[])
 							{
 								newDataFromServer = false;
 							}
-							pedalUi.sendCurrentData(comboData.unsortedParameterArray);
+							pedalUi.sendCurrentData(comboData[globalComboIndex].unsortedParameterArray);
 							//pedalUi->sendCurrentData(comboData.unsortedParameterArray);
 							//cout << "sent current data" << endl;
 						}
@@ -870,63 +822,22 @@ int main(int argc, char *argv[])
 			baseUi.waitForAccessRelease();
 			baseUi.dataProcessingStatus(0);
 
-			/*pedalUi->dataProcessingStatus(1);
-			pedalUi->waitForAccessRelease();
-			pedalUi->dataProcessingStatus(0);*/
 		}
         //usleep(100000);
 
 
 
-		/*cout << "********************* PROCESS DATA BUFFERS ****************************" << endl;
-		for(int procIndex = 0; procIndex < procCount; procIndex++)
-		{
-			procCont.getProcessData(procIndex, dataBuffer);
-			cout << "process[" << procIndex << "]: ";
-			for(int i = 0; i < 256; i += 2)
-			{
-				cout << dataBuffer[i] << ",";
-			}
-			cout << endl;
-
-			if(getProcessDataPassCount > 10)
-			{
-				procCont.clearProcessData(procIndex, dataBuffer);
-				getProcessDataPassCount = 0;
-			}
-			else getProcessDataPassCount++;
-		}
 
 
-		cout << "********************* end PROCESS DATA BUFFERS ****************************" << endl;
-		 */
-
-		/*if(hostUiActiveCount > 0)
-		{
-			//cout << "hostUiActiveCount: " << hostUiActiveCount << endl;
-			hostUiActiveCount--;
-			hostGuiActive = true;
-		}
-		else
-		{
-			if(hostGuiActive == true)
-			{
-				cout << "**** HOST GUI DE-ACTIVATED." << endl;
-			}
-			hostGuiActive = false;
-		}*/
 		readFootswitches();
-		if(comboRunning == true)
+		//if(comboRunning == true)
 		{
 			procCont.updateFootswitch(footswitchStatusArray);
 		}
 
-		/*for(int i = 0; i < procIntArray.size(); i++)
-		{
-			procIntArray.at(i).updateFootswitchStatus(footswitchStatusArray);
-		}*/
 	}
-	stopCombo();
+	procCont.stop();
+	//stopCombo();
 
 	//#if(testingPedalUi == 1)
 

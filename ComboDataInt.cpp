@@ -12,7 +12,7 @@
 
 extern int procCount;
 extern int effectCount;
-extern int comboIndex;
+extern int globalComboIndex;
 extern std::vector<string> comboNameList;
 #define JSON_BUFFER_LENGTH 32000
 extern int validateJsonBuffer(char *jsonBuffer);
@@ -56,9 +56,25 @@ void ComboDataInt::printSequencedProcessList()
 {
 	cout << "SEQUENCED PROCESSES" << endl;
 
-	for(std::vector<Process>::size_type i = 0; i < this->processesStruct.size(); i++)
+	/*for(std::vector<Process>::size_type i = 0; i < this->processesStruct.size(); i++)
 	{
 		cout << this->processesStruct[i].name << endl;
+	}*/
+	for(int i = 0; i < 20; i++)
+	{
+		if(this->processSequence[i].processName.empty() == false)
+		{
+			cout << this->processSequence[i].processName << endl;
+			for(int j = 0; j < this->processSequence[i].processInputCount; j++)
+			{
+				cout << "\t" << this->processSequence[i].inputBufferIndexes[j] << ":" << this->processSequence[i].inputBufferNames[j] << endl;
+			}
+			for(int j = 0; j < this->processSequence[i].processOutputCount; j++)
+			{
+				cout << "\t" << this->processSequence[i].outputBufferIndexes[j] << ":" << this->processSequence[i].outputBufferNames[j] << endl;
+			}
+		}
+		else break;
 	}
 
 }
@@ -148,6 +164,29 @@ void ComboDataInt::printControlList(void)
 	}
 }
 
+void ComboDataInt::printSequencedControlList(void)
+{
+	cout << "SEQUENCED CONTROL LIST:" << endl;
+	for(int i = 0; i < 20; i++)
+	{
+		if(this->controlSequence[i].name.empty() == false)
+		{
+			cout << "controlSequence[" << i << "].name: " << this->controlSequence[i].name << endl;
+			cout << "controlSequence[" << i << "].type: " << this->controlSequence[i].type << endl;
+			cout << "controlSequence[" << i << "].paramContConnectionCount: " << this->controlSequence[i].paramContConnectionCount << endl;
+
+			for(int j = 0; j < this->controlSequence[i].paramContConnectionCount; j++)
+			{
+				cout << "\tcontrolSequence[" << i << "].paramContConnection:[" << j << "].processIndex: " << this->controlSequence[i].paramContConnection[j].processIndex << endl;
+				cout << "\tcontrolSequence[" << i << "].paramContConnection:[" << j << "].processParamIndex: " << this->controlSequence[i].paramContConnection[j].processParamIndex << endl;
+			}
+		}
+		else break;
+
+		cout << endl;
+	}
+}
+
 
 void ComboDataInt::printControlParameterList()
 {
@@ -202,6 +241,22 @@ void ComboDataInt::printControlConnectionList(void)
 	}
 	cout << endl;
 }
+
+void ComboDataInt::printBufferList(void)
+{
+	cout << "PROCESS BUFFER LIST:" << endl;
+	for(std::vector<ProcessBuffer>::size_type i = 0; i < 60; i++)
+	{
+		if(this->procBufferArray[i].processName.empty() == false)
+		{
+			cout << this->procBufferArray[i].processName << ":" << this->procBufferArray[i].portName << endl;
+		}
+		else break;
+	}
+	cout << endl;
+
+}
+
 
 #define dbg 0
 int ComboDataInt::getTargetProcessIndex(string processName)
@@ -691,7 +746,6 @@ string ComboDataInt::getNextProcess()
 	for(std::vector<Process>::size_type procIndex = 0; procIndex < this->unsequencedProcessListStruct.size(); procIndex++)
 	{
 		string procName = this->unsequencedProcessListStruct[procIndex].name;
-		cout << "procName:" << procName << endl;
 		if(this->areDataBuffersReadyForProcessInputs(procName) == true)
 		{
 			nextProcess = procName;
@@ -1027,7 +1081,7 @@ int ComboDataInt::getCombo(char *comboName)
     			{
     				if(comboNameList.at(i).compare(compCombo)==0)
     				{
-    					comboIndex = i;
+    					globalComboIndex = i;
     					break;
     				}
     			}
@@ -1085,6 +1139,7 @@ int ComboDataInt::getCombo(char *comboName)
 int ComboDataInt::getPedalUi(void)
 {
     int status = 0;
+    //PedalUI pedalUiStruct;
     char effectAbbr[5];
     char compStr[10];
     //bool newEffect = true;
@@ -1167,7 +1222,10 @@ int ComboDataInt::getPedalUi(void)
 #endif
     	status = 0;//return this->pedalUiJson;
     }
-    else status = 1;//return NULL;
+    else
+    {
+    	status = -1;//return NULL;
+    }
 
 
     return status;
@@ -2385,6 +2443,681 @@ int ComboDataInt::getControlConnections(void)
 }
 
 
+#define dbg 1
+int ComboDataInt::initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::Value> connectionsJson)
+{
+	int status = 0;
+	int procBufferIndex = 0;
+	int procBufferCount = 0;
+	bool bufferAlreadyInList = false;
+	vector<Connector> bufferNameArray;
+	vector<Connector>::iterator it;
+	Connector tempConn;
+
+	tempConn.process = string("system");
+	tempConn.port = string("capture_1");
+	bufferNameArray.push_back(tempConn);
+	tempConn.process = string("system");
+	tempConn.port = string("capture_2");
+	bufferNameArray.push_back(tempConn);
+
+
+	// loop through connectionsJson and create list of process output buffers
+	for(std::vector<Json::Value>::size_type connectionsJsonIndex = 0; connectionsJsonIndex < connectionsJson.size(); connectionsJsonIndex++)
+	{
+
+		string compConnectionProc = connectionsJson[connectionsJsonIndex]["srcProcess"].asString();
+		string compConnectionPort = connectionsJson[connectionsJsonIndex]["srcPort"].asString();
+
+#if(dbg >= 2)
+		cout << "[" << connectionsJsonIndex << "]:" << compConnectionProc << ":" << compConnectionPort << endl;
+		cout << endl;
+		cout << "OUTPUT BUFFERS: " << endl;
+		cout << "bufferNameArray size: " << bufferNameArray.size() << endl;
+		for(std::vector<Connector>::size_type bufferNameArrayIndex = 0; bufferNameArrayIndex < bufferNameArray.size(); bufferNameArrayIndex++)
+		{
+			cout << "procBuffer[" << bufferNameArrayIndex << "]: " << bufferNameArray[bufferNameArrayIndex].process;
+			cout << ":" << bufferNameArray[bufferNameArrayIndex].port << endl;
+		}
+		cout << endl;
+#endif
+
+		// for each connection, loop through current list of process buffers
+
+		tempConn.process = compConnectionProc;
+		tempConn.port = compConnectionPort;
+
+
+
+		bufferAlreadyInList = false;
+		for(std::vector<Connector>::size_type bufferNameArrayIndex = 0; bufferNameArrayIndex < bufferNameArray.size(); bufferNameArrayIndex++)
+		{
+			//tempConn.process = bufferNameArray[bufferNameArrayIndex].process;
+			//tempConn.port = bufferNameArray[bufferNameArrayIndex].port;
+
+			// compare connection output (source) process:port to listed buffer process:port
+#if(dbg >=2)
+			cout << "comparing: " << bufferNameArray[bufferNameArrayIndex].process << ":" << bufferNameArray[bufferNameArrayIndex].port;
+			cout << " & " << compConnectionProc << ":" << compConnectionPort << endl;
+#endif
+
+			if(compConnectionProc.compare(bufferNameArray[bufferNameArrayIndex].process) == 0 &&
+					compConnectionPort.compare(bufferNameArray[bufferNameArrayIndex].port) == 0)
+			{
+#if(dbg >= 2)
+				cout << "MATCH: " << compConnectionProc << ":" << compConnectionPort << " already in list." << endl;
+#endif
+				bufferAlreadyInList = true;
+				break;  // connection output already listed in buffer list
+			}
+		}
+		if(bufferAlreadyInList == false) // connection output was not in list, so add to list
+		{
+			bufferNameArray.push_back(tempConn);
+#if(dbg >= 2)
+			cout << "NO MATCH: adding " << tempConn.process << ":" << tempConn.port << " to list." << endl;
+#endif
+		}
+	}
+
+#if(dbg >= 2)
+	cout << endl;
+	cout << "OUTPUT BUFFERS: " << endl;
+	cout << "bufferNameArray size: " << bufferNameArray.size() << endl;
+#endif
+	this->bufferCount = bufferNameArray.size();
+	for(int bufferNameArrayIndex = 0; bufferNameArrayIndex < this->bufferCount; bufferNameArrayIndex++)
+	{
+#if(dbg >= 2)
+		cout << "procBuffer[" << bufferNameArrayIndex << "]: " << bufferNameArray[bufferNameArrayIndex].process;
+		cout << ":" << bufferNameArray[bufferNameArrayIndex].port << endl;
+#endif
+		bufferArray[bufferNameArrayIndex].processName = bufferNameArray[bufferNameArrayIndex].process;
+		bufferArray[bufferNameArrayIndex].portName = bufferNameArray[bufferNameArrayIndex].port;
+	}
+#if(dbg >= 2)
+	cout << endl;
+#endif
+
+	return status;
+}
+
+int ComboDataInt::resetProcBuffer(struct ProcessBuffer procBufferArray)
+{
+	int status = 0;
+
+	procBufferArray.processed = 0;
+	procBufferArray.ready = 0;
+
+	return status;
+}
+
+
+int ComboDataInt::setProcBuffer(struct ProcessBuffer procBufferArray, int processed, int ready)
+{
+	int status = 0;
+
+	procBufferArray.processed = processed;
+	procBufferArray.ready = ready;
+
+	return status;
+}
+
+int ComboDataInt::initProcBuffers(struct ProcessBuffer *procBufferArray)
+{
+	int status = 0;
+
+	for(int i = 0; i < 60; i++)
+	{
+		resetProcBuffer(procBufferArray[i]);
+	}
+
+	return status;
+}
+
+#define dbg 2
+int ComboDataInt::setProcData(struct ProcessEvent *procEvent, Process processStruct)
+{
+	int status = 0;
+	string processName;
+	volatile int processType = 0;
+	//volatile int processIndex = 0;
+	volatile int footswitchNumber = 0;
+	volatile int processInputCount = 0;
+	volatile int processOutputCount = 0;
+
+	if(processStruct.type.compare("delayb") == 0) processType = 0;
+	else if(processStruct.type.compare("filter3bb") == 0) processType = 1;
+	else if(processStruct.type.compare("filter3bb2") == 0) processType = 2;
+	else if(processStruct.type.compare("lohifilterb") == 0) processType = 3;
+	else if(processStruct.type.compare("mixerb") == 0) processType = 4;
+	else if(processStruct.type.compare("volumeb") == 0) processType = 5;
+	else if(processStruct.type.compare("waveshaperb") == 0) processType = 6;
+
+	processName = processStruct.name;
+	footswitchNumber = processStruct.footswitchNumber;
+	processInputCount = processStruct.inputs.size();
+	processOutputCount = processStruct.outputs.size();
+#if(dbg >= 2)
+	std::cout << "ProcessingControl process name: " << processName << std::endl;
+	//std::cout << "processType: " << processType << std::endl;
+	std::cout << "footswitch number: " << footswitchNumber << std::endl;
+	std::cout << "process type index: " << atoi(processName.substr(processName.find("_")+1).c_str()) << std::endl;
+	std::cout << "processInputCount: " << processInputCount << std::endl;
+	std::cout << "processOutputCount: " << processOutputCount << std::endl;
+#endif
+
+
+	procEvent->processName = processName;
+	procEvent->processType = processType;
+	procEvent->footswitchNumber = footswitchNumber-1;
+	procEvent->processInputCount = processInputCount;
+
+#if(dbg >= 2)
+	cout << "procEvent->inputBufferNames: ";
+#endif
+	for(int processInputIndex = 0; processInputIndex < procEvent->processInputCount; processInputIndex++)
+	{
+		procEvent->inputBufferNames.push_back(processStruct.inputs[processInputIndex].c_str());
+#if(dbg >= 2)
+		cout << procEvent->inputBufferNames[processInputIndex] << ",";
+#endif
+	}
+#if(dbg >= 2)
+	cout << endl;
+	cout << "procEvent->outputBufferNames: ";
+#endif
+
+	procEvent->processOutputCount = processOutputCount;
+
+	for(int processOutputIndex = 0; processOutputIndex < procEvent->processOutputCount; processOutputIndex++)
+	{
+		procEvent->outputBufferNames.push_back(processStruct.outputs[processOutputIndex].c_str());
+#if(dbg >= 2)
+		cout << procEvent->outputBufferNames[processOutputIndex] << ",";
+#endif
+	}
+#if(dbg >= 2)
+	cout << endl;
+	cout <<  endl;
+
+#endif
+
+	return status;
+}
+
+#define dbg 0
+int ComboDataInt::setProcParameters(struct ProcessEvent *procEvent, Process processStruct)
+{
+	int status = 0;
+
+
+	volatile int paramArrayCount = processStruct.params.size();
+
+	for(int paramArrayIndex = 0; paramArrayIndex < paramArrayCount; paramArrayIndex++)
+	{
+		procEvent->parameters[paramArrayIndex] = processStruct.params[paramArrayIndex].value;
+
+#if(dbg == 1)
+		std::cout << "parameter[" << paramArrayIndex << "]: " << procEvent.parameters[paramArrayIndex] << std::endl;
+#endif
+	}
+
+	return status;
+}
+
+
+int ComboDataInt::initProcInputBufferIndexes(struct ProcessEvent *procEvent)
+{
+	int status = 0;
+
+	for(int procInputIndex = 0; procInputIndex < procEvent->processInputCount; procInputIndex++)
+	{
+		procEvent->inputBufferIndexes[procInputIndex] = 58;
+	}
+
+	return status;
+}
+
+int ComboDataInt::initProcOutputBufferIndexes(struct ProcessEvent *procEvent)
+{
+	int status = 0;
+
+	for(int procOutputIndex = 0; procOutputIndex < procEvent->processOutputCount; procOutputIndex++)
+	{
+		procEvent->outputBufferIndexes[procOutputIndex] = 59;
+	}
+
+	return status;
+}
+
+int ComboDataInt::connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray()
+{
+	int status = 0;
+#if(dbg >= 1)
+	cout << "*****ENTERING ComboDataInt::connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray" << endl;
+#endif
+
+	// loop through connectionsJson
+	//for(int bufferIndex = 0; bufferIndex < this->bufferCount; bufferIndex++)
+	for(unsigned int connIndex = 0; connIndex < this->connectionsJson.size(); connIndex++)
+	{
+		// 		for each procBufferArray element, get the buffer index and output (source) process:port
+
+		Connector conn, targetConn;
+
+		conn.process = this->connectionsJson[connIndex]["srcProcess"].asString();
+		conn.port = this->connectionsJson[connIndex]["srcPort"].asString();
+		targetConn.process = this->connectionsJson[connIndex]["destProcess"].asString();
+		targetConn.port = this->connectionsJson[connIndex]["destPort"].asString();
+
+#if(dbg >= 2)
+		cout << "************************************************************" << endl;
+		cout << "conn: " << conn.process << ":" << conn.port << endl;
+		cout << "targetConn: " << targetConn.process << ":" << targetConn.port << endl;
+#endif
+		int bufferIndex = 0;
+		for(bufferIndex = 0; bufferIndex < this->bufferCount; bufferIndex++)
+		{
+			if(this->procBufferArray[bufferIndex].processName.compare(conn.process) == 0 &&
+					this->procBufferArray[bufferIndex].portName.compare(conn.port) == 0)
+			{
+#if(dbg >= 2)
+				cout << "found buffer index for " << conn.process << ": " << bufferIndex << endl;
+#endif
+				break; // found input process:port index
+			}
+		}
+
+		//*********** connect relevant system input to output buffer  ********************************
+
+		this->inputProcBufferIndex[0] = 0;
+		this->inputProcBufferIndex[1] = 1;
+		/*if(conn.process.compare("system") == 0 && conn.port.compare("capture_1") == 0)
+		{
+			this->inputProcBufferIndex[0] = bufferIndex;
+#if(dbg >= 2)
+			cout << "Connected to input1: procBuffer[" << bufferIndex << "]: ";
+			cout << conn.process << ":" << conn.port << ">";
+			cout <<  targetConn.process << ":" << targetConn.port << endl;
+#endif
+		}
+		else if(conn.process.compare("system") == 0 && conn.port.compare("capture_2") == 0)
+		{
+			this->inputProcBufferIndex[1] = bufferIndex;
+#if(dbg >= 2)
+			cout << "Connected to input2: procBuffer[" << bufferIndex << "]: ";
+			cout << conn.process << ":" << conn.port << ">";
+			cout <<  targetConn.process << ":" << targetConn.port << endl;
+#endif
+		}
+
+		else*/
+		{
+			// 		loop through processSequence
+			for(int procIndex = 0; procIndex < this->processCount; procIndex++)
+			{
+
+				// 		for each processSequence element, loop through the outputs
+				for(int outputIndex = 0; outputIndex < this->processSequence[procIndex].processOutputCount; outputIndex++)
+				{
+					//			for each output, get the process:port
+					Connector procSeqOutputConn;
+					procSeqOutputConn.process = this->processSequence[procIndex].processName;
+					procSeqOutputConn.port = this->processSequence[procIndex].outputBufferNames[outputIndex];
+					// 				compare the procesSequence output process:port to the connectionsJson process:port
+					// 				if there is a match, set the processSequence output element index to the output process buffer index
+
+					if(procSeqOutputConn.process.compare(conn.process) == 0 &&
+							procSeqOutputConn.port.compare(conn.port) == 0)
+					{
+						this->processSequence[procIndex].outputBufferIndexes[outputIndex] = bufferIndex;
+#if(dbg >= 2)
+						cout << "Connected output : procBuffer[" << bufferIndex << "]: ";
+						cout <<  procSeqOutputConn.process << ":" << procSeqOutputConn.port << ">";
+						cout << targetConn.process << ":" << targetConn.port  << endl;
+#endif
+					}
+				}
+			}
+		}
+	}
+
+#if(dbg >= 1)
+	cout << "***** EXITING ComboDataInt::connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray" << endl;
+#endif
+	return status;
+}
+
+int ComboDataInt::connectProcessInputsToProcessOutputBuffersUsingConnectionsJson()
+{
+	int status = 0;
+#if(dbg >= 1)
+	cout << "*****ENTERING ComboDataInt::connectProcessInputsToProcessOutputBuffersUsingConnectionsJson" << endl;
+#endif
+
+	// loop through connectionsJson
+	for(unsigned int connIndex = 0; connIndex < this->connectionsJson.size(); connIndex++)
+	{
+		// 		for each connectionsJson element, get the buffer index, output (source) process:port and the
+		// 		target (dest) process:port
+		Connector conn, targetConn;
+		conn.process = this->connectionsJson[connIndex]["srcProcess"].asString();
+		conn.port = this->connectionsJson[connIndex]["srcPort"].asString();
+		targetConn.process = this->connectionsJson[connIndex]["destProcess"].asString();
+		targetConn.port = this->connectionsJson[connIndex]["destPort"].asString();
+
+		int bufferIndex = 0;
+		for(bufferIndex = 0; bufferIndex < this->bufferCount; bufferIndex++)
+		{
+			if(this->procBufferArray[bufferIndex].processName.compare(conn.process) == 0 &&
+					this->procBufferArray[bufferIndex].portName.compare(conn.port) == 0)
+			{
+
+				break; // found output process:port index
+			}
+		}
+
+		//*********** connect relevant output buffer to system output ********************************
+		if(targetConn.process.compare("system") == 0 && targetConn.port.compare("playback_1") == 0)
+		{
+			this->outputProcBufferIndex[0] = bufferIndex;
+#if(dbg >= 2)
+			cout << "Connected output1: procBuffer[" << bufferIndex << "]: ";
+			cout << conn.process << ":" << conn.port << ">";
+			cout <<  targetConn.process << ":" << targetConn.port << endl;
+#endif
+		}
+		else if(targetConn.process.compare("system") == 0 && targetConn.port.compare("playback_2") == 0)
+		{
+			this->outputProcBufferIndex[1] = bufferIndex;
+#if(dbg >= 2)
+			cout << "Connected output2: procBuffer[" << bufferIndex << "]: ";
+			cout << conn.process << ":" << conn.port << ">";
+			cout <<  targetConn.process << ":" << targetConn.port << endl;
+#endif
+		}
+		else
+		{
+			// 		loop through processSequence
+			for(int procIndex = 0; procIndex < this->processCount; procIndex++)
+			{
+				// 		for each processSequence element, loop through the inputs
+				for(int inputIndex = 0; inputIndex < this->processSequence[procIndex].processInputCount; inputIndex++)
+				{
+					//			for each input, get the process:port
+					Connector procSeqInputConn;
+					procSeqInputConn.process = this->processSequence[procIndex].processName;
+					procSeqInputConn.port = this->processSequence[procIndex].inputBufferNames[inputIndex];
+					// 				compare the procesSequence input process:port to the connectionsJson target process:port
+					// 				if there is a match, set the processSequence input element index to the output process buffer index
+					if(procSeqInputConn.process.compare(targetConn.process) == 0 &&
+							procSeqInputConn.port.compare(targetConn.port) == 0)
+					{
+						this->processSequence[procIndex].inputBufferIndexes[inputIndex] = bufferIndex;
+#if(dbg >= 2)
+						cout << "Connected input : procBuffer[" << bufferIndex << "]: ";
+						cout << conn.process << ":" << conn.port << ">";
+						cout <<  procSeqInputConn.process << ":" << procSeqInputConn.port << endl;
+#endif
+					}
+				}
+			}
+		}
+	}
+#if(dbg >= 1)
+	cout << "***** EXITING ComboDataInt::connectProcessInputsToProcessOutputBuffersUsingConnectionsJson" << endl;
+#endif
+	return status;
+}
+
+int ComboDataInt::initializeControlDataIntoControlEventElement()
+{
+	int status = 0;
+#if(dbg >= 1)
+	cout << "*****ENTERING ComboDataInt::initializeControlDataIntoControlEventElement" << endl;
+#endif
+	//loop through controlsStruct vector
+	this->controlCount = this->controlsStruct.size();
+#if(dbg >= 2)
+	cout << "CONTROL EVENT:" << endl;
+#endif
+	for(int controlIndex = 0; controlIndex < this->controlCount; controlIndex++)
+	{
+		this->controlSequence[controlIndex].paramContConnectionCount = 0;
+		//for each controlsStruct, enter the control data into the ControlEvent element
+		this->controlSequence[controlIndex].name = this->controlsStruct[controlIndex].name;
+		if(this->controlsStruct[controlIndex].type.compare("Norm") == 0)
+			this->controlSequence[controlIndex].type = 0;
+		else if(this->controlsStruct[controlIndex].type.compare("Env") == 0)
+			this->controlSequence[controlIndex].type = 1;
+		else if(this->controlsStruct[controlIndex].type.compare("LFO") == 0)
+			this->controlSequence[controlIndex].type = 2;
+
+#if(dbg >= 2)
+		cout << "name: " << this->controlSequence[controlIndex].name << endl;
+		cout << "type: " << this->controlSequence[controlIndex].type << endl;
+#endif
+		// enter the parameter values
+		for(unsigned int paramIndex = 0; paramIndex < this->controlsStruct[controlIndex].params.size(); paramIndex++)
+		{
+			this->controlSequence[controlIndex].parameter[paramIndex] = this->controlsStruct[controlIndex].params[paramIndex].value;
+#if(dbg >= 2)
+			cout << "\tcontrolSequence[" << controlIndex << "].parameter[" << paramIndex << "]: " << this->controlSequence[controlIndex].parameter[paramIndex] << endl;
+#endif
+		}
+
+		// enter the process and parameter index, using controlsStruct absProcessParameterIndexes as indexing for sortedParameterArray
+#if(dbg >= 2)
+#endif
+		for(unsigned int paramIndex = 0; paramIndex < this->controlsStruct[controlIndex].absProcessParameterIndexes.size(); paramIndex++)
+		{
+			// get absolute process parameter index
+			int absIndex = this->controlsStruct[controlIndex].absProcessParameterIndexes[paramIndex];
+#if(dbg >= 2)
+			cout << "absIndex: " << absIndex << endl;
+#endif
+			// use absolute parameter index to enter absolute process index from sortedParameterArray into controlSequence connected process
+			this->controlSequence[controlIndex].paramContConnection[paramIndex].processIndex =
+					this->sortedParameterArray[absIndex].absProcessIndex;
+#if(dbg >= 2)
+			cout << "\tcontrolSequence[" << controlIndex << "].paramContConnection[" << paramIndex << "].processIndex: "
+					<< this->controlSequence[controlIndex].paramContConnection[paramIndex].processIndex << endl;
+#endif
+			// use absolute parameter index to enter process parameter index from sortedParameterArray into controlSequence connected process parameter
+			this->controlSequence[controlIndex].paramContConnection[paramIndex].processParamIndex =
+					this->sortedParameterArray[absIndex].processParamIndex;
+#if(dbg >= 2)
+			cout << "\tcontrolSequence[" << controlIndex << "].paramContConnection[" << paramIndex << "].processParamIndex: "
+					<< this->controlSequence[controlIndex].paramContConnection[paramIndex].processParamIndex << endl;
+#endif
+			this->controlSequence[controlIndex].paramContConnectionCount++;
+		}
+	}
+
+
+#if(dbg >= 1)
+	cout << "***** EXITING ComboDataInt::initializeControlDataIntoControlEventElement" << endl;
+#endif
+	return status;
+}
+
+#define dbg 2
+int ComboDataInt::loadComboStruct(char *comboName)
+{
+	int status = 0;
+
+#if(dbg >= 1)
+	cout << "*****ENTERING ComboDataInt::loadComboStruct" << endl;
+#endif
+
+#if(dbg >= 1)
+	cout << "Getting combo data from file..." << endl;
+#endif
+	char pedalUiStr[10];
+#if(dbg >= 1)
+	cout << "combo title: " << comboName << endl;
+#endif
+	effectCount = this->pedalUiJson["effects"].size();
+#if(dbg >= 1)
+	cout << "number of effects:" << effectCount << endl;
+#endif
+
+	if(this->getCombo(comboName) >= 0)
+	{
+		if(this->getConnections2() >= 0)
+		{
+#if(dbg >= 1)
+			cout << "number of connections: " << this->connectionsJson.size() << endl;
+#endif
+			if(this->getProcesses() >= 0)
+			{
+#if(dbg >= 1)
+				cout << "number of processes: " << this->processesStruct.size() << endl;
+#endif
+				if(this->getControlConnections() >= 0)
+				{
+#if(dbg >= 1)
+					cout << "number of controlConnections: " << this->controlConnectionsStruct.size() << endl;
+#endif
+					if(this->getControls() >= 0)
+					{
+#if(dbg >= 1)
+						cout << "number of controls:" << this->controlsStruct.size() << endl;
+#endif
+						if(this->getPedalUi() >= 0)
+						{
+							cout << "loading combo." << endl;
+							//volatile int processIndex = 0;
+							volatile int processInputCount = 0;
+							volatile int processOutputCount = 0;
+							//volatile int processSequenceIndex = 0;
+							//volatile int procBufferIndex = 0;
+							volatile int procBufferCount = 0;
+
+							//volatile int processType = 0;
+
+							string processName;
+							string connectionName[20];
+
+							initProcBuffers(this->procBufferArray);
+
+							// setup dummy buffer for unconnected inputs
+							setProcBuffer(this->procBufferArray[58],0,1);
+
+							//int parameters[10] = {0,0,0,0,0,0,0,0,0,0};
+							//int processInputIndexes[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+							//int processOutputIndexes[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+							this->processCount = this->processesStruct.size();
+						#if(dbg >= 2)
+							cout << "this->processCount: " << this->processCount << endl;
+						#endif
+							this->controlCount = this->controlsStruct.size();
+
+
+
+							//*********** initialize process data in ProcessEvent element **************************************
+							for(int processIndex = 0; processIndex < this->processCount; processIndex++)
+							{
+								this->setProcData(&this->processSequence[processIndex], this->processesStruct[processIndex]);
+
+								this->setProcParameters(&this->processSequence[processIndex], this->processesStruct[processIndex]);
+
+								this->processSequence[processIndex].inputBufferIndexes = (int *)calloc(this->processSequence[processIndex].processInputCount, sizeof(int));
+								this->processSequence[processIndex].outputBufferIndexes = (int *)calloc(this->processSequence[processIndex].processOutputCount, sizeof(int));
+
+								// Initialize input/output buffer indexes with addresses for dummy buffers
+
+								this->initProcInputBufferIndexes(&this->processSequence[processIndex]);
+								this->initProcOutputBufferIndexes(&this->processSequence[processIndex]);
+							}
+
+							//*********** initialize data in ProcessBuffer element **************************************
+
+							this->initProcBufferArray(this->procBufferArray, connectionsJson);
+						#if(dbg >= 2)
+							cout << "OUTPUT BUFFERS: " << endl;
+							for(int i = 0; i < this->bufferCount; i++)
+							{
+								cout << this->procBufferArray[i].processName << ":" << this->procBufferArray[i].portName << endl;
+							}
+							procBufferCount = connectionsJson.size();
+							// set data in procBufferArray elements, using connectionsJson data
+
+							cout << endl;
+						#endif
+
+
+						#if(dbg >= 2)
+							cout << endl;
+						#endif
+
+							this->connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray();
+							this->connectProcessInputsToProcessOutputBuffersUsingConnectionsJson();
+							this->initializeControlDataIntoControlEventElement();
+
+							this->printSequencedProcessList();
+							this->printBufferList();
+							this->printSequencedControlList();
+						}
+						else
+						{
+							status = -1;
+#if(dbg >= 1)
+						cout << "getPedalUi failed." << endl;
+#endif
+						}
+					}
+					else
+					{
+						status = -1;
+#if(dbg >= 1)
+						cout << "getControls failed." << endl;
+#endif
+					}
+				}
+				else
+				{
+					status = -1;
+#if(dbg >= 1)
+					cout << "getControlConnections failed." << endl;
+#endif
+				}
+			}
+			else
+			{
+				status = -1;
+#if(dbg >= 1)
+				cout << "getProcesses failed." << endl;
+#endif
+			}
+		}
+		else
+		{
+			status = -1;
+#if(dbg >= 1)
+			cout << "getConnections failed." << endl;
+#endif
+		}
+	}
+	else
+	{
+		status = -1;
+#if(dbg >= 1)
+			cout << "file not found." << endl;
+#endif
+	}
+
+#if(dbg >= 1)
+	cout << "***** EXITING ComboDataInt::loadComboStruct" << endl;
+#endif
+
+	return status;
+
+}
+
+
 #define dbg 0
 void ComboDataInt::getProcParameters(int procIndex, int params[10])
 {
@@ -2611,7 +3344,7 @@ int ComboDataInt::getControlIndex(string targetProcessName, string targetParamet
 	return controlIndex;
 }
 
-#define dbg 1
+#define dbg 0
 int ComboDataInt::getProcessParameterIndex(string processName, string parameterName)
 {
 	int paramIndex = -1;
@@ -2639,7 +3372,7 @@ int ComboDataInt::getProcessParameterIndex(string processName, string parameterN
 	}
 
 #if(dbg == 1)
-	cout << "EXIT: ComboDataInt::getProcessParameterIndex" << endl;
+	cout << "EXITING: ComboDataInt::getProcessParameterIndex" << endl;
 #endif
 	return paramIndex;
 }
@@ -2661,7 +3394,7 @@ int ComboDataInt::getControlParameterIndex(string controlName, string parameterN
 		}
 	}
 #if(dbg == 1)
-	cout << "EXIT: ComboDataInt::getControlParameterIndex" << endl;
+	cout << "EXITING: ComboDataInt::getControlParameterIndex" << endl;
 #endif
 
 	return paramIndex;

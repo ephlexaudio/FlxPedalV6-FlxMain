@@ -37,7 +37,7 @@ extern int comboTime;
 
 extern int procCount;
 extern bool hostGuiActive;
-extern int comboIndex;
+extern int globalComboIndex;
 
 /*
  *  Use this signature to ONLY detect new data (not access it), and
@@ -424,7 +424,7 @@ int BaseUiInt::sendCurrentStatus(char *currentStatus)
 	if(strlen(currentStatus) == 0) currentStatus[0] = ' ';
 	for(int i = 0; i < TX_BUFFER_SIZE; i++) this->uiData[i] = 0;
 
-	sprintf(this->uiData, "currentComboIndex:%d", comboIndex);
+	sprintf(this->uiData, "currentComboIndex:%d", globalComboIndex);
 	strcat(this->uiData, "|currentStatus:");
 	strcat(this->uiData, currentStatus);
 	/*strcat(this->uiData, "|currentData:");
@@ -472,7 +472,7 @@ int BaseUiInt::sendCurrentData(vector<IndexedParameter> currentParams)
 
 	for(int i = 0; i < TX_BUFFER_SIZE; i++) this->uiData[i] = 0;
 
-	sprintf(this->uiData, "currentComboIndex:%d", comboIndex);
+	sprintf(this->uiData, "currentComboIndex:%d", globalComboIndex);
 	/*strcat(this->uiData, "|currentData:");
 	for(int i = 0; i < currentParams.size(); i++)
 	{

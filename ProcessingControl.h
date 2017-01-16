@@ -24,12 +24,12 @@
 //#include "Effects.h"
 #include "GPIOClass.h"
 #include "ComboDataInt.h"
-#include "Combo2.h"
+#include "Processing.h"
 
 class ProcessingControl
 {
 private:
-	Combo *combo;
+	Processing *processing;
 	//bool inputsSwitched;
 	//double inputLevel[4][2];
 
@@ -40,12 +40,13 @@ public:
 	// portConSwitch and areInputsSwitched have to be public to access sysfs (?)
 	//bool areInputsSwitched(void); // see if JACK has connected input jacks backwards
 
-	int load(vector<Process> processesStruct, vector<Json::Value> connectionsJson,
-			vector<Control> controlsStruct, vector<ControlConnection> controlConnectionsStruct);
+	/*int load(vector<Process> processesStruct, vector<Json::Value> connectionsJson,
+			vector<Control> controlsStruct, vector<ControlConnection> controlConnectionsStruct);*/
+	int load(int comboIndex);
 	int start();
 	int stop();
 	int getProcessData(int index, double *data);
-	int clearProcessData(int index, double *data);
+	//int clearProcessData(int index, double *data);
 	int updateFootswitch(int *footswitchStatus);
 	int bypassAllEffects();
 	int updateProcessParameter(int parameterIndex, int parameterValue);

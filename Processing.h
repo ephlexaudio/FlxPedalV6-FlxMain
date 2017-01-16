@@ -5,8 +5,8 @@
  *      Author: mike
  */
 
-#ifndef COMBO_H_
-#define COMBO_H_
+#ifndef PROCESSING_H_
+#define PROCESSING_H_
 
 #include <iostream>
 
@@ -20,13 +20,16 @@
 #include <sys/stat.h>
 #include <json/json.h>
 #include <jack/jack.h>
-//#include "Process.h"
 #include "Effects2.h"
+//#include "Combo.h"
+#include "structs.h"
 #include "ComboDataInt.h"
 #include "utilityFunctions.h"
 #include "jackaudioio.h"
 #define BUFFER_SIZE 1024
 
+
+extern ComboDataInt comboData[10];
 /*typedef struct _processingParams{
 	double lowGateThres;
 	double highGateThres;
@@ -50,10 +53,9 @@ struct _processingParams{
 };
 
 
-
-class Combo: public JackCpp::AudioIO {
+class Processing: public JackCpp::AudioIO {
 private:
-	//Process *process[20];
+	//Combo *combo;
 
 	//ProcessBuffer outProcBuffer;
 	int switchedStatus = 0;
@@ -91,29 +93,26 @@ private:
 	int signalDeltaPositiveCount;
 	int signalDeltaNegativeCount;
 	int aveArrayIndex;
-
+	bool audioCallbackRunning;
+	bool enableEffects;
 public:
-	/*struct */ProcessEvent processSequence[20]; // do these 5 variables/structs need to be public ??
-	ControlEvent controlSequence[20];
-	ProcessBuffer procBufferArray[60];
+	Processing();
+	~Processing();
+	int comboIndex;
 	int footswitchStatus[10];
-	int inputProcBufferIndex[2];
-	int outputProcBufferIndex[2];
-	int processCount;
-	int controlCount;
-	int bufferCount;
-	Combo();
-	~Combo();
+
 
 	/*int setCheckInputs();
 	int clearCheckInputs();*/
 	bool areInputsSwitched(); // needs to be public to access sysfs (?)
 
 	int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::Value> connectionsJson);
-	int loadEffects();
+	int loadCombo(int comboIndex);
+	int enableComboBypass();
+	int disableComboBypass();
 	//int start();
 	//void stop();
-	int stopEffects();
+	int stopCombo(int loadComboIndex);
 	int audioCallback(jack_nframes_t nframes,
 					// A vector of pointers to each input port.
 					audioBufVector inBufs,

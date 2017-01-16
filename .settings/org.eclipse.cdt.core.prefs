@@ -1,0 +1,14 @@
+eclipse.preferences.version=1
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2015.11.output.exe.debug.883829448/append=true
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2015.11.output.exe.debug.883829448/appendContributed=true
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/CC/delimiter=\:
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/CC/operation=replace
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/CC/value=arm-buildroot-linux-uclibcgnueabihf-gcc
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/CXX/delimiter=\:
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/CXX/operation=replace
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/CXX/value=arm-buildroot-linux-uclibcgnueabihf-g++
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/LD/delimiter=\:
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/LD/operation=replace
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/LD/value=arm-buildroot-linux-uclibcgnueabihf-ld
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/append=true
+environment/project/org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1803695409/appendContributed=true

@@ -13,6 +13,7 @@
 #define CONTROL_VALUE_INDEX_MAX 100
 #define AVE_BUFFER_SIZE 16
 #define DIST_AVE_BUFFER_SIZE 3
+#define FOOTSWITCH_ALWAYS_ON 0
 
 /* actions:
  * 		0: load the ProcessEvent data
@@ -151,14 +152,6 @@ int setProcParameters(struct ProcessEvent *procEvent, Process processStruct)
 }
 
 
-int updateProcParameter(string procName, int paramIndex, int paramValue)
-{
-	int status = 0;
-
-
-
-	return status;
-}
 
 int initProcInputBufferIndexes(struct ProcessEvent *procEvent)
 {
@@ -185,7 +178,7 @@ int initProcOutputBufferIndexes(struct ProcessEvent *procEvent)
 }
 
 #define dbg 0
-int setProcInputBufferIndex(struct ProcessEvent *procEvent, int processInputIndex, int inputBufferIndex, struct ProcessBuffer *procBufferArray)
+/*int setProcInputBufferIndex(struct ProcessEvent *procEvent, int processInputIndex, int inputBufferIndex, struct ProcessBuffer *procBufferArray)
 {
 	int status = 0;
 
@@ -199,10 +192,10 @@ int setProcInputBufferIndex(struct ProcessEvent *procEvent, int processInputInde
 
 
 	return status;
-}
+}*/
 
 
-#define dbg 0
+/*#define dbg 0
 int setProcOutputBufferIndex(struct ProcessEvent *procEvent, int processOutputIndex, int outputBufferIndex, struct ProcessBuffer *procBufferArray)
 {
 	int status = 0;
@@ -217,7 +210,7 @@ int setProcOutputBufferIndex(struct ProcessEvent *procEvent, int processOutputIn
 #endif
 
 	return status;
-}
+}*/
 
 #define dbg 1
 
@@ -237,14 +230,29 @@ int control(int action, bool gate, struct ControlEvent *controlEvent, struct Pro
 			//int peakValueIndex = 50;//controlEvent->parameter[4];
 
 			controlEvent->controlContext = (EnvGenContext *)calloc(1, sizeof(EnvGenContext));
-			((EnvGenContext *)(controlEvent->controlContext))->envStage = 0;
-
-			((EnvGenContext *)(controlEvent->controlContext))->stageTimeValue = 0;
+			if(controlEvent->controlContext == NULL)
+			{
+				std::cout << "EnvGenContext control calloc failed." << std::endl;
+			}
+			else
+			{
+				std::cout << "EnvGenContext control calloc succeeded." << std::endl;
+				((EnvGenContext *)(controlEvent->controlContext))->envStage = 0;
+				((EnvGenContext *)(controlEvent->controlContext))->stageTimeValue = 0;
+			}
 		}
 		else if(controlEvent->type == 2)
 		{
 			controlEvent->controlContext = (LfoContext *)calloc(1, sizeof(LfoContext));
-			((LfoContext *)(controlEvent->controlContext))->cycleTimeValueIndex = 0;
+			if(controlEvent->controlContext == NULL)
+			{
+				std::cout << "LfoContext control calloc failed." << std::endl;
+			}
+			else
+			{
+				std::cout << "LfoContext control calloc succeeded." << std::endl;
+				((LfoContext *)(controlEvent->controlContext))->cycleTimeValueIndex = 0;
+			}
 		}
 	}
 	else if(action == 1)
@@ -259,6 +267,11 @@ int control(int action, bool gate, struct ControlEvent *controlEvent, struct Pro
 		}
 		else if(controlEvent->type == 1) // envelope generator
 		{
+			if(controlEvent->controlContext == NULL)
+			{
+				cout << "audioCallback control context not allocated" << endl;
+				return -1;
+			}
 
 			if(gate == true && controlEvent->envTriggerStatus == false) // pick detected
 			{
@@ -384,6 +397,12 @@ int control(int action, bool gate, struct ControlEvent *controlEvent, struct Pro
 		}
 		else if(controlEvent->type == 2) // LFO
 		{
+			if(controlEvent->controlContext == NULL)
+			{
+				cout << "audioCallback control context not allocated" << endl;
+				return -1;
+			}
+
 			unsigned int cycleTimeValueIndex = ((LfoContext *)(controlEvent->controlContext))->cycleTimeValueIndex;
 			double cyclePositionValue = ((LfoContext *)(controlEvent->controlContext))->cyclePositionValue;
 			int int_cyclePositionValue;
@@ -434,7 +453,7 @@ int control(int action, bool gate, struct ControlEvent *controlEvent, struct Pro
 	}
 	else if(action == 3)
 	{
-
+		free(controlEvent->controlContext);
 	}
 	else
 	{
@@ -497,12 +516,17 @@ int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pro
 	{
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		procEvent->processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
-		((DelayContext *)(procEvent->processContext))->inputPtr = 0;
-		((DelayContext *)(procEvent->processContext))->outputPtr = 0;
-		((DelayContext *)(procEvent->processContext))->delayBuffer[0]=0.0;
 		if(procEvent->processContext == NULL)
 		{
 			std::cout << "delayb calloc failed." << std::endl;
+		}
+		else
+		{
+			std::cout << "delayb calloc succeeded." << std::endl;
+			((DelayContext *)(procEvent->processContext))->inputPtr = 0;
+			((DelayContext *)(procEvent->processContext))->outputPtr = 0;
+			((DelayContext *)(procEvent->processContext))->delayBuffer[0]=0.0;
+
 		}
 		procEvent->processFinished = false;
 
@@ -523,6 +547,12 @@ int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pro
 		unsigned int delay = 0;
 
 		//double gain, breakpoint, edge;
+
+		if(procEvent->processContext == NULL)
+		{
+			cout << "audioCallback delayb context not allocated" << endl;
+			return -1;
+		}
 
 		unsigned int i;
 		unsigned int inputPtr = ((DelayContext *)(procEvent->processContext))->inputPtr;
@@ -549,6 +579,7 @@ int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pro
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		for(i = 0; i < bufferSize; i++)
 		{
+#if(FOOTSWITCH_ALWAYS_ON == 0)
 			if(footswitchStatus[procEvent->footswitchNumber] == 0)
 			{
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
@@ -556,6 +587,7 @@ int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pro
 				((DelayContext *)(procEvent->processContext))->delayBuffer[inputPtr++] = 0.0;
 			}
 			else
+#endif
 			{
 				((DelayContext *)(procEvent->processContext))->delayBuffer[inputPtr] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
 
@@ -587,8 +619,16 @@ int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pro
 	}
 	else if(action == 3)
 	{
-		free(procEvent->processContext);
-		procEvent->processFinished = false;
+		if(procEvent->processContext == NULL || procEvent == NULL)
+		{
+			std::cout << "delayb processContext missing." << std::endl;
+		}
+		else
+		{
+			std::cout << "freeing allocated delayb." << std::endl;
+			free(procEvent->processContext);
+			procEvent->processFinished = false;
+		}
 
 		return 0;
 	}
@@ -613,9 +653,13 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 		{
 			std::cout << "filter3bb calloc failed." << std::endl;
 		}
-		for(unsigned int i = 0; i < 50; i++)
+		else
 		{
-			((double *)procEvent->processContext)[i] = 0.00;
+			std::cout << "filter3bb calloc succeeded." << std::endl;
+			for(unsigned int i = 0; i < 50; i++)
+			{
+				((double *)procEvent->processContext)[i] = 0.00;
+			}
 		}
 		procEvent->processFinished = false;
 
@@ -647,6 +691,11 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 		double couplingFilter_y[4], couplingFilter_x[4];
 		double noiseFilter_y[4], noiseFilter_x[4];
 
+		if(procEvent->processContext == NULL)
+		{
+			cout << "audioCallback filter3bb context not allocated" << endl;
+			return -1;
+		}
 
 		for(i = 0; i < NUMBER_OF_BANDS; i++)
 		{
@@ -755,6 +804,7 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[1]]);
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[2]]);
 
+#if(FOOTSWITCH_ALWAYS_ON == 0)
 		if(footswitchStatus[procEvent->footswitchNumber] == 0)
 		{
 			for(i = 0; i < bufferSize; i++)
@@ -768,6 +818,7 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 			}
 		}
 		else
+#endif
 		{
 			for(i = 0; i < bufferSize; i++)
 			{
@@ -915,12 +966,13 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 	}
 	else if(action == 3)
 	{
-		if(procEvent->processContext == NULL)
+		if(procEvent->processContext == NULL || procEvent == NULL)
 		{
 			std::cout << "filter3bb processContext missing." << std::endl;
 		}
 		else
 		{
+			std::cout << "freeing allocated filter3bb." << std::endl;
 			free(procEvent->processContext);
 			procEvent->processFinished = false;
 		}
@@ -948,9 +1000,13 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 		{
 			std::cout << "filter3bb2 calloc failed." << std::endl;
 		}
-		for(unsigned int i = 0; i < 50; i++)
+		else
 		{
-			((double *)procEvent->processContext)[i] = 0.00;
+			std::cout << "filter3bb2 calloc succeeded." << std::endl;
+			for(unsigned int i = 0; i < 50; i++)
+			{
+				((double *)procEvent->processContext)[i] = 0.00;
+			}
 		}
 		procEvent->processFinished = false;
 
@@ -983,6 +1039,11 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 		double couplingFilter_y[3], couplingFilter_x[3];
 		double noiseFilter_y[3], noiseFilter_x[3];
 
+		if(procEvent->processContext == NULL)
+		{
+			cout << "audioCallback filter3bb2 context not allocated" << endl;
+			return -1;
+		}
 
 		for(j = 0; j < 3; j++)
 		{
@@ -1055,6 +1116,7 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[1]]);
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[2]]);
 
+#if(FOOTSWITCH_ALWAYS_ON == 0)
 		if(footswitchStatus[procEvent->footswitchNumber] == 0)
 		{
 			for(i = 0; i < bufferSize; i++)
@@ -1068,6 +1130,7 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 			}
 		}
 		else
+#endif
 		{
 			for(i = 0; i < bufferSize; i++)
 			{
@@ -1168,6 +1231,8 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 		updateBufferOffset(&procBufferArray[procEvent->outputBufferIndexes[2]]);
 
 
+		if(procEvent->processContext == NULL) return -1;
+
 		contextIndex = 0;
 
 		for(j = 0; j < 3; j++)
@@ -1222,12 +1287,13 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 	}
 	else if(action == 3)
 	{
-		if(procEvent->processContext == NULL)
+		if(procEvent->processContext == NULL || procEvent == NULL)
 		{
 			std::cout << "filter3bb2 processContext missing." << std::endl;
 		}
 		else
 		{
+			std::cout << "freeing allocated filter3bb2." << std::endl;
 			free(procEvent->processContext);
 			procEvent->processFinished = false;
 		}
@@ -1258,9 +1324,13 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 		{
 			std::cout << "lohifilterb calloc failed." << std::endl;
 		}
-		for(i = 0; i < 50; i++)
+		else
 		{
-			((double *)procEvent->processContext)[i] = 0.00;
+			std::cout << "lohifilterb calloc succeeded." << std::endl;
+			for(i = 0; i < 50; i++)
+			{
+				((double *)procEvent->processContext)[i] = 0.00;
+			}
 		}
 		procEvent->processFinished = false;
 		for(i = 0; i < 256; i++)
@@ -1284,6 +1354,11 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 		outputSum[1] = 0.00000;
 
 
+		if(procEvent->processContext == NULL)
+		{
+			cout << "audioCallback lohifilterb context not allocated" << endl;
+			return -1;
+		}
 		//for(int i = 0; i < 1; i++)
 		i = 0;
 		{
@@ -1349,6 +1424,7 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 
 			for(i = 0; i < bufferSize; i++)
 			{
+#if(FOOTSWITCH_ALWAYS_ON == 0)
 				if(footswitchStatus[procEvent->footswitchNumber] == 0)//(input[i] > 0.00000)
 				{
 					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
@@ -1357,6 +1433,7 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 					processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[1]]);
 				}
 			    else
+#endif
 			    {
 					/********************* Lowpass filter ********************/
 					lp_x[j][0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
@@ -1435,12 +1512,13 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 	}
 	else if(action == 3)
 	{
-		if(procEvent->processContext == NULL)
+		if(procEvent->processContext == NULL || procEvent == NULL)
 		{
 			std::cout << "lohifilterb processContext missing." << std::endl;
 		}
 		else
 		{
+			std::cout << "freeing allocated lohifilterb." << std::endl;
 			free(procEvent->processContext);
 			procEvent->processFinished = false;
 		}
@@ -1478,11 +1556,13 @@ int mixerb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pro
 
 		for(i = 0; i < bufferSize; i++)
 		{
+#if(FOOTSWITCH_ALWAYS_ON == 0)
 			if(footswitchStatus[procEvent->footswitchNumber] == 0)
 			{
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 			}
 			else
+#endif
 			{
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = levelOut*(level1*(procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset) +
 						level2*(procBufferArray[procEvent->inputBufferIndexes[1]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[1]].offset) +
@@ -1511,8 +1591,7 @@ int mixerb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pro
 	}
 	else if(action == 3)
 	{
-		//free(procEvent->processContext);
-		procEvent->processFinished = false;
+
 		return 0;
 	}
 	else
@@ -1544,11 +1623,13 @@ int volumeb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pr
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		for(i = 0; i < bufferSize; i++)
 		{
+#if(FOOTSWITCH_ALWAYS_ON == 0)
 			if(footswitchStatus[procEvent->footswitchNumber] == 0)
 			{
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 			}
 			else
+#endif
 			{
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = vol*(procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset);
 				//outputSum += procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
@@ -1569,8 +1650,7 @@ int volumeb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pr
 	}
 	else if(action == 3)
 	{
-		procEvent->processFinished = false;
-		free(procEvent->processContext);
+
 
 		return 0;
 	}
@@ -1593,64 +1673,69 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 		{
 			std::cout << "waveshaperb calloc failed." << std::endl;
 		}
-		for(i = 0; i < 50; i++)
+		else
 		{
-			((double *)procEvent->processContext)[i] = 0.00;
+			std::cout << "waveshaperb calloc succeeded." << std::endl;
+			for(i = 0; i < 50; i++)
+			{
+				((double *)procEvent->processContext)[i] = 0.00;
+			}
+			const double r1 = 1000.0;
+			const double r2 = 2000.0;
+			const double r3 = 500.0;
+			const double r4 = 120.0;
+			const double r5 = 50.0;
+			int contextIndex = 0;
+			/* Calculate constants for waveshaper algorithm */
+			((double *)procEvent->processContext)[contextIndex++] = 0.0; // outMeasure
+			/*((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 0
+			((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 1
+			((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 2
+			((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 3*/
+
+			for(j = 0; j < 3; j++)
+			{
+				 ((double *)procEvent->processContext)[contextIndex++] = 0.00000;
+				 ((double *)procEvent->processContext)[contextIndex++] = 0.00000;
+			}
+
+			((double *)procEvent->processContext)[contextIndex++] = r2*r3*r4*r5;
+			((double *)procEvent->processContext)[contextIndex++] = r1*r3*r4*r5;
+			((double *)procEvent->processContext)[contextIndex++] = r1*r2*r4*r5;
+			((double *)procEvent->processContext)[contextIndex++] = r1*r2*r3*r5;
+			((double *)procEvent->processContext)[contextIndex++] = r1*r2*r3*r4;
+
+			((double *)procEvent->processContext)[contextIndex++] = r2*r3*r4;
+			((double *)procEvent->processContext)[contextIndex++] = r1*r3*r4;
+			((double *)procEvent->processContext)[contextIndex++] = r1*r2*r4;
+			((double *)procEvent->processContext)[contextIndex++] = r1*r2*r3;
+			((double *)procEvent->processContext)[contextIndex++] = 0;
+
+			((double *)procEvent->processContext)[contextIndex++] = r2*r3;
+			((double *)procEvent->processContext)[contextIndex++] = r1*r3;
+			((double *)procEvent->processContext)[contextIndex++] = r1*r2;
+			((double *)procEvent->processContext)[contextIndex++] = 0;
+			((double *)procEvent->processContext)[contextIndex++] = 0;
+
+			((double *)procEvent->processContext)[contextIndex++] = r2;
+			((double *)procEvent->processContext)[contextIndex++] = r1;
+			((double *)procEvent->processContext)[contextIndex++] = 0;
+			((double *)procEvent->processContext)[contextIndex++] = 0;
+			((double *)procEvent->processContext)[contextIndex++] = 0;
+
+			((double *)procEvent->processContext)[contextIndex++] = 1;
+			((double *)procEvent->processContext)[contextIndex++] = 0;
+			((double *)procEvent->processContext)[contextIndex++] = 0;
+			((double *)procEvent->processContext)[contextIndex++] = 0;
+			((double *)procEvent->processContext)[contextIndex++] = 0;
+
+			((double *)procEvent->processContext)[contextIndex++] = 0.200;
+			((double *)procEvent->processContext)[contextIndex++] = 0.350;
+			((double *)procEvent->processContext)[contextIndex++] = 0.60;
+			((double *)procEvent->processContext)[contextIndex++] = 0.80;
+
 		}
 
-		const double r1 = 1000.0;
-		const double r2 = 2000.0;
-		const double r3 = 500.0;
-		const double r4 = 120.0;
-		const double r5 = 50.0;
-		int contextIndex = 0;
-		/* Calculate constants for waveshaper algorithm */
-		((double *)procEvent->processContext)[contextIndex++] = 0.0; // outMeasure
-		/*((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 0
-		((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 1
-		((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 2
-		((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 3*/
-
-		for(j = 0; j < 3; j++)
-		{
-			 ((double *)procEvent->processContext)[contextIndex++] = 0.00000;
-			 ((double *)procEvent->processContext)[contextIndex++] = 0.00000;
-		}
-
-		((double *)procEvent->processContext)[contextIndex++] = r2*r3*r4*r5;
-		((double *)procEvent->processContext)[contextIndex++] = r1*r3*r4*r5;
-		((double *)procEvent->processContext)[contextIndex++] = r1*r2*r4*r5;
-		((double *)procEvent->processContext)[contextIndex++] = r1*r2*r3*r5;
-		((double *)procEvent->processContext)[contextIndex++] = r1*r2*r3*r4;
-
-		((double *)procEvent->processContext)[contextIndex++] = r2*r3*r4;
-		((double *)procEvent->processContext)[contextIndex++] = r1*r3*r4;
-		((double *)procEvent->processContext)[contextIndex++] = r1*r2*r4;
-		((double *)procEvent->processContext)[contextIndex++] = r1*r2*r3;
-		((double *)procEvent->processContext)[contextIndex++] = 0;
-
-		((double *)procEvent->processContext)[contextIndex++] = r2*r3;
-		((double *)procEvent->processContext)[contextIndex++] = r1*r3;
-		((double *)procEvent->processContext)[contextIndex++] = r1*r2;
-		((double *)procEvent->processContext)[contextIndex++] = 0;
-		((double *)procEvent->processContext)[contextIndex++] = 0;
-
-		((double *)procEvent->processContext)[contextIndex++] = r2;
-		((double *)procEvent->processContext)[contextIndex++] = r1;
-		((double *)procEvent->processContext)[contextIndex++] = 0;
-		((double *)procEvent->processContext)[contextIndex++] = 0;
-		((double *)procEvent->processContext)[contextIndex++] = 0;
-
-		((double *)procEvent->processContext)[contextIndex++] = 1;
-		((double *)procEvent->processContext)[contextIndex++] = 0;
-		((double *)procEvent->processContext)[contextIndex++] = 0;
-		((double *)procEvent->processContext)[contextIndex++] = 0;
-		((double *)procEvent->processContext)[contextIndex++] = 0;
-
-		((double *)procEvent->processContext)[contextIndex++] = 0.200;
-		((double *)procEvent->processContext)[contextIndex++] = 0.350;
-		((double *)procEvent->processContext)[contextIndex++] = 0.60;
-		((double *)procEvent->processContext)[contextIndex++] = 0.80;
 		procEvent->processFinished = false;
 		for(i = 0; i < 256; i++)
 		{
@@ -1672,6 +1757,12 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 		double outMeasure;
 		double outputSum = 0.00000;
 		double noiseFilter_y[3], noiseFilter_x[3];
+
+		if(procEvent->processContext == NULL)
+		{
+			cout << "audioCallback waveshaperb context not allocated" << endl;
+			return -1;
+		}
 
 		outMeasure = ((double *)procEvent->processContext)[contextIndex++];
 		/*distAveArray[0] = ((double *)procEvent->processContext)[contextIndex++];
@@ -1737,11 +1828,13 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		for(i = 0; i < bufferSize; i++)
 		{
+#if(FOOTSWITCH_ALWAYS_ON == 0)
 			if(footswitchStatus[procEvent->footswitchNumber] == 0)//(input[i] > 0.00000)
 			{
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 			}
 			else
+#endif
 			{
 				if (v[3] < outMeasure) kIndex = 4;
 				else if (v[2] < outMeasure && outMeasure <= v[3]) kIndex = 3;
@@ -1818,14 +1911,15 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 	}
 	else if(action == 3)
 	{
-		if(procEvent->processContext == NULL)
+		if(procEvent->processContext == NULL || procEvent == NULL)
 		{
 			std::cout << "waveshaperb processContext missing." << std::endl;
 		}
 		else
 		{
+			std::cout << "freeing allocated waveshaperb." << std::endl;
 			procEvent->processFinished = false;
-			//free(procEvent->processContext); // for some reason, this causes a SIGABRT after a third combo selection
+			free(procEvent->processContext); // for some reason, this causes a SIGABRT after a third combo selection
 		}
 		return 0;
 	}

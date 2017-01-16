@@ -71,7 +71,7 @@ int resetProcBuffer(struct ProcessBuffer procBufferArray);
 int setProcData(struct ProcessEvent *procEvent, Process processStruct);
 
 int setProcParameters(struct ProcessEvent *procEvent, Process processStruct);
-int updateProcParameter(string procName, int paramIndex, int paramValue);
+
 int initProcInputBufferIndexes(struct ProcessEvent *procEvent);
 int initProcOutputBufferIndexes(struct ProcessEvent *procEvent);
 

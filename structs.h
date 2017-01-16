@@ -205,4 +205,20 @@ struct ControlEvent{
 	unsigned int int_output;
 };
 
+
+
+/*struct Combo {
+	ProcessEvent processSequence[20]; // do these 5 variables/structs need to be public ??
+	ControlEvent controlSequence[20];
+	ProcessBuffer procBufferArray[60];
+	int footswitchStatus[10];
+	int inputProcBufferIndex[2];
+	int outputProcBufferIndex[2];
+	int processCount;
+	int controlCount;
+	int bufferCount;
+	Json::Value pedalUi;
+};*/
+
+
 #endif /* STRUCTS_H_ */

@@ -56,7 +56,7 @@ extern std::vector<linuxProcess> linuxProcessList;
 #define FILE_LENGTH 1000
 extern jack_client_t *ofxJackClient;
 
-extern ComboDataInt comboData;
+//extern ComboDataInt comboData;
 //extern PedalUiInt pedalUi;
 //extern ConnectionCont connCont;
 //extern std::vector<string> componentList;
@@ -281,14 +281,14 @@ int initializePedal(char *fileName)
 #endif
 
 
-	if(status == 0)
+	/*if(status == 0)
 	{
 		comboData.getCombo(fileName);
 		if(comboData.getPedalUi() != 0)
 		{
 			status = 1;
 		}
-	}
+	}*/
 
 	/*************  Initialize PCB UI Interface  *************/
 
@@ -439,7 +439,7 @@ int getRunningProcesses(void)
 
 
 #define dbg 1
-int loadCombo(void)
+/*int loadCombo(void)
 {
 	int status = 0;
 	startTimer();
@@ -456,26 +456,6 @@ int loadCombo(void)
 #if(dbg==1)
 	printf("number of effects:%d\n", effectCount);
 #endif
-	/*for(int i = 0; i < effectCount; i++)
-	{
-#if(dbg==1)
-		printf("\teffect abbr: %s\n",(const char*)(comboData.pedalUiJson["effects"][i]["abbr"].asString().c_str()));
-		printf("\teffect name: %s\n",(const char*)comboData.pedalUiJson["effects"][i]["name"].asString().c_str());
-#endif
-
-		//int paramCount = comboData.pedalUiJson["effects"][i]["params"].size();
-#if(dbg==1)
-		printf("\tnumber of parameters:%d\n", paramCount);
-		for(int j = 0 ; j < paramCount; j++)
-		{
-			printf("\t\t param abbr: %s\n", comboData.pedalUiJson["effects"][i]["params"][j]["abbr"].asString().c_str());
-
-			printf("\t\t param name: %s\n", comboData.pedalUiJson["effects"][i]["params"][j]["name"].asString().c_str());
-
-			printf("\t\t param value: %s\n", comboData.pedalUiJson["effects"][i]["params"][j]["value"].asString().c_str());
-		}
-#endif
-	}*/
 
 	if(status == 0)
 	{
@@ -562,7 +542,7 @@ int loadCombo(void)
 
 	stopTimer("loadCombo");
 	return status;
-}
+}*/
 
 // run and connect processes
 #define dbg 0
@@ -629,7 +609,7 @@ int stopCombo(void)
 	char procOutput[15];
 	int connCount = 0;
 	//stopJack();
-	procCont.stop();//stopCombo();
+	//procCont.stop();//stopCombo();
 	sleep(1);
 	char disconnString[100];
 	startTimer();

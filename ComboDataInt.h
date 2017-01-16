@@ -114,7 +114,17 @@ public:
 	std::vector<Control> controlsStruct;
 	std::vector<ControlConnection> controlConnectionsStruct;
 	//std::vector<Parameter> parameterArray;
-	PedalUI pedalUiStruct;
+
+	ProcessEvent processSequence[20]; // do these 5 variables/structs need to be public ??
+	ControlEvent controlSequence[20];
+	ProcessBuffer procBufferArray[60];
+	int footswitchStatus[10];
+	int inputProcBufferIndex[2];
+	int outputProcBufferIndex[2];
+	int processCount;
+	int controlCount;
+	int bufferCount;
+
 	void printSequencedConnectionList();
 	void printUnsequencedProcessList();
 	void printSequencedProcessList();
@@ -124,9 +134,11 @@ public:
 	void printSortedParameters();
 	void printDataReadyList(void);
 	void printControlList(void);
+	void printSequencedControlList(void);
 	void printControlParameterList();
 	void printControlConnectionList(void);
 	void printControlParameter(int controlParameterIndex);
+	void printBufferList(void);
 	int getCombo(char *comboName); //get JSON data and parse into effectComboJson
 	int getPedalUi(void); // setup pedalUiJson using effectComboJson
 	int getConnections(void); // setup connectionsJson using effectComboJson
@@ -134,6 +146,26 @@ public:
 	int getProcesses(void); // setup processesStruct and unsortedParameterArray using effectComboJson
 	int getControls(void);	// setup controlsStruct and controlParameterArray using effectComboJson
 	int getControlConnections(void);  // setup controlConnectionsStruct using effectComboJson
+
+	int initProcBuffers(struct ProcessBuffer *procBufferArray);
+	int setProcBuffer(struct ProcessBuffer procBufferArray, int processed, int ready);
+	int resetProcBuffer(struct ProcessBuffer procBufferArray);
+
+	int setProcData(struct ProcessEvent *procEvent, Process processStruct);
+
+	int setProcParameters(struct ProcessEvent *procEvent, Process processStruct);
+
+	int initProcInputBufferIndexes(struct ProcessEvent *procEvent);
+	int initProcOutputBufferIndexes(struct ProcessEvent *procEvent);
+
+	int setProcInputBufferIndex(struct ProcessEvent *procEvent, int processInputIndex, int inputBufferIndex, struct ProcessBuffer *procBufferArray);
+	int setProcOutputBufferIndex(struct ProcessEvent *procEvent, int processOutputIndex, int outputBufferIndex, struct ProcessBuffer *procBufferArray);
+
+	int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::Value> connectionsJson);
+	int connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray();
+	int connectProcessInputsToProcessOutputBuffersUsingConnectionsJson();
+	int initializeControlDataIntoControlEventElement();
+	int loadComboStruct(char *comboName);
 	void getProcParameters(int procIndex, int params[10]);
 	int saveCombo(void/*Json::Value combo*/);
 	int updateJson(int paramIndex, int paramValue);
