@@ -48,7 +48,8 @@ public:
 	int getProcessData(int index, double *data);
 	//int clearProcessData(int index, double *data);
 	int updateFootswitch(int *footswitchStatus);
-	int bypassAllEffects();
+	int enableEffects();
+	int disableEffects();
 	int updateProcessParameter(int parameterIndex, int parameterValue);
 	int updateControlParameter(int parameterIndex, int parameterValue);
 

@@ -8,7 +8,7 @@
 
 
 #include "ProcessingControl.h"
-extern ComboDataInt comboData[10];
+extern ComboDataInt comboData[15];
 extern int globalComboIndex;
 extern bool justPoweredUp;
 extern bool inputsSwitched;
@@ -205,7 +205,7 @@ int ProcessingControl::start() // start clients and connect them
 int ProcessingControl::stop() // stop clients and disconnect them
 {
 	int status = 0;
-	this->processing->bypassAll(); // set to straight-thru to avoid XRun
+	//this->processing->bypassAll(); // set to straight-thru to avoid XRun
 	//this->processing->stopEffects();
 	//sleep(2);
 	this->processing->disconnectInPort(0);	// Disconnecting ports.
@@ -327,13 +327,18 @@ int ProcessingControl::updateControlParameter(int parameterIndex, int parameterV
 }
 
 
-int ProcessingControl::bypassAllEffects()
+int ProcessingControl::enableEffects()
 {
-	int status = 0;
 
-	this->processing->bypassAll();
+	this->processing->enableProcessing();
+	return 0;
+}
 
-	return status;
+int ProcessingControl::disableEffects()
+{
+
+	this->processing->disableProcessing();
+	return 0;
 }
 
 

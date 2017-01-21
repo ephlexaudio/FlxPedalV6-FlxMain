@@ -49,7 +49,7 @@ public:
 	int checkForNewPedalData(void);
 	//string getUserRequest(void);
 	//int processUserRequest(char *request);
-	int sendComboUiData(Json::Value uiData);
+	int sendComboUiData(Json::Value uiJson);
 	//int sendComboList(string comboLists);
 	//int sendCurrentStatus(char *currentStatus);
 	//int sendCurrentData(vector<IndexedParameter> currentParams);

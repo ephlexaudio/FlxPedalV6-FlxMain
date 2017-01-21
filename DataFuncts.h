@@ -31,7 +31,7 @@ std::vector<string> getComponentList(void);
 std::string getComponentData(std::string componentName);
 std::vector<string> getComboList(void);
 std::string getComboData(std::string comboName);
-int saveCombo(std::string comboData);
+string saveCombo(std::string comboData);
 int deleteCombo(std::string comboName);
 
 

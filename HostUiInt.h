@@ -30,6 +30,9 @@ public:
 	virtual ~HostUiInt();
 
 	// Files are retrieved from the directory and sent straight to the host
+	int connect();
+	int disconnect();
+	int isConnected();
 
 	int checkForNewHostData(void);
 	string getUserRequest(void);
@@ -37,7 +40,7 @@ public:
 	int sendCurrentStatus(char *currentStatus);
 	int sendCurrentData(vector<IndexedParameter> currentParams);
 	int sendComboToHost(string comboName);
-	int getComboFromHost(string comboData);
+	string getComboFromHost(string comboData);
 	int sendSimpleResponse(char *response);
 
 };

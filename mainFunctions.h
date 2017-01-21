@@ -60,6 +60,11 @@ int loadCombo(void);
 int runCombo(void);
 //int updateCombo(int paramIndex, int paramValueIndex);
 int stopCombo(void);
+int loadComboStructArray(vector<string> comboList);
+int addComboStruct(string comboName);
+int deleteComboStruct(char *comboName);
+int getComboIndex(string comboName);
+
 int readFootswitches(void);
 int bypassAll(void);
 #endif /* MAINFUNCTIONS_H_ */

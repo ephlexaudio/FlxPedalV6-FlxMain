@@ -139,7 +139,9 @@ public:
 	void printControlConnectionList(void);
 	void printControlParameter(int controlParameterIndex);
 	void printBufferList(void);
-	int getCombo(char *comboName); //get JSON data and parse into effectComboJson
+
+	int getCombo(char *comboName); //get JSON data from file and parse into effectComboJson
+	int getCombo(string comboData); //get JSON data from input string and parse into effectComboJson
 	int getPedalUi(void); // setup pedalUiJson using effectComboJson
 	int getConnections(void); // setup connectionsJson using effectComboJson
 	int getConnections2(void);
@@ -165,7 +167,9 @@ public:
 	int connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray();
 	int connectProcessInputsToProcessOutputBuffersUsingConnectionsJson();
 	int initializeControlDataIntoControlEventElement();
-	int loadComboStruct(char *comboName);
+	int loadComboStructFromName(char *comboName);
+	int loadComboStructFromJsonString(string comboJson);
+
 	void getProcParameters(int procIndex, int params[10]);
 	int saveCombo(void/*Json::Value combo*/);
 	int updateJson(int paramIndex, int paramValue);
@@ -178,8 +182,10 @@ public:
 	int getControlParameterIndex(string controlName, string parameterName);
 	int updateProcess(int absParamIndex, int valueIndex);
 	int updateControl(int absParamIndex, int valueIndex);
+	string getName();
 };
 
+string getComboStringFromFile(string comboName);
 
 
 #endif /* DATABASEINT_H_ */

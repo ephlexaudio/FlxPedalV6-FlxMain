@@ -19,6 +19,7 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <errno.h>
 #include "utilityFunctions.h"
 
 #define FILE_SIZE 32000
@@ -29,10 +30,13 @@ private:
 	char usbInputBuffer[FILE_SIZE];
 	char usbOutputBuffer[FILE_SIZE];
 	int hostUiFD;
+	int connectionStatus;
 public:
 	UsbInt();
 	~UsbInt();
-
+	int connect();
+	int disconnect();
+	int isConnected();
 	int newData(void);
 	char* readData(void);
 	int writeData(char* input);

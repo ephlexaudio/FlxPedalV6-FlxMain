@@ -452,7 +452,9 @@ std::string getComboData(std::string comboName)
 	{
 		while(fgets(jsonBuffer,FILE_SIZE,fdCombo) != NULL)
 		{
+#if(dbg>=2)
 			puts(jsonBuffer);
+#endif
 		}
 		jsonBufferString = string(jsonBuffer);
 
@@ -482,13 +484,14 @@ std::string getComboData(std::string comboName)
 	return jsonBufferString;
 }
 
-#define dbg 2
-int saveCombo(std::string comboData)
+#define dbg 1
+string saveCombo(std::string comboJson)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: DataFuncts::saveCombo" << endl;
 #endif
 	int status = 0;
+	string name;
 	FILE *saveComboFD;
 	Json::Value tempJsonCombo;
 	int charCount = 0;
@@ -502,8 +505,10 @@ int saveCombo(std::string comboData)
 	}
 	char fileNameBuffer[40];
 
-	cout << "pre parsed JSON string: " << comboData.c_str() << endl;
-	if(dataReader.parse(comboData.c_str(), tempJsonCombo))
+#if(dbg>=2)
+	cout << "pre parsed JSON string: " << comboJson.c_str() << endl;
+#endif
+	if(dataReader.parse(comboJson.c_str(), tempJsonCombo))
 	{
 		sprintf(fileNameBuffer, "/home/Combos/%s.txt", tempJsonCombo["name"].asString().c_str());
 #if(dbg>=2)
@@ -512,7 +517,7 @@ int saveCombo(std::string comboData)
 		//saveComboFD = fopen(fileNameString,"w");
 		if((saveComboFD = fopen(fileNameBuffer,"w")) != NULL )
 		{
-			strcpy(comboDataBuffer, comboData.c_str());
+			strcpy(comboDataBuffer, comboJson.c_str());
 			for(int i = 0; comboDataBuffer[i] != 0; i++) charCount++;
 			strncpy(parsedComboDataBuffer, comboDataBuffer, charCount);
 #if(dbg>=2)
@@ -523,6 +528,7 @@ int saveCombo(std::string comboData)
 			std::cout << "OfxMain/DataFuncts/saveCombo bytes written: " << bytesWritten << endl;
 #endif
 			fclose(saveComboFD);
+			name = tempJsonCombo["name"].asString();
 		}
 		else
 		{
@@ -539,7 +545,7 @@ int saveCombo(std::string comboData)
 #if(dbg >= 1)
 	cout << "***** EXITING: DataFuncts::saveCombo" << endl;
 #endif
-	return status;
+	return name;
 }
 
 

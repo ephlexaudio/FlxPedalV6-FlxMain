@@ -60,7 +60,7 @@ extern jack_client_t *ofxJackClient;
 //extern PedalUiInt pedalUi;
 //extern ConnectionCont connCont;
 //extern std::vector<string> componentList;
-//extern std::vector<string> comboList;
+extern std::vector<string> comboList;
 //extern std::vector<ProcessInt> procIntArray;
 extern int ofxPid;
 extern int childPgid;
@@ -619,6 +619,142 @@ int stopCombo(void)
 
 	  stopTimer("stopCombo");
 	return status;
+}
+
+#define dbg 1
+int loadComboStructArray(vector<string> comboList)
+{
+	int status = 0;
+
+#if(dbg >= 1)
+	cout << "*****ENTERING loadComboStructArray" << endl;
+#endif
+
+	for(vector<string>::size_type comboListIndex = 0; comboListIndex < comboList.size(); comboListIndex++)
+	{
+		if(comboData[comboListIndex].loadComboStructFromName((char *)comboList[comboListIndex].c_str()) < 0)
+		{
+			cout << "failed to open file: " << (char *)comboList[comboListIndex].c_str();
+		}
+	}
+
+
+#if(dbg >= 1)
+	cout << "***** EXITING loadComboStructArray" << endl;
+#endif
+	return status;
+}
+
+#define dbg 1
+int addComboStruct(string comboName)
+{
+	int status = 0;
+#if(dbg >= 1)
+	cout << "*****ENTERING addComboStruct" << endl;
+#endif
+	int index = 0;
+
+	for(index = 0; index < 15; index++)
+	{
+		if(comboData[index].effectComboJson["name"].empty() == true)
+		{
+			break;
+		}
+		else
+		{
+			cout << "comboData[" << index << "]:" << comboData[index].effectComboJson["name"] << endl;
+		}
+	}
+
+	cout << "writing to combo index: " << index << endl;
+	//comboData[index].loadComboStructFromName((char *)comboName.c_str());
+	string comboJson = getComboStringFromFile(comboName);
+	comboData[index].loadComboStructFromJsonString(comboJson);
+#if(dbg >= 1)
+	cout << "***** EXITING addComboStruct" << endl;
+#endif
+
+	return status;
+}
+
+#define dbg 1
+int deleteComboStruct(char *comboName)
+{
+	int status = 0;
+#if(dbg >= 1)
+	cout << "*****ENTERING deleteComboStruct" << endl;
+#endif
+	int index = getComboIndex(string(comboName));
+
+	cout << "removing " << index << ":" << comboName << endl;
+	if(index >= 0)
+	{
+		comboData[index].connectionsJson.clear();
+
+		comboData[index].effectComboJson.clear();
+		comboData[index].pedalUiJson.clear();
+		comboData[index].unsequencedProcessListJson.clear();
+		comboData[index].unsequencedProcessListStruct.clear();
+		comboData[index].unsequencedConnectionListJson.clear();
+
+		comboData[index].connectionsJson.clear();
+		comboData[index].processesJson.clear();
+		comboData[index].processesStruct.clear();
+		comboData[index].unsortedParameterArray.clear();
+		comboData[index].sortedParameterArray.clear();
+		comboData[index].controlParameterArray.clear();
+		comboData[index].controlsStruct.clear();
+		comboData[index].controlConnectionsStruct.clear();
+		//std::vector<Parameter> parameterArray;
+
+		for(int i = 0; i < 10; i++)
+			comboData[index].footswitchStatus[i] = 0;
+		for(int i = 0; i < 2; i++)
+			comboData[index].inputProcBufferIndex[i] = 0;
+		for(int i = 0; i < 2; i++)
+			comboData[index].outputProcBufferIndex[i] = 0;
+		comboData[index].processCount = 0;
+		comboData[index].controlCount = 0;
+		comboData[index].bufferCount = 0;
+		status = 0;
+	}
+	else
+	{
+		cout << "invalid index." << endl;
+		status = -1;
+	}
+
+#if(dbg >= 1)
+	cout << "***** EXITING deleteComboStruct" << endl;
+#endif
+
+	return status;
+}
+
+#define dbg 1
+int getComboIndex(string comboName)
+{
+
+#if(dbg >= 1)
+	cout << "ENTERING getComboIndex." << endl;
+#endif
+	for(vector<string>::size_type i = 0; i < comboList.size(); i++)
+	{
+		cout << "comparing: " << comboList[i] << " with " << comboName << endl;
+		if(comboList[i].compare(comboName) == 0)
+		{
+#if(dbg >= 1)
+	cout << "EXITING getComboIndex." << endl;
+#endif
+			return i;
+		}
+	}
+
+#if(dbg >= 1)
+	cout << "EXITING getComboIndex." << endl;
+#endif
+	return -1; // combo not found
+
 }
 
 #define dbg 0

@@ -14,7 +14,9 @@
 #define AVE_BUFFER_SIZE 16
 #define DIST_AVE_BUFFER_SIZE 3
 #define FOOTSWITCH_ALWAYS_ON 0
-
+#define AVERAGE_OFFSET_ON 1
+#define COUPLING_FILTER_ON 0
+#define NOISE_FILTER_ON 1
 /* actions:
  * 		0: load the ProcessEvent data
  * 		1: run the process
@@ -26,6 +28,7 @@
 // set
 
 extern unsigned int bufferSize;
+extern int inputCouplingMode;
 #define dbg 1
 
 int resetProcBuffer(struct ProcessBuffer procBufferArray)
@@ -542,6 +545,7 @@ int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pro
 		//double internalPosPeak = 0.0;
 		//double internalNegPeak = 0.0;
 		double outputSum = 0.00000;
+		double tempInput;
 		unsigned int delayCoarse = 0 ;
 		unsigned int delayFine = 0 ;
 		unsigned int delay = 0;
@@ -589,7 +593,31 @@ int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *pro
 			else
 #endif
 			{
-				((DelayContext *)(procEvent->processContext))->delayBuffer[inputPtr] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+				/*if(inputCouplingMode == 0)
+				{
+					tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+				}
+				else if(inputCouplingMode == 1)
+				{
+					couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+					couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
+
+					tempInput = couplingFilter_y[0];
+
+					couplingFilter_x[2] = couplingFilter_x[1];
+					couplingFilter_x[1] = couplingFilter_x[0];
+
+					couplingFilter_y[2] = couplingFilter_y[1];
+					couplingFilter_y[1] = couplingFilter_y[0];
+				}
+				else if(inputCouplingMode == 2)
+				{
+					tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				}*/
+
+				tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+
+				((DelayContext *)(procEvent->processContext))->delayBuffer[inputPtr] = tempInput;
 
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = ((DelayContext *)(procEvent->processContext))->delayBuffer[outputPtr];
 
@@ -677,6 +705,7 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 		unsigned int contextIndex = 0;
 		//double internalPosPeak = 0.0;
 		//double internalNegPeak = 0.0;
+		double tempInput;
 		double outputSum[3];
 		outputSum[0] = 0.00000;
 		outputSum[1] = 0.00000;
@@ -697,6 +726,12 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 			return -1;
 		}
 
+
+		for(j = 0; j < 3; j++)
+		{
+			couplingFilter_x[j] = ((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+			couplingFilter_y[j] = ((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+		}
 		for(i = 0; i < NUMBER_OF_BANDS; i++)
 		{
 			for(j = 0; j < 4; j++)
@@ -706,12 +741,6 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 				hp_x[i][j] = ((double *)procEvent->processContext)[/*i*8+j*4+2*/contextIndex++];
 				hp_y[i][j] = ((double *)procEvent->processContext)[/*i*8+j*4+3*/contextIndex++];
 			}
-		}
-
-		for(j = 0; j < 3; j++)
-		{
-			couplingFilter_x[j] = ((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
-			couplingFilter_y[j] = ((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
 		}
 		for(j = 0; j < 3; j++)
 		{
@@ -824,20 +853,43 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 			{
 				//for(j = 0; j < NUMBER_OF_BANDS; j++)
 				{
-					/************************** FIRST BAND DIVIDER (LOW/MID) *************************/
-					j = 0;
+					if(inputCouplingMode == 0)
 					{
-						couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+						tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+					}
+					else if(inputCouplingMode == 1)
+					{
+						couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 						couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
 
-						lp_x[j][0] = couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
-						hp_x[j][0] = couplingFilter_y[0]; // get input data for BD0 from process input
+						tempInput = couplingFilter_y[0];
 
 						couplingFilter_x[2] = couplingFilter_x[1];
 						couplingFilter_x[1] = couplingFilter_x[0];
 
 						couplingFilter_y[2] = couplingFilter_y[1];
 						couplingFilter_y[1] = couplingFilter_y[0];
+					}
+					else if(inputCouplingMode == 2)
+					{
+						tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+					}
+
+					/************************** FIRST BAND DIVIDER (LOW/MID) *************************/
+					j = 0;
+					{
+						/*couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+						couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
+
+
+						couplingFilter_x[2] = couplingFilter_x[1];
+						couplingFilter_x[1] = couplingFilter_x[0];
+
+						couplingFilter_y[2] = couplingFilter_y[1];
+						couplingFilter_y[1] = couplingFilter_y[0];*/
+
+						lp_x[j][0] = tempInput; // get inputBuffer[0] data for BD0 from process input
+						hp_x[j][0] = tempInput; // get input data for BD0 from process input
 
 						lp_y[j][0] = lp_a[j][0]*lp_x[j][0] + lp_a[j][1]*lp_x[j][1] + lp_a[j][2]*lp_x[j][2]/* + lp_a[j][3]*lp_x[j][3]*/ - lp_b[j][1]*lp_y[j][1] - lp_b[j][2]*lp_y[j][2]/* - lp_b[j][3]*lp_y[j][3]*/;
 						procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = lp_y[j][0];
@@ -883,7 +935,7 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 						lp_y[j][2] = lp_y[j][1];
 						lp_y[j][1] = lp_y[j][0];
 
-						hp_x[j][0] = couplingFilter_y[0];
+						hp_x[j][0] = tempInput;
 						hp_y[j][0] = hp_a[j][0]*hp_x[j][0] + hp_a[j][1]*hp_x[j][1] + hp_a[j][2]*hp_x[j][2]/* + hp_a[j][3]*hp_x[j][3]*/ - hp_b[j][1]*hp_y[j][1] - hp_b[j][2]*hp_y[j][2];// - hp_b[j][3]*hp_y[j][3];
 
 						//hp_x[j][4] = hp_x[j][3];
@@ -918,6 +970,13 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 		updateBufferOffset(&procBufferArray[procEvent->outputBufferIndexes[1]]);
 		updateBufferOffset(&procBufferArray[procEvent->outputBufferIndexes[2]]);
 		contextIndex = 0;
+
+
+		for(j = 0; j < 3; j++)
+		{
+			((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = couplingFilter_x[j];
+			((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = couplingFilter_y[j];
+		}
 		for(i = 0; i < NUMBER_OF_BANDS; i++)
 		{
 			for(j = 0; j < 4; j++)
@@ -931,11 +990,6 @@ int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *
 				((double *)procEvent->processContext)[/*i*8+j*4+3*/contextIndex++] = hp_y[i][j];
 				//std::cout << "end: hp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_y[i][j] << std::endl;
 			}
-		}
-		for(j = 0; j < 3; j++)
-		{
-			((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = couplingFilter_x[j];
-			((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = couplingFilter_y[j];
 		}
 		for(j = 0; j < 3; j++)
 		{
@@ -1023,6 +1077,7 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 		unsigned int contextIndex = 0;
 		//double internalPosPeak = 0.0;
 		//double internalNegPeak = 0.0;
+		double tempInput;
 		double outputSum[3];
 		outputSum[0] = 0.00000;
 		outputSum[1] = 0.00000;
@@ -1047,6 +1102,11 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 
 		for(j = 0; j < 3; j++)
 		{
+			couplingFilter_x[j] = ((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+			couplingFilter_y[j] = ((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+		}
+		for(j = 0; j < 3; j++)
+		{
 			lp_x[j] = ((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
 			lp_y[j] = ((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
 		}
@@ -1060,14 +1120,6 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 			hp_x[j] = ((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
 			hp_y[j] = ((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
 		}
-
-
-		for(j = 0; j < 3; j++)
-		{
-			couplingFilter_x[j] = ((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
-			couplingFilter_y[j] = ((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
-		}
-
 		for(j = 0; j < 3; j++)
 		{
 			noiseFilter_x[j] = ((double *)procEvent->processContext)[contextIndex++];
@@ -1134,23 +1186,45 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 		{
 			for(i = 0; i < bufferSize; i++)
 			{
-					couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+					/*couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
 					couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
 
 					lp_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];//couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
 					bp_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];//couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
 					hp_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];//couplingFilter_y[0]; // get input data for BD0 from process input
 
-					/*lp_x[0] = couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
-					bp_x[0] = couplingFilter_y[0]; // get inputBuffer[0] data for BD0 from process input
-					hp_x[0] = couplingFilter_y[0]; // get input data for BD0 from process input
-*/
+					couplingFilter_x[2] = couplingFilter_x[1];
+					couplingFilter_x[1] = couplingFilter_x[0];
+
+					couplingFilter_y[2] = couplingFilter_y[1];
+					couplingFilter_y[1] = couplingFilter_y[0];*/
+
+
+				if(inputCouplingMode == 0)
+				{
+					tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+				}
+				else if(inputCouplingMode == 1)
+				{
+					couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+					couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
+
+					tempInput = couplingFilter_y[0];
 
 					couplingFilter_x[2] = couplingFilter_x[1];
 					couplingFilter_x[1] = couplingFilter_x[0];
 
 					couplingFilter_y[2] = couplingFilter_y[1];
 					couplingFilter_y[1] = couplingFilter_y[0];
+				}
+				else if(inputCouplingMode == 2)
+				{
+					tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				}
+
+					lp_x[0] = tempInput;
+					bp_x[0] = tempInput;
+					hp_x[0] = tempInput;
 				//*********************Band Divider (BD): Lowpass filter ********************
 
 				lp_y[0] = lp_a[0]*lp_x[0] + lp_a[1]*lp_x[1] + lp_a[2]*lp_x[2] - lp_b[1]*lp_y[1] - lp_b[2]*lp_y[2];
@@ -1237,6 +1311,11 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 
 		for(j = 0; j < 3; j++)
 		{
+			((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = couplingFilter_x[j];
+			((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = couplingFilter_y[j];
+		}
+		for(j = 0; j < 3; j++)
+		{
 			((double *)procEvent->processContext)[contextIndex++] = lp_x[j];
 			((double *)procEvent->processContext)[contextIndex++] = lp_y[j];
 		}
@@ -1249,13 +1328,6 @@ int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer 
 		{
 			((double *)procEvent->processContext)[contextIndex++] = hp_x[j];
 			((double *)procEvent->processContext)[contextIndex++] = hp_y[j];
-		}
-
-
-		for(j = 0; j < 3; j++)
-		{
-			((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = couplingFilter_x[j];
-			((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = couplingFilter_y[j];
 		}
 		for(j = 0; j < 3; j++)
 		{
@@ -1349,6 +1421,9 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 
 		double hp_a[NUMBER_OF_BANDS][4], hp_b[NUMBER_OF_BANDS][4];
 		double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+		double couplingFilter_y[3], couplingFilter_x[3];
+		double noiseFilter_y[3], noiseFilter_x[3];
+		double tempInput;
 		double outputSum[2];
 		outputSum[0] = 0.00000;
 		outputSum[1] = 0.00000;
@@ -1360,6 +1435,11 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 			return -1;
 		}
 		//for(int i = 0; i < 1; i++)
+		for(j = 0; j < 3; j++)
+		{
+			couplingFilter_x[j] = ((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+			couplingFilter_y[j] = ((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+		}
 		i = 0;
 		{
 			for(j = 0; j < 4; j++)
@@ -1374,6 +1454,7 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 				//std::cout << "start: hp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_y[i][j] << std::endl;
 			}
 		}
+
 		/*clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		clearBufferParameters(&procBufferArray[procEvent->outputBufferIndexes[1]]);*/
 
@@ -1435,8 +1516,30 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 			    else
 #endif
 			    {
+					if(inputCouplingMode == 0)
+					{
+						tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+					}
+					else if(inputCouplingMode == 1)
+					{
+						couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+						couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
+
+						tempInput = couplingFilter_y[0];
+
+						couplingFilter_x[2] = couplingFilter_x[1];
+						couplingFilter_x[1] = couplingFilter_x[0];
+
+						couplingFilter_y[2] = couplingFilter_y[1];
+						couplingFilter_y[1] = couplingFilter_y[0];
+					}
+					else if(inputCouplingMode == 2)
+					{
+						tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+					}
+
 					/********************* Lowpass filter ********************/
-					lp_x[j][0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+					lp_x[j][0] = tempInput;
 
 					lp_y[j][0] = lp_a[j][0]*lp_x[j][0] + lp_a[j][1]*lp_x[j][1] + lp_a[j][2]*lp_x[j][2] + lp_a[j][3]*lp_x[j][3] - lp_b[j][1]*lp_y[j][1] - lp_b[j][2]*lp_y[j][2] - lp_b[j][3]*lp_y[j][3];
 
@@ -1458,7 +1561,7 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 
 					//low_output[i] = input[i];
 					/********************* Highpass filter ********************/
-					hp_x[j][0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+					hp_x[j][0] = tempInput;
 
 					hp_y[j][0] = hp_a[j][0]*hp_x[j][0] + hp_a[j][1]*hp_x[j][1] + hp_a[j][2]*hp_x[j][2] + hp_a[j][3]*hp_x[j][3] - hp_b[j][1]*hp_y[j][1] - hp_b[j][2]*hp_y[j][2] - hp_b[j][3]*hp_y[j][3];
 
@@ -1489,6 +1592,11 @@ int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 				- procBufferArray[procEvent->outputBufferIndexes[1]].ampNegativePeak;*/
 
 		//for(int i = 0; i < NUMBER_OF_BANDS; i++)
+		for(j = 0; j < 3; j++)
+		{
+			((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = couplingFilter_x[j];
+			((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = couplingFilter_y[j];
+		}
 		i = 0;
 		{
 			for(j = 0; j < 4; j++)
@@ -1687,13 +1795,20 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 			const double r5 = 50.0;
 			int contextIndex = 0;
 			/* Calculate constants for waveshaper algorithm */
+
+			for(j = 0; j < 3; j++) // initialize coupling filter
+			{
+				 ((double *)procEvent->processContext)[contextIndex++] = 0.00000;
+				 ((double *)procEvent->processContext)[contextIndex++] = 0.00000;
+			}
+
 			((double *)procEvent->processContext)[contextIndex++] = 0.0; // outMeasure
 			/*((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 0
 			((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 1
 			((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 2
 			((double *)procEvent->processContext)[contextIndex++] = 0.0; // dist average 3*/
 
-			for(j = 0; j < 3; j++)
+			for(j = 0; j < 3; j++) // initialize noise filter
 			{
 				 ((double *)procEvent->processContext)[contextIndex++] = 0.00000;
 				 ((double *)procEvent->processContext)[contextIndex++] = 0.00000;
@@ -1750,12 +1865,13 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 	{
 		double k[5][5];
 		double v[4];
-
+		double tempInput;
 		double distAveArray[4];
 		double distAve;
 		int contextIndex = 0;
 		double outMeasure;
 		double outputSum = 0.00000;
+		double couplingFilter_y[3], couplingFilter_x[3];
 		double noiseFilter_y[3], noiseFilter_x[3];
 
 		if(procEvent->processContext == NULL)
@@ -1764,12 +1880,17 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 			return -1;
 		}
 
+
+		for(j = 0; j < 3; j++)
+		{
+			couplingFilter_x[j] = ((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
+			couplingFilter_y[j] = ((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
+		}
 		outMeasure = ((double *)procEvent->processContext)[contextIndex++];
 		/*distAveArray[0] = ((double *)procEvent->processContext)[contextIndex++];
 		distAveArray[1] = ((double *)procEvent->processContext)[contextIndex++];
 		distAveArray[2] = ((double *)procEvent->processContext)[contextIndex++];
 		distAveArray[3] = ((double *)procEvent->processContext)[contextIndex++];*/
-
 		for(j = 0; j < 3; j++)
 		{
 			noiseFilter_x[j] = ((double *)procEvent->processContext)[contextIndex++];
@@ -1806,6 +1927,7 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 		k[0][3] = ((double *)procEvent->processContext)[contextIndex++];
 		k[0][4] = ((double *)procEvent->processContext)[contextIndex++];
 
+
 		int edge = procEvent->parameters[1];
 		v[0] = brkpt[edge][0];
 		v[1] = brkpt[edge][1];
@@ -1814,6 +1936,7 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 
 		double gain = logAmp[procEvent->parameters[0]]*5.0;
 		double mix = linAmp[procEvent->parameters[2]]*0.1;
+		double out = logAmp[procEvent->parameters[3]]*0.1;
 		double k1,k2,k3,k4,k5;
 		double v1,v2,v3,v4;
 		double clean, dist;
@@ -1836,6 +1959,28 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 			else
 #endif
 			{
+				if(inputCouplingMode == 0)
+				{
+					tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset;
+				}
+				else if(inputCouplingMode == 1)
+				{
+					couplingFilter_x[0] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+					couplingFilter_y[0] = 0.993509026691*couplingFilter_x[0] + (-1.987017202207)*couplingFilter_x[1] +0.993509026691*couplingFilter_x[2] - (-1.986975069020)*couplingFilter_y[1] - 0.987060186570*couplingFilter_y[2];
+
+					tempInput = couplingFilter_y[0];
+
+					couplingFilter_x[2] = couplingFilter_x[1];
+					couplingFilter_x[1] = couplingFilter_x[0];
+
+					couplingFilter_y[2] = couplingFilter_y[1];
+					couplingFilter_y[1] = couplingFilter_y[0];
+				}
+				else if(inputCouplingMode == 2)
+				{
+					tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				}
+
 				if (v[3] < outMeasure) kIndex = 4;
 				else if (v[2] < outMeasure && outMeasure <= v[3]) kIndex = 3;
 				else if (v[1] < outMeasure && outMeasure <= v[2]) kIndex = 2;
@@ -1856,10 +2001,10 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 				}
 				k1 = k[kIndex][0]; k2 = k[kIndex][1]; k3 = k[kIndex][2]; k4 = k[kIndex][3]; k5 = k[kIndex][4];
 
-				dist = ((procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset)*gain*k1 + v1*k2 + v2*k3 + v3*k4 + v4*k5)/(k1 + k2 + k3 + k4 + k5);
-				clean = (procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i] - procBufferArray[procEvent->inputBufferIndexes[0]].offset);
+				dist = (tempInput*gain*k1 + v1*k2 + v2*k3 + v3*k4 + v4*k5)/(k1 + k2 + k3 + k4 + k5);
+				clean = tempInput;
 				//outputSum += procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
-
+				outMeasure = dist;
 				/*distAveArray[3] = distAveArray[2];
 				distAveArray[2] = distAveArray[1];
 				distAveArray[1] = distAveArray[0];
@@ -1868,7 +2013,7 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 				distAve = (distAveArray[0] + distAveArray[1] + distAveArray[2])/3;*/
 
 				//procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = (1.0 - mix)*clean + mix*dist;
-				noiseFilter_x[0] = (1.0 - mix)*clean + mix*dist;
+				noiseFilter_x[0] = /*out**/((1.0 - mix)*clean + mix*dist);
 				noiseFilter_y[0] = 0.01870016*noiseFilter_x[0] + 0.00304999*noiseFilter_x[1] + 0.01870016*noiseFilter_x[2] - (-1.69729152)*noiseFilter_y[1] - 0.73774183*noiseFilter_y[2];
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = noiseFilter_y[0];
 				noiseFilter_x[2] = noiseFilter_x[1];
@@ -1888,6 +2033,11 @@ int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer
 
 		contextIndex = 0;
 
+		for(j = 0; j < 3; j++)
+		{
+			((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = couplingFilter_x[j];
+			((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = couplingFilter_y[j];
+		}
 		((double *)procEvent->processContext)[contextIndex++] = outMeasure; // outMeasure
 		/*((double *)procEvent->processContext)[contextIndex++] = distAveArray[0]; // dist average 0
 		((double *)procEvent->processContext)[contextIndex++] = distAveArray[1]; // dist average 1

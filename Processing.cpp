@@ -66,7 +66,7 @@ Processing::Processing():JackCpp::AudioIO("processing", 2,2)
 	this->signalDeltaFilterIndex = 0;
 	this->signalDeltaFilterOut = 0.0;
 	this->signalLevel = 0.0;
-	this->enableEffects = false;
+	this->processingEnabled = true;
 }
 
 Processing::~Processing()
@@ -225,43 +225,6 @@ int Processing::loadCombo(int loadComboIndex)
 	return status;
 }
 
-#define dbg 1
-int Processing::enableComboBypass()
-{
-	int status = 0;
-#if(dbg >= 1)
-	cout << "ENTERING: Processing::enableComboBypass" << endl;
-#endif
-
-	do
-	{
-		cout << "waiting for audioCallback." << endl;
-	}while(this->audioCallbackRunning == true);
-	this->enableEffects = false;
-
-#if(dbg >= 1)
-	cout << "EXITING: Processing::enableComboBypass" << endl;
-#endif
-
-	return status;
-}
-
-#define dbg 1
-int Processing::disableComboBypass()
-{
-	int status = 0;
-#if(dbg >= 1)
-	cout << "ENTERING: Processing::disableComboBypass" << endl;
-#endif
-
-	this->enableEffects = true;
-
-#if(dbg >= 1)
-	cout << "EXITING: Processing::disableComboBypass" << endl;
-#endif
-
-	return status;
-}
 
 int audioCallbackComboIndex = 100;
 double testBuffer[10][BUFFER_SIZE];
@@ -293,9 +256,9 @@ int Processing::audioCallback(jack_nframes_t nframes,
 //#endif
 	int process = 0;
 
-	if(audioCallbackComboIndex == this->comboIndex)
+	if(audioCallbackComboIndex == this->comboIndex && this->processingEnabled == true)
 	{
-
+		//cout << "PROCESSING ACTIVE." << endl;
 		for(unsigned int i = 0; i < bufferSize; i++)
 		{
 			if(inputsSwitched)
@@ -591,18 +554,23 @@ int Processing::audioCallback(jack_nframes_t nframes,
 	}
 	else
 	{
-		cout << "straight thru signal." << endl;
+		//cout << "straight thru signal." << endl;
+		cout << "PROCESSING BYPASSED." << endl;
 		for(unsigned int i = 0; i < bufferSize; i++)
 		{
 			outBufs[0][i] = inBufs[0][i];
 			outBufs[1][i] = inBufs[1][i];
 		}
-		cout << "stopping combo." << endl;
-		delay(1000);
-		this->stopCombo(audioCallbackComboIndex);
-		cout << "loading combo." << endl;
-		this->loadCombo(this->comboIndex);
-		audioCallbackComboIndex = this->comboIndex;
+		if(audioCallbackComboIndex != this->comboIndex)
+		{
+			cout << "stopping combo." << endl;
+			delay(1000);
+			this->stopCombo(audioCallbackComboIndex);
+			cout << "loading combo." << endl;
+			this->loadCombo(this->comboIndex);
+			audioCallbackComboIndex = this->comboIndex;
+		}
+
 	}
 	this->audioCallbackRunning = false;
 #if(TIMING_DBG == 1)
@@ -803,5 +771,35 @@ int Processing::updateControlParameter(string controlName, int parameterIndex, i
 	cout << "EXITING: Combo::updateControlParameter" << endl;
 #endif
 	return status;
+}
+
+#define dbg 1
+int Processing::enableProcessing()
+{
+#if(dbg==1)
+	cout << "ENTERING: Processing::enableProcessing" << endl;
+#endif
+
+	this->processingEnabled = true;
+#if(dbg>=1)
+	cout << "EXITING: Processing::enableProcessing" << endl;
+#endif
+
+	return 0;
+}
+
+#define dbg 1
+int Processing::disableProcessing()
+{
+#if(dbg==1)
+	cout << "ENTERING: Processing::disableProcessing" << endl;
+#endif
+
+	this->processingEnabled = false;
+#if(dbg>=1)
+	cout << "EXITING: Processing::disableProcessing" << endl;
+#endif
+
+	return 0;
 }
 

@@ -29,7 +29,7 @@
 #define BUFFER_SIZE 1024
 
 
-extern ComboDataInt comboData[10];
+extern ComboDataInt comboData[15];
 /*typedef struct _processingParams{
 	double lowGateThres;
 	double highGateThres;
@@ -94,7 +94,7 @@ private:
 	int signalDeltaNegativeCount;
 	int aveArrayIndex;
 	bool audioCallbackRunning;
-	bool enableEffects;
+	bool processingEnabled;
 public:
 	Processing();
 	~Processing();
@@ -121,6 +121,8 @@ public:
 	int getProcessData(int index, double *data);
 	int clearProcessData(int index, double *data);
 	int updateFootswitch(int footswitchStatus[]);
+	int enableProcessing();
+	int disableProcessing();
 	int bypassAll();
 	int updateProcessParameter(string processName, int parameterIndex, int parameterValue);
 	int updateControlParameter(string controlName, int parameterIndex, int parameterValue);

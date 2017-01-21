@@ -20,13 +20,52 @@
 using namespace std;
 UsbInt::UsbInt() {
 	// TODO Auto-generated constructor stub
-	hostUiFD = open("/dev/ttyGS0", O_RDWR | O_NONBLOCK);
-
+	this->hostUiFD = 0;
 }
 
 UsbInt::~UsbInt() {
 	// TODO Auto-generated destructor stub
 }
+
+int UsbInt::connect()
+{
+	errno = 0;
+	if(this->connectionStatus == 0)
+	{
+		this->hostUiFD = open("/dev/ttyGS0", O_RDWR | O_NONBLOCK);
+		if(this->hostUiFD >= 0)
+		{
+			this->connectionStatus = 1;
+		}
+		else
+		{
+			cout << "failed to close USB:"  << errno << endl;
+		}
+	}
+	else
+	{
+		cout << "USB already connected." << endl;
+	}
+
+}
+int UsbInt::disconnect()
+{
+	errno = 0;
+	if(close(this->hostUiFD) >= 0)
+	{
+		this->connectionStatus = 0;
+	}
+	else
+	{
+		cout << "failed to close USB: " << errno << endl;
+	}
+}
+
+int UsbInt::isConnected()
+{
+	return this->connectionStatus;
+}
+
 
 #define dbg 0
 int UsbInt::newData(void)
@@ -36,7 +75,7 @@ int UsbInt::newData(void)
 #endif
 	clearBuffer(this->usbInputBuffer,FILE_SIZE);
 
-	ssize_t size_read = read(hostUiFD, this->usbInputBuffer, FILE_SIZE);
+	ssize_t size_read = read(this->hostUiFD, this->usbInputBuffer, FILE_SIZE);
 	if(size_read > 1)
 	{
 #if(dbg >= 1)
@@ -78,7 +117,7 @@ int UsbInt::writeData(char *input)
 	cout << "dataString: " << this->usbOutputBuffer << endl;
 #endif
 
-	ssize_t size_write = write(hostUiFD, this->usbOutputBuffer, strlen(this->usbOutputBuffer));
+	ssize_t size_write = write(this->hostUiFD, this->usbOutputBuffer, strlen(this->usbOutputBuffer));
 
 	if(size_write >= 0) status = 0;
 	else status = -1;

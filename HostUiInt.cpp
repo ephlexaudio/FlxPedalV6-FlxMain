@@ -38,12 +38,40 @@ HostUiInt::~HostUiInt() {
 	// TODO Auto-generated destructor stub
 }
 
+int HostUiInt::connect()
+{
+	int status = 0;
+
+	status = usb.connect();
+
+	return status;
+}
+
+int HostUiInt::disconnect()
+{
+	int status = 0;
+
+	status = usb.disconnect();
+
+	return status;
+}
+
+int HostUiInt::isConnected()
+{
+	int status = 0;
+
+	status = usb.isConnected();
+
+	return status;
+}
+
 #define dbg 0
 int HostUiInt::checkForNewHostData(void)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: HostUiInt::checkForNewHostData" << endl;
 #endif
+
 	int status = usb.newData();
 
 #if(dbg >= 1)
@@ -54,6 +82,7 @@ int HostUiInt::checkForNewHostData(void)
 
 string HostUiInt::getUserRequest(void)
 {
+
 	return string(usb.readData());
 }
 
@@ -143,7 +172,7 @@ int HostUiInt::sendCurrentData(vector<IndexedParameter> currentParams)
 	return status;
 }
 
-#define dbg 2
+#define dbg 0
 int HostUiInt::sendComboToHost(string comboName)
 {
 	#if(dbg >= 1)
@@ -196,7 +225,7 @@ int HostUiInt::sendComboToHost(string comboName)
 }
 
 #define dbg 0
-int HostUiInt::getComboFromHost(string comboData)
+string HostUiInt::getComboFromHost(string comboJson)
 {
 	#if(dbg >= 1)
 		cout << "***** ENTERING: HostUiInt::getComboFromHost" << endl;
@@ -206,6 +235,7 @@ int HostUiInt::getComboFromHost(string comboData)
 		clearBuffer(this->hostUiRawRequestCharArray,FILE_SIZE);
 
 	char filteredComboData[FILE_SIZE];
+	string comboName;
 	int status = 0;
 
 
@@ -213,8 +243,8 @@ int HostUiInt::getComboFromHost(string comboData)
 		//int retVal;
 		bool done = false;
 
-		strcpy(this->hostUiRawRequestCharArray, comboData.c_str()/*usb.readData()*/);
-		cout << "USB data size: " << strlen(comboData.c_str()/*usb.readData()*/) << endl;
+		strcpy(this->hostUiRawRequestCharArray, comboJson.c_str()/*usb.readData()*/);
+		cout << "USB data size: " << strlen(comboJson.c_str()/*usb.readData()*/) << endl;
 		if(strlen(usb.readData()) < 4000)
 			done = true;
 
@@ -234,7 +264,7 @@ int HostUiInt::getComboFromHost(string comboData)
 				break;
 			}*/
 		}
-		//if(this->getData(SHARED_MEMORY_FILE_ADDRESS, this->comboData, SHARED_MEMORY_FILE_SIZE) == 0)
+		//if(this->getData(SHARED_MEMORY_FILE_ADDRESS, this->comboJson, SHARED_MEMORY_FILE_SIZE) == 0)
 		{
 			// Filter data first
 			int filteredDataIndex = 0;
@@ -254,11 +284,10 @@ int HostUiInt::getComboFromHost(string comboData)
 			}
 #if(dbg >= 2)
 			cout << "data filtered" << endl;
-#endif
-
 			cout << "filtered combo data: " << filteredComboData << endl;
-
-			if(saveCombo(string(filteredComboData)) != 0)
+#endif
+			comboName = saveCombo(string(filteredComboData));
+			if(comboName.empty() == true)
 			{
 				cout << "error saving combo." << endl;
 				status = -1;
@@ -266,17 +295,19 @@ int HostUiInt::getComboFromHost(string comboData)
 		}
 	}
 
-
+#if(dbg >= 2)
 	cout << "combo data: " << this->hostUiRawRequestCharArray << endl;
-
+#endif
 	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 
 	#if(dbg >= 1)
 		cout << "***** EXITING: HostUiInt::getComboFromHost" << endl;
 	#endif
 
-	return status;
+	return comboName;
 }
+
+
 
 int HostUiInt::sendSimpleResponse(char *response)
 {

@@ -75,7 +75,7 @@ int PedalUiInt::checkForNewPedalData(void)
 
 #define dbg 1
 
-int PedalUiInt::sendComboUiData(Json::Value uiData)
+int PedalUiInt::sendComboUiData(Json::Value uiJson)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: PedalUiInt::sendComboUiData" << endl;
@@ -97,28 +97,28 @@ int PedalUiInt::sendComboUiData(Json::Value uiData)
 
 
 	strcpy((char *)this->uiData, "{title:");
-	strncat((char *)this->uiData, uiData["title"].asCString(), strlen(uiData["title"].asString().c_str()));
+	strncat((char *)this->uiData, uiJson["title"].asCString(), strlen(uiJson["title"].asString().c_str()));
 
 	{
 		strcat((char *)this->uiData, ",effects:[");
-		effectCount = uiData["effects"].size();
+		effectCount = uiJson["effects"].size();
 		for(effectIndex = 0; effectIndex < effectCount; effectIndex++)
 		{
-			guiParamCount = uiData["effects"][effectIndex]["params"].size();
+			guiParamCount = uiJson["effects"][effectIndex]["params"].size();
 			if(guiParamCount > 0)
 			{
 				strcat((char *)this->uiData, "{abbr:");
-				strncat((char *)this->uiData, uiData["effects"][effectIndex]["abbr"].asString().c_str(),
-						strlen(uiData["effects"][effectIndex]["abbr"].asCString()));
+				strncat((char *)this->uiData, uiJson["effects"][effectIndex]["abbr"].asString().c_str(),
+						strlen(uiJson["effects"][effectIndex]["abbr"].asCString()));
 				strcat((char *)this->uiData, ",name:");
-				strncat((char *)this->uiData, uiData["effects"][effectIndex]["name"].asString().c_str(),
-						strlen(uiData["effects"][effectIndex]["name"].asCString()));
+				strncat((char *)this->uiData, uiJson["effects"][effectIndex]["name"].asString().c_str(),
+						strlen(uiJson["effects"][effectIndex]["name"].asCString()));
 				strcat((char *)this->uiData, ",params:[");
 
 				for(guiParamIndex = 0; guiParamIndex < guiParamCount; guiParamIndex++)
 				{
-					if(uiData["effects"][effectIndex]["params"][guiParamIndex]["name"].asString().size() > 1
-        					&& uiData["effects"][effectIndex]["params"][guiParamIndex]["name"].asString().compare("none") != 0)
+					if(uiJson["effects"][effectIndex]["params"][guiParamIndex]["name"].asString().size() > 1
+        					&& uiJson["effects"][effectIndex]["params"][guiParamIndex]["name"].asString().compare("none") != 0)
 					{
 						strcat((char *)this->uiData, "{");
 						char paramStringBuffer[15];
@@ -126,7 +126,7 @@ int PedalUiInt::sendComboUiData(Json::Value uiData)
 						clearBuffer(stringBuffer,200);
 
 						clearBuffer(paramStringBuffer, 15);
-						strcpy(paramStringBuffer, uiData["effects"][effectIndex]["params"][guiParamIndex]["abbr"].asString().c_str());
+						strcpy(paramStringBuffer, uiJson["effects"][effectIndex]["params"][guiParamIndex]["abbr"].asString().c_str());
 	#if(dbg>=2)
 						strcpy(stringBuffer,"abbr:");//puts("abbr:");
 						strcat(stringBuffer, paramStringBuffer);//puts(paramStringBuffer);
@@ -135,7 +135,7 @@ int PedalUiInt::sendComboUiData(Json::Value uiData)
 
 						strcat((char *)this->uiData, ",");
 						clearBuffer(paramStringBuffer, 15);
-						strcpy(paramStringBuffer, uiData["effects"][effectIndex]["params"][guiParamIndex]["name"].asString().c_str());
+						strcpy(paramStringBuffer, uiJson["effects"][effectIndex]["params"][guiParamIndex]["name"].asString().c_str());
 	#if(dbg>=2)
 						strcat(stringBuffer,", name:");//puts("name:");
 						strcat(stringBuffer, paramStringBuffer);//puts(paramStringBuffer);
@@ -144,7 +144,7 @@ int PedalUiInt::sendComboUiData(Json::Value uiData)
 
 						strcat((char *)this->uiData, ",");
 						clearBuffer(paramStringBuffer, 15);
-						strcpy(paramStringBuffer, uiData["effects"][effectIndex]["params"][guiParamIndex]["value"].asString().c_str());
+						strcpy(paramStringBuffer, uiJson["effects"][effectIndex]["params"][guiParamIndex]["value"].asString().c_str());
 	#if(dbg>=2)
 						strcat(stringBuffer,", value:");//puts("value:");
 						strcat(stringBuffer, paramStringBuffer);//puts(paramStringBuffer);
@@ -153,7 +153,7 @@ int PedalUiInt::sendComboUiData(Json::Value uiData)
 
 						strcat((char *)this->uiData, ",");
 						clearBuffer(paramStringBuffer, 15);
-						strcpy(paramStringBuffer, uiData["effects"][effectIndex]["params"][guiParamIndex]["type"].asString().c_str());
+						strcpy(paramStringBuffer, uiJson["effects"][effectIndex]["params"][guiParamIndex]["type"].asString().c_str());
 	#if(dbg>=2)
 						strcat(stringBuffer,", type:");//puts("type:");
 						strcat(stringBuffer, paramStringBuffer);//puts(paramStringBuffer);
@@ -162,7 +162,7 @@ int PedalUiInt::sendComboUiData(Json::Value uiData)
 
 						strcat((char *)this->uiData, ",");
 						clearBuffer(paramStringBuffer, 15);
-						strcpy(paramStringBuffer, uiData["effects"][effectIndex]["params"][guiParamIndex]["index"].asString().c_str());
+						strcpy(paramStringBuffer, uiJson["effects"][effectIndex]["params"][guiParamIndex]["index"].asString().c_str());
 	#if(dbg>=2)
 						strcat(stringBuffer,", type:");//puts("type:");
 						strcat(stringBuffer, paramStringBuffer);//puts(paramStringBuffer);
@@ -177,7 +177,7 @@ int PedalUiInt::sendComboUiData(Json::Value uiData)
 					}
 				}
 				strcat((char *)this->uiData, "]}");
-				if(effectIndex != effectCount-1 && uiData["effects"][effectIndex+1]["params"].size() != 0)
+				if(effectIndex != effectCount-1 && uiJson["effects"][effectIndex+1]["params"].size() != 0)
 					strcat((char *)this->uiData, ",");
 			}
 		}
