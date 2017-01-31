@@ -160,6 +160,7 @@ struct ProcessEvent{
 	string processName;
 	int processTypeIndex;
 	int footswitchNumber;
+	int parameterCount;
 	int parameters[10];
 	double internalData[256]; // use to store curves, etc.
 	int dataReadReady; // data buffer ready to be read by outside process
@@ -207,8 +208,9 @@ struct ControlEvent{
 
 
 
-/*struct Combo {
-	ProcessEvent processSequence[20]; // do these 5 variables/structs need to be public ??
+struct ComboStruct {
+	string name;
+	ProcessEvent processSequence[20];
 	ControlEvent controlSequence[20];
 	ProcessBuffer procBufferArray[60];
 	int footswitchStatus[10];
@@ -218,7 +220,7 @@ struct ControlEvent{
 	int controlCount;
 	int bufferCount;
 	Json::Value pedalUi;
-};*/
+};
 
 
 #endif /* STRUCTS_H_ */

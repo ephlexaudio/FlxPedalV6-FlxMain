@@ -6,6 +6,7 @@
  */
 
 
+#include "config.h"
 #include "SharedMemoryInt.h"
 #include "utilityFunctions.h"
 

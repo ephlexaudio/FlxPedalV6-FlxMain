@@ -5,6 +5,7 @@
  *      Author: buildrooteclipse
  */
 
+#include "config.h"
 #include "UsbInt.h"
 #define FILE_SIZE 32000
 /*

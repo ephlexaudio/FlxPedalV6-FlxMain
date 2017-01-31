@@ -6,6 +6,7 @@
  */
 
 //#include "BaseUiInt.h"
+#include "config.h"
 #include "PedalUiInt.h"
 //#include "ComboDataInt.h"
 #include "utilityFunctions.h"

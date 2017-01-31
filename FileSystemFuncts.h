@@ -29,10 +29,12 @@ int validateJsonBuffer(char *jsonBuffer);
 
 std::vector<string> getComponentList(void);
 std::string getComponentData(std::string componentName);
-std::vector<string> getComboList(void);
-std::string getComboData(std::string comboName);
-string saveCombo(std::string comboData);
-int deleteCombo(std::string comboName);
+
+std::vector<string> getComboListFromFS(void);
+//std::vector<string> getComboFileList(void);
+std::string getComboDataFromFS(std::string comboName);
+string saveComboToFS(std::string comboData);
+int deleteComboFromFS(std::string comboName);
 
 
 #endif /* DATAFUNCTS_H_ */

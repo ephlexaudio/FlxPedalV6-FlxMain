@@ -98,7 +98,7 @@ private:
 public:
 	ComboDataInt();
 	~ComboDataInt();
-
+	string comboName;
 	Json::Value effectComboJson;
 	Json::Value pedalUiJson;
 	std::vector<Json::Value> unsequencedProcessListJson;
@@ -170,6 +170,8 @@ public:
 	int loadComboStructFromName(char *comboName);
 	int loadComboStructFromJsonString(string comboJson);
 
+	int saveComboStruct(ComboStruct comboStructData);
+
 	void getProcParameters(int procIndex, int params[10]);
 	int saveCombo(void/*Json::Value combo*/);
 	int updateJson(int paramIndex, int paramValue);
@@ -185,6 +187,11 @@ public:
 	string getName();
 };
 
+ComboStruct getComboStructFromName(char *comboName);
+ComboStruct getComboStructFromComboIndex(int index);
+ComboStruct getComboStructFromComboName(string comboName);
+ComboStruct getComboStructFromJsonString(string comboJson);
+ComboStruct transferComboStruct(ComboStruct source);
 string getComboStringFromFile(string comboName);
 
 

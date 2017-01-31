@@ -43,6 +43,7 @@ public:
 	/*int load(vector<Process> processesStruct, vector<Json::Value> connectionsJson,
 			vector<Control> controlsStruct, vector<ControlConnection> controlConnectionsStruct);*/
 	int load(int comboIndex);
+	int load(string comboName);
 	int start();
 	int stop();
 	int getProcessData(int index, double *data);

@@ -37,6 +37,7 @@
 #include <sys/resource.h>
 #include <jack/jack.h>
 #include <jack/control.h>
+#include <algorithm>
 
 
 struct _jackParams{
@@ -60,10 +61,29 @@ int loadCombo(void);
 int runCombo(void);
 //int updateCombo(int paramIndex, int paramValueIndex);
 int stopCombo(void);
+ComboDataInt getComboObject(string comboName);
+
 int loadComboStructArray(vector<string> comboList);
-int addComboStruct(string comboName);
-int deleteComboStruct(char *comboName);
-int getComboIndex(string comboName);
+std::vector<string> getComboArrayList(void);
+int getComboListIndex(string comboName);
+int addComboStructToArray(string comboName);
+int deleteComboStructFromArray(char *comboName);
+
+int loadComboStructVector(void);
+std::vector<string> getComboVectorList(void);
+int getComboVectorIndex(string comboName);
+int addComboStructToVector(string comboName);
+int deleteComboStructFromVector(string comboName);
+
+int loadComboStructMapAndList(void);
+std::vector<string> getComboMapList(void);
+int getComboMapIndex(string comboName);
+int addComboStructToMapAndList(string comboName);
+int addComboStructToMap(string comboName);
+int deleteComboStructFromMapAndList(string comboName);
+
+int deleteComboNameFromList(string comboName);
+
 
 int readFootswitches(void);
 int bypassAll(void);

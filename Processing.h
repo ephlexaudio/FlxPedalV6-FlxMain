@@ -95,24 +95,29 @@ private:
 	int aveArrayIndex;
 	bool audioCallbackRunning;
 	bool processingEnabled;
+
 public:
 	Processing();
 	~Processing();
 	int comboIndex;
+	string comboName;
 	int footswitchStatus[10];
-
-
+	bool processingUpdated;
+	bool updateProcessing;
+	bool processingContextAllocationError;
 	/*int setCheckInputs();
 	int clearCheckInputs();*/
 	bool areInputsSwitched(); // needs to be public to access sysfs (?)
 
 	int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::Value> connectionsJson);
 	int loadCombo(int comboIndex);
+	int loadCombo(void);
 	int enableComboBypass();
 	int disableComboBypass();
 	//int start();
 	//void stop();
 	int stopCombo(int loadComboIndex);
+	int stopCombo(void);
 	int audioCallback(jack_nframes_t nframes,
 					// A vector of pointers to each input port.
 					audioBufVector inBufs,

@@ -10,7 +10,7 @@
 
 #include "UsbInt.h"
 #include "utilityFunctions.h"
-#include "DataFuncts.h"
+#include "FileSystemFuncts.h"
 #include "GPIOClass.h"
 //using namespace std;
 #define FILE_SIZE 32000

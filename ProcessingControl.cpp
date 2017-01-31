@@ -6,9 +6,19 @@
  */
 
 
-
+#include "config.h"
 #include "ProcessingControl.h"
-extern ComboDataInt comboData[15];
+
+
+/*#define COMBO_DATA_VECTOR 0
+#define COMBO_DATA_ARRAY 0
+#define COMBO_DATA_MAP 1*/
+
+
+extern ComboStruct combo[2];
+extern int currentComboStructIndex;
+extern int oldComboStructIndex;
+
 extern int globalComboIndex;
 extern bool justPoweredUp;
 extern bool inputsSwitched;
@@ -19,6 +29,13 @@ using std::endl;
 #define CONTROL_PIN_1_NUMBER 42
 #define CONTROL_PIN_2_NUMBER 43
 
+#if(COMBO_DATA_VECTOR == 1)
+	extern vector<ComboDataInt> comboDataVector;
+#elif(COMBO_DATA_ARRAY == 1)
+	extern ComboDataInt comboDataArray[15];
+#elif(COMBO_DATA_MAP == 1)
+	extern map<string, ComboDataInt> comboDataMap;
+#endif
 
 
 ProcessingControl::ProcessingControl()
@@ -50,32 +67,64 @@ ProcessingControl::~ProcessingControl()
 
 }
 
+int audioCallbackComboIndex = 100;
+
+#if(COMBO_DATA_VECTOR == 1 || COMBO_DATA_ARRAY == 1)
+	#define dbg 1
+	int ProcessingControl::load(int comboIndex)
+	{
+		int status = 0;
+	#if(dbg >= 1)
+		cout << "ENTERING: ProcessingControl::load (using Array or Vector of ComboDataInts)" << endl;
+	#endif
+
+		this->processing->comboIndex = comboIndex;
+		cout << "comboIndex: " << comboIndex << endl;
+		combo = getComboStructFromComboIndex(this->processing->comboIndex);
+		usleep(100000);
+		this->processing->updateProcessing = true;
+		this->processing->processingUpdated = false;
+
+
+	#if(dbg >= 1)
+		cout << "EXIT: ProcessingControl::load  (using Array or Vector of ComboDataInts)" << endl;
+	#endif
+		return status;
+	}
+#elif(COMBO_DATA_MAP == 1)
+	#define dbg 1
+	int ProcessingControl::load(string comboName)
+	{
+		int status = 0;
+		int loadIndex = 0;
+	#if(dbg >= 1)
+		cout << "ENTERING: ProcessingControl::load (using Map of ComboDataInts)" << endl;
+		cout << "comboName: " << comboName << endl;
+	#endif
+
+		this->processing->comboName = comboName;
+		cout << "comboName: " << comboName << endl;
+		//oldCombo = transferComboStruct(combo);
+		oldComboStructIndex = currentComboStructIndex;
+		currentComboStructIndex ^= 1;
+		cout << "oldComboStructIndex: " << oldComboStructIndex << "\tcurrentComboStructIndex: " << currentComboStructIndex << endl;
+		combo[currentComboStructIndex] = getComboStructFromComboName(this->processing->comboName);
+
+
+		this->processing->updateProcessing = true;
+		this->processing->processingUpdated = false;
+
+
+	#if(dbg >= 1)
+		cout << "EXIT: ProcessingControl::load (using Map of ComboDataInts)" << endl;
+	#endif
+		return status;
+	}
+#endif
+
+
 
 #define dbg 1
-int ProcessingControl::load(int comboIndex)
-{
-	int status = 0;
-#if(dbg >= 1)
-	cout << "ENTERING: ProcessingControl::load" << endl;
-#endif
-	/*this->stop();
-	usleep(100000);
-	this->start();
-	cout << "restarting JACK." << endl;*/
-	this->processing->comboIndex = comboIndex;
-	/*this->processing->enableComboBypass();
-	this->processing->stopCombo();
-	this->processing->loadCombo(comboIndex);
-	this->processing->disableComboBypass();*/
-
-#if(dbg >= 1)
-	cout << "EXIT: ProcessingControl::load" << endl;
-#endif
-	return status;
-}
-
-
-#define dbg 0
 int ProcessingControl::start() // start clients and connect them
 {
 	int status = 0;
@@ -85,31 +134,9 @@ int ProcessingControl::start() // start clients and connect them
 #endif
 	this->processing = new Processing;// initial ports from constructor created here.
 	//this->processing->load();
-	/*
 #if(dbg == 1)
-	cout << "process created." << endl;
+	cout << "processing Constructor successful." << endl;
 #endif
-	this->processing->addOutPort("proc_out0");		// add new out port (2) named "blahout0"
-#if(dbg == 1)
-	cout << "port added: " << this->processing->getOutputPortName(0) << endl;
-#endif
-	this->processing->addOutPort("proc_out1");		// add new out port (3) named "blahout1"
-#if(dbg == 1)
-	cout << "port added: " << this->processing->getOutputPortName(1) << endl;
-#endif
-	this->processing->addInPort("proc_in0");		// add new in port (2) named "blahin0"
-#if(dbg == 1)
-	cout << "port added: " << this->processing->getInputPortName(0) << endl;
-#endif
-	this->processing->addInPort("proc_in1");		// add new in port (3) named "blahin1"
-#if(dbg == 1)
-	cout << "port added: " << this->processing->getInputPortName(1) << endl;
-#endif
-	//this->bypassAll(); // set to straight-thru to avoid XRun
-#if(dbg == 1)
-	cout << "process bypassed." << endl;
-#endif
-	*/
 	this->processing->start();	// activate the client
 #if(dbg == 1)
 	cout << "process started." << endl;
@@ -149,53 +176,13 @@ int ProcessingControl::start() // start clients and connect them
 	cout << "connecting processes: " << this->processing->getOutputPortName(1) << endl;
 #endif
 
-/*
-	// exception test example
-	cout << endl << "testing exceptions, trying to connect to a fake port" << endl;
-	try {
-		this->processing->connectFrom(1,"fakeportname");
-	} catch (std::runtime_error e){
-		cout << "YES: " << e.what() << endl;
-	}
 
-	cout << "try to query a port we don't have" << endl;
-	try {
-		this->processing->numConnectionsInPort(100);
-	} catch (std::range_error e){
-		cout << "YES: " << e.what() << endl;
-	}
-
-	// port connection status
-#if(dbg == 1)
-	cout << endl;
-	cout << "proc 0 output 0 is connected to " << this->processing->numConnectionsOutPort(0) << " ports" << endl;
-	cout << "proc 0 output 1 is connected to " << this->processing->numConnectionsOutPort(1) << " ports" << endl;
-	cout << "proc 0 input 0 is connected to " << this->processing->numConnectionsInPort(0) << " ports" << endl;
-	cout << "proc 0 input 1 is connected to " << this->processing->numConnectionsInPort(1) << " ports" << endl;
-#endif
-
-	//print names
-#if(dbg == 1)
-	cout << endl;
-	cout << "inport names:" << endl;
-	for(unsigned int i = 0; i < this->processing->inPorts(); i++)
-		cout << "\t" << this->processing->getInputPortName(i) << endl;
-
-	cout << "outport names:" << endl;
-	for(unsigned int i = 0; i < this->processing->outPorts(); i++)
-		cout << "\t" << this->processing->getOutputPortName(i) << endl;
-#endif
-	*/
 	if(justPoweredUp)
 	{
 		inputsSwitched = this->processing->areInputsSwitched();
 		justPoweredUp = false;
 	}
 
-	/*sleep(3);
-	cout << "adding a new output port!" << endl;
-	this->addOutPort("newOut1");
-	sleep(3);*/
 
 	return status;
 
@@ -264,24 +251,34 @@ int ProcessingControl::updateFootswitch(int *footswitchStatus)
 	return status;
 }
 
-#define dbg 0
+#define dbg 2
 
 int ProcessingControl::updateProcessParameter(int parameterIndex, int parameterValue)
 {
 	int status = 0;
+#if(dbg >= 1)
+	cout << "ENTERING: ProcessingControl::updateProcessParameter" << endl;
+	cout << "parameterIndex: " << parameterIndex << "\tparameterValue: "  << parameterValue << endl;
+#endif
 
-	IndexedParameter parameter = comboData[this->processing->comboIndex].sortedParameterArray[parameterIndex];
+#if(COMBO_DATA_VECTOR == 1)
+	IndexedParameter parameter = comboDataVector[this->processing->comboIndex].sortedParameterArray[parameterIndex];
+#elif(COMBO_DATA_ARRAY == 1)
+	IndexedParameter parameter = comboDataArray[this->processing->comboIndex].sortedParameterArray[parameterIndex];
+#elif(COMBO_DATA_MAP == 1)
+	IndexedParameter parameter = comboDataMap[this->processing->comboName].sortedParameterArray[parameterIndex];
+#endif
 	string processName = parameter.processName; // need to use process name instead of index because process index
 											// in parameterArray does not correspond to process index in processSequence
 
 #if(dbg >= 2)
-	cout << "processName: " << comboData.sortedParameterArray[parameterIndex].processName
-			<< "\t\tabsProcessIndex: " << comboData.sortedParameterArray[parameterIndex].absProcessIndex
-			<< "\t\tparamName: " << comboData.sortedParameterArray[parameterIndex].paramName
-			<< "\t\tprocessParamIndex: " << comboData.sortedParameterArray[parameterIndex].processParamIndex
-			<< "\t\tabsParamIndex: " << comboData.sortedParameterArray[parameterIndex].absParamIndex
-			<< "\t\tparamName: " << comboData.sortedParameterArray[parameterIndex].paramName
-			<< "\t\tparamValue: " << comboData.sortedParameterArray[parameterIndex].paramValue << endl;
+	cout << "processName: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.processName
+			<< "\t\tabsProcessIndex: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.absProcessIndex
+			<< "\t\tparamName: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.paramName
+			<< "\t\tprocessParamIndex: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.processParamIndex
+			<< "\t\tabsParamIndex: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.absParamIndex
+			<< "\t\tparamName: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.paramName
+			<< "\t\tparamValue: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.paramValue << endl;
 #endif
 
 	int processParameterIndex = parameter.processParamIndex;
@@ -290,34 +287,52 @@ int ProcessingControl::updateProcessParameter(int parameterIndex, int parameterV
 #endif
 	this->processing->updateProcessParameter(processName, processParameterIndex, parameterValue);
 
+#if(dbg >= 1)
+	cout << "EXIT: ProcessingControl::updateProcessParameter" << endl;
+#endif
+
 	return status;
 }
 
-#define dbg 0
+#define dbg 2
 int ProcessingControl::updateControlParameter(int parameterIndex, int parameterValue)
 {
 	int status = 0;
+
 #if(dbg >= 1)
 	cout << "ENTERING: ProcessingControl::updateControlParameter" << endl;
+	cout << "parameterIndex: " << parameterIndex << "\tparameterValue: "  << parameterValue << endl;
 #endif
-	IndexedControlParameter parameter = comboData[this->processing->comboIndex].controlParameterArray[parameterIndex];
+
+#if(dbg >= 2)
+	cout << "parameterIndex: " << parameterIndex << endl;
+	cout << "parameterValue: " << parameterValue << endl;
+	cout << "comboDataArray[this->processing->comboIndex].controlParameterArray[parameterIndex]" << endl;
+	cout << "this->processing->comboIndex: " << this->processing->comboIndex << endl;
+#endif
+
+#if(COMBO_DATA_VECTOR == 1)
+	IndexedControlParameter parameter = comboDataVector[this->processing->comboIndex].controlParameterArray[parameterIndex];
+#elif(COMBO_DATA_ARRAY == 1)
+	IndexedControlParameter parameter = comboDataArray[this->processing->comboIndex].controlParameterArray[parameterIndex];
+#elif(COMBO_DATA_MAP == 1)
+	IndexedControlParameter parameter = comboDataMap[this->processing->comboName].controlParameterArray[parameterIndex];
+#endif
 	string controlName = parameter.controlName; // need to use control name instead of index because control index
 											// in parameterArray does not correspond to control index in controlSequence
 
 #if(dbg >= 2)
 	//int procParamIndex = comboData.controlParameterArray[parameterIndex].absProcessParamIndex;
-	cout << "controlName: " << comboData.controlParameterArray[parameterIndex].controlName
-			<< "\tabsControlIndex: " << comboData.controlParameterArray[parameterIndex].absControlIndex
-			<< "\tcontrolParamName: " << comboData.controlParameterArray[parameterIndex].controlParamName
-			<< "\tcontrolParamIndex: " << comboData.controlParameterArray[parameterIndex].controlParamIndex
-			<< "\tcontrolParamValue: " << comboData.controlParameterArray[parameterIndex].controlParamValue
-			/*<< "\tabsProcessParamIndex: " << comboData.controlParameterArray[parameterIndex].absProcessParamIndex
-			<< "\tprocessParamName: " << comboData.unsortedParameterArray[procParamIndex].paramName
-			<< "\tprocessName: " << comboData.unsortedParameterArray[procParamIndex].processName*/ << endl;
+	cout << "controlName: " << /*comboData.controlParameterArray[parameterIndex]*/parameter.controlName
+			<< "\tabsControlIndex: " << /*comboData.controlParameterArray[parameterIndex]*/parameter.absControlIndex
+			<< "\tcontrolParamName: " << /*comboData.controlParameterArray[parameterIndex]*/parameter.controlParamName
+			<< "\tcontrolParamIndex: " << /*comboData.controlParameterArray[parameterIndex]*/parameter.controlParamIndex
+			<< "\tcontrolParamValue: " << /*comboData.controlParameterArray[parameterIndex]*/parameter.controlParamValue << endl;
 #endif
 
 	int controlParameterIndex = parameter.controlParamIndex;
 	this->processing->updateControlParameter(controlName, controlParameterIndex, parameterValue);
+
 #if(dbg >= 1)
 	cout << "control: " << controlName << "\t\tparameter: " << parameter.controlParamName << endl;
 	cout << "EXITING: ProcessingControl::updateControlParameter" << endl;
@@ -331,6 +346,7 @@ int ProcessingControl::enableEffects()
 {
 
 	this->processing->enableProcessing();
+	//this->start();
 	return 0;
 }
 
@@ -338,6 +354,7 @@ int ProcessingControl::disableEffects()
 {
 
 	this->processing->disableProcessing();
+	//this->stop();
 	return 0;
 }
 

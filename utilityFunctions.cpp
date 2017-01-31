@@ -5,6 +5,7 @@
  *      Author: mike
  */
 
+#include "config.h"
 #include "utilityFunctions.h"
 
 

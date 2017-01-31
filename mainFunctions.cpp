@@ -5,12 +5,12 @@
  *      Author: mike
  */
 
-
+#include "config.h"
 //#include "ProcessInt.h"
 //#include "ConnectionCont.h"
 #include "ComboDataInt.h"
 //#include "PedalUiInt.h"
-#include "DataFuncts.h"
+#include "FileSystemFuncts.h"
 #include "utilityFunctions.h"
 #include "mainFunctions.h"
 
@@ -22,6 +22,10 @@ GPIOClass footswitch[2];
 
 #define FOOTSWITCH_1 6
 #define FOOTSWITCH_2 12
+
+/*#define COMBO_DATA_VECTOR 0
+#define COMBO_DATA_ARRAY 0
+#define COMBO_DATA_MAP 1*/
 
 using namespace std;
 
@@ -60,7 +64,14 @@ extern jack_client_t *ofxJackClient;
 //extern PedalUiInt pedalUi;
 //extern ConnectionCont connCont;
 //extern std::vector<string> componentList;
+#if(COMBO_DATA_VECTOR == 1)
+extern std::vector<string> comboList;//comboVectorList;
+#elif(COMBO_DATA_ARRAY == 1)
 extern std::vector<string> comboList;
+#elif(COMBO_DATA_MAP == 1)
+extern std::vector<string> comboList;
+#endif
+
 //extern std::vector<ProcessInt> procIntArray;
 extern int ofxPid;
 extern int childPgid;
@@ -71,7 +82,16 @@ extern int effectCount;
 extern int wrapperParamData[10];
 ProcessingControl procCont;
 
+#if(COMBO_DATA_VECTOR == 1)
+	extern vector<ComboDataInt> comboDataVector;
+#elif(COMBO_DATA_ARRAY == 1)
+	extern ComboDataInt comboDataArray[15];
+#elif(COMBO_DATA_MAP == 1)
+	extern map<string, ComboDataInt> comboDataMap;
+#endif
+
 extern struct _jackParams jackParams;
+extern int comboDataCount;
 /*extern void *toProcessMemory;
 extern void *fromProcessMemory;
 extern int toProcFD;
@@ -115,7 +135,7 @@ int openJack(void)
     cout << "jackctl_server_create" << endl;
     ofxJackServer = jackctl_server_create(NULL, NULL);
 
-	/*************  Finish setting codec registers ************/
+	//*************  Finish setting codec registers ************
 	  snprintf(i2cDevFileName, 19, "/dev/i2c-%d", i2cAdapter);
 	  i2cDevFile = open(i2cDevFileName, O_WRONLY);
 	  if (i2cDevFile < 0)
@@ -164,6 +184,7 @@ int openJack(void)
     return status;
 }
 
+#define dbg 1
 int startJack(void)
 {
 	int status = 0;
@@ -199,7 +220,11 @@ int startJack(void)
 	char i2cDevFileName[20];
 	uint8_t i2cBuffer[2];
 	uint8_t i2cStatus = 0;
-	/*************  Finish setting codec registers ************/
+
+    /*cout << "jackctl_server_create" << endl;
+    ofxJackServer = jackctl_server_create(NULL, NULL);*/
+
+	//*************  Finish setting codec registers ************
 	  snprintf(i2cDevFileName, 19, "/dev/i2c-%d", i2cAdapter);
 	  i2cDevFile = open(i2cDevFileName, O_WRONLY);
 	  if (i2cDevFile < 0)
@@ -261,7 +286,7 @@ int closeJack(void)
 {
 	int status = 0;
 
-    jackctl_server_destroy(ofxJackServer);
+    //jackctl_server_destroy(ofxJackServer);
 
 	status = system("killall -9 jackd");
 
@@ -608,7 +633,7 @@ int stopCombo(void)
 	//int procCount = 0;
 	char procOutput[15];
 	int connCount = 0;
-	//stopJack();
+	stopJack();
 	//procCont.stop();//stopCombo();
 	sleep(1);
 	char disconnString[100];
@@ -622,140 +647,499 @@ int stopCombo(void)
 }
 
 #define dbg 1
-int loadComboStructArray(vector<string> comboList)
+ComboDataInt getComboObject(string comboName)
 {
-	int status = 0;
-
+	ComboDataInt comboObject;
 #if(dbg >= 1)
-	cout << "*****ENTERING loadComboStructArray" << endl;
+	cout << "*****ENTERING getComboObject" << endl;
 #endif
 
-	for(vector<string>::size_type comboListIndex = 0; comboListIndex < comboList.size(); comboListIndex++)
-	{
-		if(comboData[comboListIndex].loadComboStructFromName((char *)comboList[comboListIndex].c_str()) < 0)
-		{
-			cout << "failed to open file: " << (char *)comboList[comboListIndex].c_str();
-		}
-	}
-
+	comboObject.loadComboStructFromName((char *)comboName.c_str());
 
 #if(dbg >= 1)
-	cout << "***** EXITING loadComboStructArray" << endl;
+	cout << "***** EXITING getComboObject" << endl;
 #endif
-	return status;
+	return comboObject;
+
 }
 
-#define dbg 1
-int addComboStruct(string comboName)
-{
-	int status = 0;
-#if(dbg >= 1)
-	cout << "*****ENTERING addComboStruct" << endl;
-#endif
-	int index = 0;
 
-	for(index = 0; index < 15; index++)
+
+#if(COMBO_DATA_VECTOR == 1)
+	#define dbg 1
+	int loadComboStructVectorAndList()
 	{
-		if(comboData[index].effectComboJson["name"].empty() == true)
+		int status = 0;
+	#if(dbg >= 1)
+		cout << "*****ENTERING loadComboStructVector" << endl;
+	#endif
+
+		FILE *fdComboList = popen("ls /home/Combos","r");
+		char buffer[20];
+
+		for(int i = 0; i<20;i++)
 		{
-			break;
+			buffer[i] = 0;
+		}
+
+
+		if(fdComboList == NULL)
+		{
+	#if(dbg>=2)
+			cout << "popen failed." << endl;
+	#endif
+			status = 1;
 		}
 		else
 		{
-			cout << "comboData[" << index << "]:" << comboData[index].effectComboJson["name"] << endl;
+			fflush(fdComboList);
+			while(fgets(buffer,20,fdComboList) != NULL)
+			{
+				strcpy(buffer,strtok(buffer,"."));
+				addComboStructToVector(string(buffer));
+				for(int i = 0; i<20;i++) buffer[i] = 0;
+			}
 		}
+
+	#if(dbg >= 1)
+		cout << "***** EXITING loadComboStructVector" << endl;
+	#endif
+		return status;
 	}
 
-	cout << "writing to combo index: " << index << endl;
-	//comboData[index].loadComboStructFromName((char *)comboName.c_str());
-	string comboJson = getComboStringFromFile(comboName);
-	comboData[index].loadComboStructFromJsonString(comboJson);
-#if(dbg >= 1)
-	cout << "***** EXITING addComboStruct" << endl;
-#endif
 
-	return status;
-}
-
-#define dbg 1
-int deleteComboStruct(char *comboName)
-{
-	int status = 0;
-#if(dbg >= 1)
-	cout << "*****ENTERING deleteComboStruct" << endl;
-#endif
-	int index = getComboIndex(string(comboName));
-
-	cout << "removing " << index << ":" << comboName << endl;
-	if(index >= 0)
+	std::vector<string> getComboVectorList(void)
 	{
-		comboData[index].connectionsJson.clear();
+		std::vector<string> tempComboList;
 
-		comboData[index].effectComboJson.clear();
-		comboData[index].pedalUiJson.clear();
-		comboData[index].unsequencedProcessListJson.clear();
-		comboData[index].unsequencedProcessListStruct.clear();
-		comboData[index].unsequencedConnectionListJson.clear();
+	#if(dbg >= 1)
+		cout << "*****ENTERING getComboVectorList" << endl;
+	#endif
 
-		comboData[index].connectionsJson.clear();
-		comboData[index].processesJson.clear();
-		comboData[index].processesStruct.clear();
-		comboData[index].unsortedParameterArray.clear();
-		comboData[index].sortedParameterArray.clear();
-		comboData[index].controlParameterArray.clear();
-		comboData[index].controlsStruct.clear();
-		comboData[index].controlConnectionsStruct.clear();
-		//std::vector<Parameter> parameterArray;
+		for(int comboVectorIndex = 0; comboVectorIndex < comboDataVector.size(); comboVectorIndex++)
+		{
+			cout << "combo name: " << comboDataVector[comboVectorIndex].comboName << endl;
+			if(comboDataVector[comboVectorIndex].comboName.empty() == false)
+			{
+				tempComboList.push_back(comboDataVector[comboVectorIndex].comboName);
+			}
+			else
+			{
+				cout << "combo name is empty." << endl;
+			}
+		}
 
-		for(int i = 0; i < 10; i++)
-			comboData[index].footswitchStatus[i] = 0;
-		for(int i = 0; i < 2; i++)
-			comboData[index].inputProcBufferIndex[i] = 0;
-		for(int i = 0; i < 2; i++)
-			comboData[index].outputProcBufferIndex[i] = 0;
-		comboData[index].processCount = 0;
-		comboData[index].controlCount = 0;
-		comboData[index].bufferCount = 0;
-		status = 0;
+	#if(dbg >= 1)
+		cout << "***** EXITING getComboVectorList" << endl;
+	#endif
+		return tempComboList;
+	}
+
+	#define dbg 1
+	int getComboVectorIndex(string comboName)
+	{
+		int index;
+	#if(dbg >= 1)
+		cout << "*****ENTERING getComboVectorIndex" << endl;
+	#endif
+
+		for(int i = 0; i < comboDataVector.size(); i++)
+		{
+			if(comboDataVector[i].comboName.empty() == false)
+			{
+				cout << "comparing: " << comboDataVector[i].comboName << " with " << comboName << endl;
+				if(comboDataVector[i].comboName.compare(comboName) == 0)
+				{
+	#if(dbg >= 1)
+					cout << "EXITING getComboVectorIndex." << endl;
+	#endif
+					return i;
+				}
+			}
+			else
+			{
+				cout << "combo name was empty." << endl;
+			}
+		}
+	#if(dbg >= 1)
+		cout << "***** EXITING getComboVectorIndex" << endl;
+	#endif
+		return -1;
+	}
+
+	#define dbg 1
+	int addComboStructToVectorAndList(string comboName)
+	{
+		int status = 0;
+	#if(dbg >= 1)
+		cout << "*****ENTERING addComboStructToVector" << endl;
+	#endif
+		ComboDataInt tempCombo = getComboObject(comboName);
+		if(tempCombo.comboName.empty() == false)
+		{
+			comboDataVector.push_back(tempCombo);
+		}
+		else
+		{
+			cout << "failed to add combo object: " << comboName << endl;
+			status = -1;
+		}
+
+	#if(dbg >= 1)
+		cout << "***** EXITING addComboStructToVector" << endl;
+	#endif
+		return status;
+	}
+
+	#define dbg 1
+	int deleteComboStructFromVectorAndList(char *comboName)
+	{
+		int status = 0;
+	#if(dbg >= 1)
+		cout << "*****ENTERING deleteComboStructFromVector" << endl;
+	#endif
+		int index = 0;
+
+		index = getComboVectorIndex(comboName);
+		if(index >= 0)
+		{
+			comboDataVector.erase(comboDataVector.begin() + index);
+		}
+		else
+		{
+			cout << "combo object not found:" << comboName << endl;
+			status = -1;
+		}
+
+	#if(dbg >= 1)
+		cout << "***** EXITING deleteComboStructFromVector" << endl;
+	#endif
+		return status;
+	}
+
+#elif(COMBO_DATA_ARRAY == 1)
+	#define dbg 1
+	int getComboArrayIndex(string comboName)
+	{
+
+	#if(dbg >= 1)
+		cout << "ENTERING getComboIndex." << endl;
+	#endif
+		for(int i = 0; i < comboList.size(); i++)
+		{
+			if(comboDataArray[i].comboName.empty() == false)
+			{
+				cout << "comparing: " << comboDataArray[i].comboName << " with " << comboName << endl;
+				if(comboDataArray[i].comboName.compare(comboName) == 0)
+				{
+		#if(dbg >= 1)
+			cout << "EXITING getComboIndex." << endl;
+		#endif
+					return i;
+				}
+			}
+			else
+			{
+				cout << "combo name was empty." << endl;
+			}
+		}
+
+	#if(dbg >= 1)
+		cout << "EXITING getComboIndex." << endl;
+	#endif
+		return -1; // combo not found
+
+	}
+
+	#define dbg 1
+	int loadComboStructArrayAndList(vector<string> comboList)
+	{
+		int status = 0;
+
+	#if(dbg >= 1)
+		cout << "*****ENTERING loadComboStructArray*****" << endl;
+	#endif
+
+		for(int comboListIndex = 0; comboListIndex < comboList.size(); comboListIndex++)
+		{
+			cout << "loading combo from file: " << comboList[comboListIndex] << endl;
+			if(comboDataArray[comboListIndex].loadComboStructFromName((char *)comboList[comboListIndex].c_str()) < 0)
+			{
+				cout << "failed to open file: " << comboDataArray[comboListIndex].comboName.c_str();
+			}
+		}
+
+
+	#if(dbg >= 1)
+		cout << "***** EXITING loadComboStructArray*****" << endl;
+	#endif
+		return status;
+	}
+
+	#define dbg 1
+	int addComboStructToArrayAndList(string comboName)
+	{
+		int status = 0;
+	#if(dbg >= 1)
+		cout << "*****ENTERING addComboStruct" << endl;
+	#endif
+		int index = 0;
+
+		comboDataArray[comboDataCount++].loadComboStructFromName((char *)comboName.c_str());
+	#if(dbg >= 1)
+		cout << "***** EXITING addComboStruct" << endl;
+	#endif
+
+		return status;
+	}
+
+	#define dbg 1
+	int deleteComboStructFromArrayAndList(string comboName)
+	{
+		int status = 0;
+	#if(dbg >= 1)
+		cout << "*****ENTERING deleteComboStruct" << endl;
+	#endif
+		int index = getComboIndex(comboName);
+
+
+		cout << "removing " << index << ":" << comboName << endl;
+		if(index >= 0)
+		{
+			comboDataArray[index].comboName.clear();
+			comboDataArray[index].connectionsJson.clear();
+
+			comboDataArray[index].effectComboJson.clear();
+			comboDataArray[index].pedalUiJson.clear();
+			comboDataArray[index].unsequencedProcessListJson.clear();
+			comboDataArray[index].unsequencedProcessListStruct.clear();
+			comboDataArray[index].unsequencedConnectionListJson.clear();
+
+			comboDataArray[index].connectionsJson.clear();
+			comboDataArray[index].processesJson.clear();
+			comboDataArray[index].processesStruct.clear();
+			comboDataArray[index].unsortedParameterArray.clear();
+			comboDataArray[index].sortedParameterArray.clear();
+			comboDataArray[index].controlParameterArray.clear();
+			comboDataArray[index].controlsStruct.clear();
+			comboDataArray[index].controlConnectionsStruct.clear();
+			//std::vector<Parameter> parameterArray;
+
+			for(int i = 0; i < 10; i++)
+				comboDataArray[index].footswitchStatus[i] = 0;
+			for(int i = 0; i < 2; i++)
+				comboDataArray[index].inputProcBufferIndex[i] = 0;
+			for(int i = 0; i < 2; i++)
+				comboDataArray[index].outputProcBufferIndex[i] = 0;
+			comboDataArray[index].processCount = 0;
+			comboDataArray[index].controlCount = 0;
+			comboDataArray[index].bufferCount = 0;
+			status = 0;
+		}
+		else
+		{
+			cout << "invalid index." << endl;
+			status = -1;
+		}
+
+	#if(dbg >= 1)
+		cout << "***** EXITING deleteComboStruct" << endl;
+	#endif
+
+		return status;
+	}
+
+#elif(COMBO_DATA_MAP == 1)
+	int loadComboStructMapAndList(void)
+	{
+		int status = 0;
+#if(dbg >= 1)
+	cout << "*****ENTERING loadComboStructMapAndList" << endl;
+#endif
+
+/*	FILE *fdComboList = popen("ls /home/Combos","r");
+	char buffer[20];
+
+	for(int i = 0; i<20;i++)
+	{
+		buffer[i] = 0;
+	}*/
+
+	comboList = getComboListFromFS();
+
+	if(comboList.empty() == true)
+	{
+#if(dbg>=2)
+		cout << "popen failed." << endl;
+#endif
+		status = -1;
 	}
 	else
 	{
-		cout << "invalid index." << endl;
-		status = -1;
-	}
-
-#if(dbg >= 1)
-	cout << "***** EXITING deleteComboStruct" << endl;
-#endif
-
-	return status;
-}
-
-#define dbg 1
-int getComboIndex(string comboName)
-{
-
-#if(dbg >= 1)
-	cout << "ENTERING getComboIndex." << endl;
-#endif
-	for(vector<string>::size_type i = 0; i < comboList.size(); i++)
-	{
-		cout << "comparing: " << comboList[i] << " with " << comboName << endl;
-		if(comboList[i].compare(comboName) == 0)
+		comboDataMap.clear();
+		//while(fgets(buffer,20,fdComboList) != NULL)
+		for(vector<string>::size_type comboListIndex = 0; comboListIndex < comboList.size(); comboListIndex++)
 		{
-#if(dbg >= 1)
-	cout << "EXITING getComboIndex." << endl;
-#endif
-			return i;
+			addComboStructToMap(comboList[comboListIndex]);
 		}
 	}
 
 #if(dbg >= 1)
-	cout << "EXITING getComboIndex." << endl;
+	cout << "***** EXITING loadComboStructMapAndList" << endl;
 #endif
-	return -1; // combo not found
+		return status;
+	}
 
+
+	std::vector<string> getComboMapList(void)
+	{
+		std::vector<string> tempComboList;
+#if(dbg >= 1)
+	cout << "*****ENTERING getComboMapList" << endl;
+#endif
+
+			for(map<string, ComboDataInt>::iterator comboMapIt = comboDataMap.begin(); comboMapIt != comboDataMap.end(); comboMapIt++)
+			{
+				cout << "combo name: " << comboMapIt->first << endl;
+				if(comboMapIt->first.empty() == false)
+				{
+					tempComboList.push_back(comboMapIt->first);
+				}
+				else
+				{
+					cout << "combo name is empty." << endl;
+				}
+			}
+
+#if(dbg >= 1)
+	cout << "***** EXITING getComboMapList" << endl;
+#endif
+			return tempComboList;
+	}
+
+	int getComboMapIndex(string comboName)
+	{
+		int status = 0;
+#if(dbg >= 1)
+	cout << "*****ENTERING getComboMapIndex" << endl;
+#endif
+
+
+
+#if(dbg >= 1)
+	cout << "***** EXITING getComboMapIndex" << endl;
+#endif
+		return status;
+	}
+
+	//************* Use this when adding individual comboStructs to comboStruct map and comboList *****************
+	int addComboStructToMapAndList(string comboName)
+	{
+		int status = 0;
+#if(dbg >= 1)
+		cout << "*****ENTERING addComboStructToMapAndList" << endl;
+#endif
+
+		ComboDataInt tempCombo = getComboObject(comboName);
+		if(tempCombo.comboName.empty() == false)
+		{
+			comboDataMap.insert({comboName, tempCombo});
+			comboList = getComboMapList();
+		}
+		else
+		{
+			cout << "failed to add combo object: " << comboName << endl;
+			status = -1;
+		}
+
+#if(dbg >= 1)
+		cout << "***** EXITING addComboStructToMapAndList" << endl;
+#endif
+		return status;
+	}
+
+	//************* Use this when re-creating entire comboStruct map *****************
+	int addComboStructToMap(string comboName)
+	{
+		int status = 0;
+#if(dbg >= 1)
+		cout << "*****ENTERING addComboStructToMapAndList" << endl;
+#endif
+
+		ComboDataInt tempCombo = getComboObject(comboName);
+		if(tempCombo.comboName.empty() == false)
+		{
+			comboDataMap.insert({comboName, tempCombo});
+		}
+		else
+		{
+			cout << "failed to add combo object: " << comboName << endl;
+			status = -1;
+		}
+
+#if(dbg >= 1)
+		cout << "***** EXITING addComboStructToMapAndList" << endl;
+#endif
+		return status;
+	}
+
+
+	int deleteComboStructFromMapAndList(string comboName)
+	{
+		int status = 0;
+#if(dbg >= 1)
+	cout << "*****ENTERING deleteComboStructFromMapAndList" << endl;
+#endif
+
+		if(comboDataMap.find(comboName) != comboDataMap.end())
+		{
+			comboDataMap.erase(comboName);
+			comboList = getComboMapList();
+		}
+		else
+		{
+			cout << "combo object not found:" << comboName << endl;
+			status = -1;
+		}
+
+#if(dbg >= 1)
+	cout << "***** EXITING deleteComboStructFromMapAndList" << endl;
+#endif
+		return status;
+	}
+#endif
+
+
+int deleteComboNameFromList(string comboName)
+{
+	int status = 0;
+#if(dbg >= 1)
+cout << "*****ENTERING deleteComboNameFromList" << endl;
+#endif
+
+	for(int i = 0; i < comboList.size(); i++)
+	{
+		if(comboList[i].compare(string(comboName)) == 0)
+		{
+			comboList.erase(comboList.begin() + i);
+			break;
+		}
+		if(i == comboList.size() - 1)
+		{
+			cout << "combo object not found:" << comboName << endl;
+			status = -1;
+		}
+	}
+
+	#if(dbg >= 1)
+cout << "***** EXITING deleteComboNameFromList" << endl;
+#endif
+	return status;
 }
+
+
+
+
 
 #define dbg 0
 int readFootswitches(void)

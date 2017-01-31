@@ -5,6 +5,7 @@
  *      Author: buildrooteclipse
  */
 
+#include "config.h"
 #include "BaseUiInt.h"
 #include "HostUiInt.h"
 
@@ -87,7 +88,7 @@ string HostUiInt::getUserRequest(void)
 }
 
 
-#define dbg 0
+#define dbg 2
 int HostUiInt::sendComboList(string comboLists)
 {
 
@@ -98,13 +99,20 @@ int HostUiInt::sendComboList(string comboLists)
 
 	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 	sprintf(this->hostUiResponseCharArray,"ComboList:%s",(char *)comboLists.c_str());
+	errno = 0;
 	if(usb.writeData(this->hostUiResponseCharArray) >= 0)
 	{
 		status = 0;
+#if(dbg >= 2)
+		cout << this->hostUiResponseCharArray << endl;
+#endif
 	}
 	else
 	{
 		status = -1;
+#if(dbg >= 2)
+		cout << "combo list end fail: " << errno << endl;
+#endif
 	}
 
 #if(dbg >= 1)
@@ -185,7 +193,7 @@ int HostUiInt::sendComboToHost(string comboName)
 	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 	//strcpy(this->hostUiResponseCharArray, getComboData(comboName).c_str());
 
-	comboString = getComboData(comboName);
+	comboString = getComboDataFromFS(comboName);
 	if(comboString.empty() == false)
 	{
 
@@ -224,7 +232,7 @@ int HostUiInt::sendComboToHost(string comboName)
 	return status;
 }
 
-#define dbg 0
+#define dbg 1
 string HostUiInt::getComboFromHost(string comboJson)
 {
 	#if(dbg >= 1)
@@ -286,7 +294,7 @@ string HostUiInt::getComboFromHost(string comboJson)
 			cout << "data filtered" << endl;
 			cout << "filtered combo data: " << filteredComboData << endl;
 #endif
-			comboName = saveCombo(string(filteredComboData));
+			comboName = saveComboToFS(string(filteredComboData));
 			if(comboName.empty() == true)
 			{
 				cout << "error saving combo." << endl;
