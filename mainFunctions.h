@@ -62,6 +62,7 @@ int runCombo(void);
 //int updateCombo(int paramIndex, int paramValueIndex);
 int stopCombo(void);
 ComboDataInt getComboObject(string comboName);
+int listComboMapObjects(void);
 
 int loadComboStructArray(vector<string> comboList);
 std::vector<string> getComboArrayList(void);

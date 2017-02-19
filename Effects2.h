@@ -5,10 +5,11 @@
  *      Author: mike
  */
 
-#ifndef EFFECTS_H_
-#define EFFECTS_H_
+#ifndef EFFECTS2_H_
+#define EFFECTS2_H_
 
-#define BUFFER_SIZE 1024
+//#define BUFFER_SIZE 1024
+#include "config.h"
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -63,11 +64,14 @@ struct ProcessEvent{
 	bool processFinished;
 };*/
 
+
+
 //***************** functions for loading process data ***************************
 int initProcBuffers(struct ProcessBuffer *procBufferArray);
 int setProcBuffer(struct ProcessBuffer procBufferArray, int processed, int ready);
 int resetProcBuffer(struct ProcessBuffer procBufferArray);
-
+int clearProcBuffer(struct ProcessBuffer *procBuffer);
+int clearProcBuffer(struct ProcessBuffer procBuffer);
 int setProcData(struct ProcessEvent *procEvent, Process processStruct);
 
 int setProcParameters(struct ProcessEvent *procEvent, Process processStruct);
@@ -80,7 +84,7 @@ int setProcOutputBufferIndex(struct ProcessEvent *procEvent, int processOutputIn
 
 //******************************** Controls for manipulating process parameters ********************************
 
-int control(int action, bool envTrigger, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
+int control(/*int*/ char action, bool envTrigger, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
 
 
 //************************ processing *************************************************
@@ -89,19 +93,19 @@ void resetBufferAve(struct ProcessBuffer *bufferArray);
 int processBufferAveSample(double sample, struct ProcessBuffer *bufferArray);
 void updateBufferOffset(struct ProcessBuffer *bufferArray);
 
-int delayb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
 
-int filter3bb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
 
-int filter3bb2(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
 
-int lohifilterb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
 
-int mixerb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int mixerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
 
-int volumeb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
 
-int waveshaperb(int action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
 
 
 #endif /* EFFECTS_H_ */

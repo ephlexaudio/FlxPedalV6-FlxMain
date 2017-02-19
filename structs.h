@@ -11,6 +11,7 @@
 using namespace std;
 
 //#include <string>
+#include "config.h"
 #include <vector>
 #include <sys/types.h>
 //#include <stdbool.h>
@@ -21,8 +22,7 @@ using namespace std;
 #include <cstring>
 #include <linux/types.h>*/
 
-#define BUFFER_SIZE 1024
-#define DELAY_BUFFER_LENGTH 40000
+//#define BUFFER_SIZE 1024
 #define AVE_ARRAY_SIZE 16
 /*************** CONTROL CONTEXTS ************************/
 struct EnvGenContext{
@@ -42,10 +42,45 @@ struct LfoContext{
 
 /****************** EFFECTS CONTEXTS *********************/
 struct DelayContext{
+	double dummy[100];
 	unsigned int inputPtr;
 	unsigned int outputPtr;
 	double delayBuffer[DELAY_BUFFER_LENGTH];
+	double dummy1[100];
 };
+
+#define NUMBER_OF_BANDS 2
+struct Filter3bbContext{
+	double lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+	double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+	double couplingFilter_y[4], couplingFilter_x[4];
+	double noiseFilter_y[4], noiseFilter_x[4];
+};
+
+struct Filter3bb2Context{
+	double lp_y[4], lp_x[4]; // needs to be static to retain data from previous processing
+	double bp_y[5], bp_x[5]; // needs to be static to retain data from previous processing
+	double hp_y[4], hp_x[4]; // needs to be static to retain data from previous processing
+	double couplingFilter_y[3], couplingFilter_x[3];
+	double noiseFilter_y[3], noiseFilter_x[3];
+};
+
+struct LohifilterbContext{
+	double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+	double lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+	double couplingFilter_y[3], couplingFilter_x[3];
+	double noiseFilter_y[3], noiseFilter_x[3];
+};
+
+struct WaveshaperbContext{
+	double v[4];
+	double x[6],y[6];
+	double m[5],b[5];
+	double couplingFilter_y[3], couplingFilter_x[3];
+	double noiseFilter_y[3], noiseFilter_x[3];
+	double outMeasure;
+};
+
 
 
 struct ProcessParams{
@@ -167,11 +202,11 @@ struct ProcessEvent{
 	int dataReadDone; // outside process finished reading data
 	int processInputCount;
 	int processOutputCount;
-	int *inputBufferIndexes;
+	int inputBufferIndexes[5];
 	vector<string> inputBufferNames;
-	int *outputBufferIndexes;
+	int outputBufferIndexes[5];
 	vector<string> outputBufferNames;
-	void *processContext;
+	//void *processContext;
 	bool processFinished;
 };
 
@@ -199,7 +234,8 @@ struct ControlEvent{
 								// get process:parameter from ControlConnection.dest, then
 								// get index using getProcessParameterIndex(dest.process, dest.parameter)
 	int paramContConnectionCount; // number of process parameters being written to by this control
-	void *controlContext;
+	//void *controlContext;
+	int controlTypeIndex;
 	bool gateStatus;
 	bool envTriggerStatus;
 	double output;

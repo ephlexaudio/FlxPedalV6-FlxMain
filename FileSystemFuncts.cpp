@@ -37,13 +37,13 @@ struct _segFaultInfo {
 	string function;
 	int line;
 };
-extern struct _segFaultInfo segFaultInfo;
 
 #define dbg 1
 int validateJsonString(std::string jsonString)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: FileSystemFuncts::validateJsonString" << endl;
+	cout << "jsonString: " << jsonString << endl;
 #endif
 
 	int status = 0;
@@ -156,7 +156,7 @@ int validateJsonString(std::string jsonString)
 	}
 
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::validateJsonString" << endl;
+	cout << "***** EXITING: FileSystemFuncts::validateJsonString: " << status << endl;
 #endif
 
 	return status;
@@ -167,9 +167,8 @@ int validateJsonBuffer(char *jsonBuffer)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: FileSystemFuncts::validateJsonBuffer" << endl;
+	cout << "jsonBuffer: " << jsonBuffer << endl;
 #endif
-	segFaultInfo.function = string("validateJsonBuffer");
-	segFaultInfo.line = 0;
 	int status = 0;
 	Json::Value jsonClean;
 	int newlineIndex =0;
@@ -218,7 +217,6 @@ int validateJsonBuffer(char *jsonBuffer)
 
 	if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 	{
-		cout << "line 219." << endl;
 		cout << "JSON name: " << jsonClean["name"] << endl;
 		cleanBufferString = jsonCleanWriter.write(jsonClean);
 		cleanBufferString.erase(remove(cleanBufferString.begin(),cleanBufferString.end(),'\n'),cleanBufferString.end());
@@ -279,16 +277,14 @@ int validateJsonBuffer(char *jsonBuffer)
 
 			}
 		}
-		cout << "line 279" << endl;
 	}
 	else
 	{
 		cout << "jsonString could not be parsed" << endl;
 		status = -1;
 	}
-	cout << "line 286" << endl;
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::validateJsonBuffer" << endl;
+	cout << "***** EXITING: FileSystemFuncts::validateJsonBuffer: " << status << endl;
 #endif
 
 
@@ -353,6 +349,7 @@ std::string getComponentData(std::string componentName)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: FileSystemFuncts::getComponentData" << endl;
+	cout << "componentName: " << componentName << endl;
 #endif
 	char compString[50];
 	sprintf(compString,"/home/Components/%s.txt", componentName.c_str());
@@ -388,7 +385,7 @@ std::string getComponentData(std::string componentName)
 
 //def update_combo_directory_data():
 #define dbg 0
-std::vector<string> getComboListFromFS(void)
+std::vector<string> getComboListFromFileSystem(void)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: FileSystemFuncts::getComboFileList" << endl;
@@ -438,10 +435,11 @@ std::vector<string> getComboListFromFS(void)
 
 
 #define dbg 0
-std::string getComboDataFromFS(std::string comboName)
+std::string getComboDataFromFileSystem(std::string comboName)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: FileSystemFuncts::getComboData" << endl;
+	cout << "comboName: " << comboName << endl;
 #endif
 	errno = 0;
 	char comboString[50];
@@ -498,10 +496,10 @@ std::string getComboDataFromFS(std::string comboName)
 }
 
 #define dbg 0
-string saveComboToFS(std::string comboJson)
+string saveComboToFileSystem(std::string comboJson)
 {
 #if(dbg >= 1)
-	cout << "***** ENTERING: FileSystemFuncts::saveComboToFS" << endl;
+	cout << "***** ENTERING: FileSystemFuncts::saveComboToFileSystem" << endl;
 #endif
 	int status = 0;
 	string name;
@@ -525,7 +523,7 @@ string saveComboToFS(std::string comboJson)
 	{
 		sprintf(fileNameBuffer, "/home/Combos/%s.txt", tempJsonCombo["name"].asString().c_str());
 #if(dbg>=2)
-		std::cout << "saveComboToFS: " << fileNameBuffer << '\n';
+		std::cout << "saveComboToFileSystem: " << fileNameBuffer << '\n';
 #endif
 		//saveComboFD = fopen(fileNameString,"w");
 		if((saveComboFD = fopen(fileNameBuffer,"w")) != NULL )
@@ -534,11 +532,11 @@ string saveComboToFS(std::string comboJson)
 			for(int i = 0; comboDataBuffer[i] != 0; i++) charCount++;
 			strncpy(parsedComboDataBuffer, comboDataBuffer, charCount);
 #if(dbg>=2)
-			std::cout << "OfxMain/FileSystemFuncts/saveComboToFS size: " << strlen(parsedComboDataBuffer) << endl;
+			std::cout << "OfxMain/FileSystemFuncts/saveComboToFileSystem size: " << strlen(parsedComboDataBuffer) << endl;
 #endif
 			int bytesWritten = fwrite(parsedComboDataBuffer,1,charCount,saveComboFD);
 #if(dbg>=2)
-			std::cout << "OfxMain/FileSystemFuncts/saveComboToFS bytes written: " << bytesWritten << endl;
+			std::cout << "OfxMain/FileSystemFuncts/saveComboToFileSystem bytes written: " << bytesWritten << endl;
 #endif
 			fclose(saveComboFD);
 			name = tempJsonCombo["name"].asString();
@@ -556,15 +554,19 @@ string saveComboToFS(std::string comboJson)
 	}
 
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::saveComboToFS" << endl;
+	cout << "***** EXITING: FileSystemFuncts::saveComboToFileSystem: " << name << endl;
 #endif
 	return name;
 }
 
 
-int deleteComboFromFS(std::string comboName)
+int deleteComboFromFileSystem(std::string comboName)
 {
 	int status = 0;
+#if(dbg >= 1)
+	cout << "***** ENTERING: FileSystemFuncts::deleteComboFromFileSystem" << endl;
+	cout << "comboName: " << comboName << endl;
+#endif
 
 	char cliString[50];
 	char cliResult[100];
@@ -583,6 +585,9 @@ int deleteComboFromFS(std::string comboName)
 	{
 		status = -1;
 	}
+#if(dbg >= 1)
+		cout << "***** EXITING: FileSystemFuncts::deleteComboFromFileSystem: " << status << endl;
+#endif
 
 	return status;
 }

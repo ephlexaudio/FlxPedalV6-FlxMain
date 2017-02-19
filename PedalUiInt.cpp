@@ -27,6 +27,16 @@
 #define RX_BUFFER_SIZE 1500
 #define FILE_BUFFER_SIZE 16000
 
+#if(dbg >= 1)
+	cout << "***** ENTERING: PedalUiInt::" << endl;
+#endif
+
+#if(dbg >= 1)
+	cout << "***** EXITING: PedalUiInt:::" << endl;
+#endif
+
+
+
 using namespace std;
 
 //extern int procCount;
@@ -67,14 +77,14 @@ int PedalUiInt::checkForNewPedalData(void)
 	}*/
 	status = BaseUiInt::checkForNewData(1);
 #if(dbg >= 1)
-	cout << "***** EXITING: PedalUiInt::checkForNewPedalData" << endl;
+	cout << "***** EXITING: PedalUiInt::checkForNewPedalData: " << status << endl;
 #endif
 
 	return status;
 }
 
 
-#define dbg 1
+#define dbg 2
 
 int PedalUiInt::sendComboUiData(Json::Value uiJson)
 {
@@ -184,7 +194,7 @@ int PedalUiInt::sendComboUiData(Json::Value uiJson)
 		}
 		strcat((char *)this->uiData, "]}");
 	}
-#if(dbg>=1)
+#if(dbg>=2)
 	//printf("this->uiData: %s\n", this->uiData);
 	cout << "this->uiData:" << this->uiData << endl;
 	//printf("this->uiData length: %d\n", strlen(this->uiData));
@@ -195,7 +205,7 @@ int PedalUiInt::sendComboUiData(Json::Value uiJson)
 	for(int i = 0; i < TX_BUFFER_SIZE; i++) this->uiData[i] = 0;
 
 #if(dbg >= 1)
-	cout << "***** EXITING: PedalUiInt::sendComboUiData" << endl;
+	cout << "***** EXITING: PedalUiInt::sendComboUiData: " << status << endl;
 #endif
 	return status;
 }

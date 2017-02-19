@@ -26,6 +26,19 @@
 #define TX_BUFFER_SIZE 1500
 #define RX_BUFFER_SIZE 1500
 
+/**************************************
+#if(dbg >= 1)
+	cout << "***** ENTERING: SharedMemoryInt::" << endl;
+	cout << ": " <<  << endl;
+#endif
+
+#if(dbg >= 1)
+	cout << "***** EXITING: SharedMemoryInt::: " << status << endl;
+#endif
+
+#if(dbg >=2)
+#endif
+********************************************/
 
 #define MCU_SHARED_MEMORY_SECTION_INDEX 0
 #define CM0_SHARED_MEMORY_SECTION_INDEX 1
@@ -48,7 +61,7 @@ SharedMemoryInt::SharedMemoryInt()
 	this->spiFD = open(device0, O_RDWR);
 	if (this->spiFD < 0)
 	{
-		this->status = 1;
+		this->status = -1;
 		pabort("can't open device");
 	}
 
@@ -57,23 +70,23 @@ SharedMemoryInt::SharedMemoryInt()
 	 */
 	int ret;
 
-	if(this->status == 0)
+	if(this->status >= 0)
 	{
 		ret = ioctl(this->spiFD, SPI_IOC_WR_MODE, &mode);
 		if (ret == -1)
 		{
-			this->status = 1;
+			this->status = -1;
 			pabort("can't set spi mode");
 		}
 
 	}
 
-	if(this->status == 0)
+	if(this->status >= 0)
 	{
 		ret = ioctl(this->spiFD, SPI_IOC_RD_MODE, &mode);
 		if (ret == -1)
 		{
-			this->status = 1;
+			this->status = -1;
 			pabort("can't get spi mode");
 		}
 
@@ -82,23 +95,23 @@ SharedMemoryInt::SharedMemoryInt()
 	/*
 	 * bits per word
 	 */
-	if(this->status == 0)
+	if(this->status >= 0)
 	{
 		ret = ioctl(this->spiFD, SPI_IOC_WR_BITS_PER_WORD, &bits);
 		if (ret == -1)
 		{
-			this->status = 1;
+			this->status = -1;
 			pabort("can't set bits per word");
 		}
 
 	}
 
-	if(this->status == 0)
+	if(this->status >= 0)
 	{
 		ret = ioctl(this->spiFD, SPI_IOC_RD_BITS_PER_WORD, &bits);
 		if (ret == -1)
 		{
-			this->status = 1;
+			this->status = -1;
 			pabort("can't get bits per word");
 		}
 
@@ -107,22 +120,22 @@ SharedMemoryInt::SharedMemoryInt()
 	/*
 	 * max speed hz
 	 */
-	if(this->status == 0)
+	if(this->status >= 0)
 	{
 		ret = ioctl(this->spiFD, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
 		if (ret == -1)
 		{
-			this->status = 1;
+			this->status = -1;
 			pabort("can't set max speed hz");
 		}
 	}
 
-	if(this->status == 0)
+	if(this->status >= 0)
 	{
 		ret = ioctl(this->spiFD, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
 		if (ret == -1)
 		{
-			this->status = 1;
+			this->status = -1;
 			pabort("can't get max speed hz");
 		}
 
@@ -146,13 +159,21 @@ SharedMemoryInt::~SharedMemoryInt()
 {
 	int ret;
 
+#if(dbg >= 1)
+	cout << "***** ENTERING: SharedMemoryInt::" << endl;
+#endif
+
+#if(dbg >= 1)
+	cout << "***** EXITING: SharedMemoryInt::: " << status << endl;
+#endif
+
 	this->status = 0;
 	printf("spi file descriptor: %d", this->spiFD );
 
 	ret = close(this->spiFD);
 	if(ret == -1)
 	{
-		this->status = 1;
+		this->status = -1;
 		pabort("couldn't close SPI port");
 	}
 	//newData.unexport_gpio();
@@ -163,13 +184,14 @@ SharedMemoryInt::~SharedMemoryInt()
 }
 
 #define dbg 0
-void SharedMemoryInt::dataProcessingStatus(uint8_t status)
+void SharedMemoryInt::dataProcessingStatus(uint8_t pinStatus)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: SharedMemoryInt::dataProcessingStatus" << endl;
+	cout << "status: " << status << endl;
 #endif
 
-	if(status == 0) dataProcessed.setval_gpio(0/*"0"*/);
+	if(pinStatus == 0) dataProcessed.setval_gpio(0/*"0"*/);
 	else dataProcessed.setval_gpio(1/*"1"*/);
 
 #if(dbg >= 1)
@@ -185,6 +207,7 @@ uint8_t SharedMemoryInt::sendData(uint16_t address, char *data, uint16_t length)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: SharedMemoryInt::sendData" << endl;
+	cout << "address: " << address << "\tlength: " << length << endl;
 #endif
 	uint8_t status = 0;
 	//address += index*SHARED_MEMORY_SECTION_SIZE;
@@ -193,8 +216,7 @@ uint8_t SharedMemoryInt::sendData(uint16_t address, char *data, uint16_t length)
 	struct spi_ioc_transfer spi;
 	if(address >= HOST_SHARED_MEMORY_FILE_ADDRESS)
 	{
-#if(dbg >= 1)
-		cout << "file length: " << length << endl;
+#if(dbg >= 2)
 		cout << "sendData file data: " <<  data << endl;
 #endif
 		for(int i = 0; i < HOST_SHARED_MEMORY_FILE_SIZE; i++) this->sharedMemoryFileTxBuffer[i] = 0;
@@ -253,7 +275,7 @@ uint8_t SharedMemoryInt::sendData(uint16_t address, char *data, uint16_t length)
 			errno = 0;
 			status = ioctl(this->spiFD, SPI_IOC_MESSAGE(1), &spi) ;
 
-#if(dbg >= 1)
+#if(dbg >= 2)
 			cout << "spi transmit status: " << strerror(errno) << endl;
 #endif
 			address += 4000;
@@ -261,7 +283,7 @@ uint8_t SharedMemoryInt::sendData(uint16_t address, char *data, uint16_t length)
 	}
 	else
 	{
-#if(dbg >= 1)
+#if(dbg >= 2)
 	cout << "file length: " << length << endl;
 	cout << "sendData data: " << data << endl;
 #endif
@@ -297,7 +319,7 @@ uint8_t SharedMemoryInt::sendData(uint16_t address, char *data, uint16_t length)
 		errno = 0;
 		status = ioctl(this->spiFD, SPI_IOC_MESSAGE(1), &spi) ;
 
-#if(dbg >= 1)
+#if(dbg >= 2)
 		cout << "spi transmit status: " << strerror(errno) << endl;
 #endif
 
@@ -307,7 +329,7 @@ uint8_t SharedMemoryInt::sendData(uint16_t address, char *data, uint16_t length)
 	puts((const char*)(this->sharedMemoryRxBuffer));
 #endif
 #if(dbg >= 1)
-	cout << "***** EXITING: SharedMemoryInt::sendData" << endl;
+	cout << "***** EXITING: SharedMemoryInt::sendData: " << status << endl;
 #endif
 	return status;
 }
@@ -317,6 +339,7 @@ uint8_t SharedMemoryInt::getData(uint16_t address, char *data, uint16_t length)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: SharedMemoryInt::getData" << endl;
+	cout << "address: " << address << "\tlength: " << length << endl;
 #endif
 
 	uint8_t status = 0;
@@ -325,92 +348,9 @@ uint8_t SharedMemoryInt::getData(uint16_t address, char *data, uint16_t length)
 	//address += index*SHARED_MEMORY_SECTION_SIZE;
 	uint8_t addressHigh;
 	uint8_t addressLow;
-#if(dbg >= 2)
-	cout << "address: " << address << endl;
-#endif
-
 
 	struct spi_ioc_transfer spi;
 
-	/*if(address >= HOST_SHARED_MEMORY_FILE_ADDRESS)
-	{
-#if(dbg >= 2)
-		cout << "getting data from HOST_SHARED_MEMORY_FILE_ADDRESS" <<  endl;
-#endif
-		for(int i = 0; i < HOST_SHARED_MEMORY_FILE_SIZE; i++) this->sharedMemoryFileTxBuffer[i] = 0;
-		this->sharedMemoryFileTxBuffer[HOST_SHARED_MEMORY_FILE_SIZE-1] = 255;
-
-		for(int i = 0; i < HOST_SHARED_MEMORY_FILE_SIZE; i++) this->sharedMemoryFileRxBuffer[i] = 0;
-		this->sharedMemoryFileRxBuffer[HOST_SHARED_MEMORY_FILE_SIZE-1] = 255;
-
-		int done = 0;
-		int dataLength = 0;
-		for(int fileDivisionIndex = 0; done == 0 && fileDivisionIndex < 4; fileDivisionIndex++)//while(done == 0)
-		{
-
-			addressHigh = address>>8;
-			addressLow = 0x00FF & address;
-			this->fileDivisionTxBuffer[0] = 0x03;
-			this->fileDivisionTxBuffer[1] = addressHigh;
-			this->fileDivisionTxBuffer[2] = addressLow;
-			this->fileDivisionTxBuffer[3] = 0; // status byte on MCU, keep blank here
-
-			{
-				spi.tx_buf        = (unsigned long)(this->fileDivisionTxBuffer); // transmit from "txBuffer"
-				spi.rx_buf        = (unsigned long)(this->fileDivisionRxBuffer); // receive into "rxBuffer"
-				spi.len           = 4004;//sizeof(this->rxBuffer);
-				spi.delay_usecs   = 0;
-				spi.speed_hz      = speed;
-				spi.bits_per_word = bits;
-				spi.cs_change = 0;
-				spi.tx_nbits = 0;
-				spi.rx_nbits = 0;
-				spi.pad = 0;
-			}
-			errno = 0;
-	#if(dbg >= 2)
-			cout << "spi data: ";
-	#endif
-			if(ioctl(this->spiFD, SPI_IOC_MESSAGE(1), &spi) == -1)
-			{
-				cout << "spi ioctl failure: " << strerror(errno) << endl;
-				return 1;
-			}
-			memcpy(this->sharedMemoryFileRxBuffer+fileDivisionIndex*4000, this->fileDivisionRxBuffer+4, 4000);
-
-			for(int dataIndex = 0; dataIndex < 4000; dataIndex++)
-			{
-				//data[dataIndex] = this->sharedMemoryRxBuffer[dataIndex+4];
-	#if(dbg >= 2)
-				cout << this->sharedMemoryFileRxBuffer[fileDivisionIndex*4000+dataIndex] << ',';
-	#endif
-				if(this->sharedMemoryFileRxBuffer[fileDivisionIndex*4000+dataIndex] == 255)  // end marker found
-				{
-					done = 1;
-				}
-				else
-				{
-					dataLength++;
-				}
-			}
-			cout << endl;
-			cout << "fileDivisionIndex: " << fileDivisionIndex << endl;
-			cout << endl;
-
-			address += 4000;
-	#if(dbg >= 2)
-			cout << endl;
-			cout << "data length: " << dataLength << endl;
-	#endif
-		}
-
-		memcpy(data, this->sharedMemoryFileRxBuffer, dataLength);
-
-#if(dbg >= 2)
-		cout << "data: " << data << endl;
-#endif
-	}
-	else*/
 	{
 
 		for(int i = 0; i < TX_BUFFER_SIZE; i++) this->sharedMemoryTxBuffer[i] = 0;
@@ -485,7 +425,7 @@ uint8_t SharedMemoryInt::getData(uint16_t address, char *data, uint16_t length)
 
 
 #if(dbg >= 1)
-	cout << "***** EXITING: SharedMemoryInt::getData" << endl;
+	cout << "***** EXITING: SharedMemoryInt::getData: " << status << endl;
 #endif
 
 	return status;

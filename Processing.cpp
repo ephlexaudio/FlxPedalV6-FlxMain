@@ -16,17 +16,18 @@ using std::endl;
 #define COMBO_STRUCT 1
 /**************************************
 #if(dbg >= 1)
-	cout << "***** ENTERING: Combo2::" << endl;
+	cout << "***** ENTERING: Processing::" << endl;
+	cout << ": " <<  << endl;
 #endif
 
 #if(dbg >= 1)
-	cout << "***** EXITING: Combo2::" << endl;
+	cout << "***** EXITING: Processing::: " << status << endl;
 #endif
 
 #if(dbg >=2)
 #endif
 ********************************************/
-#define BUFFER_SIZE 1024
+
 #define TEST_PROCESS_COUNT 6
 #define SIGNAL_DELTA_THRESHOLD 0.03
 #define TIMING_DBG 0
@@ -35,7 +36,7 @@ using std::endl;
 extern struct _processingParams processingParams;
 //struct ProcessEvent this->processSequence[10];
 
-extern ComboStruct combo[2];
+extern ComboStruct combo;
 extern int currentComboStructIndex;
 extern int oldComboStructIndex;
 
@@ -116,6 +117,14 @@ int Combo::clearCheckInputs()
 bool Processing::areInputsSwitched(void) // see if JACK has connected input jacks backwards
 {
 	bool intInputsSwitched = false;
+#if(dbg >= 1)
+	cout << "***** ENTERING: Processing::" << endl;
+	cout << ": " <<  << endl;
+#endif
+
+#if(dbg >= 1)
+	cout << "***** EXITING: Processing::: " << status << endl;
+#endif
 
 	usleep(300000);
 
@@ -314,7 +323,7 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 #endif
 
 #if(COMBO_STRUCT == 1)
-#define dbg 1
+#define dbg 2
 	int Processing::loadCombo(void)
 	{
 		int status = 0;
@@ -327,55 +336,69 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 	#endif
 
 		this->aveArrayIndex = 0;
-		initProcBuffers(combo[currentComboStructIndex].procBufferArray); // reset all data ready flags to 0.
+		//initProcBuffers(combo.procBufferArray); // reset all data ready flags to 0.
 
-		cout << "Control Count: " << combo[currentComboStructIndex].controlCount << endl;
-		cout << "Process Count: " << combo[currentComboStructIndex].processCount << endl;
-		cout << "Buffer Count: " << combo[currentComboStructIndex].bufferCount << endl;
+		cout << "Control Count: " << combo.controlCount << endl;
+		cout << "Process Count: " << combo.processCount << endl;
+		cout << "Buffer Count: " << combo.bufferCount << endl;
 
-		for(int i = 0; i < combo[currentComboStructIndex].controlCount; i++)
+		for(int i = 0; i < combo.controlCount; i++)
 		{
-			control(0, false, &combo[currentComboStructIndex].controlSequence[i], /*&this->processSequence[j]*/NULL);
+			control('l', false, &combo.controlSequence[i], /*&this->processSequence[j]*/NULL);
 		}
 
-		for(int i = 0; i < combo[currentComboStructIndex].processCount; i++)
+		for(int i = 0; i < combo.processCount; i++)
 		{
-			switch(combo[currentComboStructIndex].processSequence[i].processType)
+			switch(combo.processSequence[i].processType)
 			{
 				case 0:
-					delayb(0, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus);
+					delayb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 					break;
 				case 1:
-					filter3bb(0, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus);
+					filter3bb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 					break;
 				case 2:
-					filter3bb2(0, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus);
+					filter3bb2('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 					break;
 				case 3:
-					lohifilterb(0, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus);
+					lohifilterb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 					break;
 				case 4:
-					mixerb(0, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus);
+					mixerb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 					break;
 				case 5:
-					volumeb(0, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus);
+					volumeb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 					break;
 				case 6:
-					waveshaperb(0, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus);
+					waveshaperb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 					break;
 				default:;
 			}
 		}
 
-
-
-		for(int bufferIndex = 0; bufferIndex < combo[currentComboStructIndex].bufferCount; bufferIndex++)
+		for(unsigned int bufferIndex = 0; bufferIndex < combo.bufferCount; bufferIndex++)
 		{
-			initBufferAveParameters(&combo[currentComboStructIndex].procBufferArray[bufferIndex]);
+			//initBufferAveParameters(&combo.procBufferArray[bufferIndex]);
+#if(dbg >= 2)
+			cout << "clearing procBufferArray[" << bufferIndex << "]:" << endl;
+#endif
+#if(PROC_BUFFER_REF == 1)
+			clearProcBuffer(&combo.procBufferArray[bufferIndex]);
+#elif(PROC_BUFFER_VAL == 1)
+			clearProcBuffer(combo.procBufferArray[bufferIndex]);
+#endif
 		}
+#if(dbg >= 2)
+			cout << "clearing procBufferArray[58]:" << endl;
+#endif
+#if(PROC_BUFFER_REF == 1)
+			clearProcBuffer(&combo.procBufferArray[58]);
+#elif(PROC_BUFFER_VAL == 1)
+			clearProcBuffer(combo.procBufferArray[58]);
+#endif
 
 	#if(dbg >= 1)
-		cout << "EXITING: Processing::loadCombo" << endl;
+		cout << "EXITING: Processing::loadCombo: " << status << endl;
 	#endif
 
 		return status;
@@ -407,7 +430,7 @@ double testBuffer[10][BUFFER_SIZE];
 		internalNegPeak[0] = 0.00;
 		internalPosPeak[1] = 0.00;
 		internalNegPeak[1] = 0.00;
-	#if(dbg == 1)
+	#if(dbg >= 1)
 		//cout << "ENTERING audioCallback:  " << endl;
 	#endif
 
@@ -424,13 +447,13 @@ double testBuffer[10][BUFFER_SIZE];
 			{
 				if(inputsSwitched)
 				{
-					combo[currentComboStructIndex].procBufferArray[combo[currentComboStructIndex].inputProcBufferIndex[0]].buffer[i] = inBufs[1][i]*this->inputLevel;
-					combo[currentComboStructIndex].procBufferArray[combo[currentComboStructIndex].inputProcBufferIndex[1]].buffer[i] = inBufs[0][i]*this->inputLevel;
+					combo.procBufferArray[combo.inputProcBufferIndex[0]].buffer[i] = inBufs[1][i]*this->inputLevel;
+					combo.procBufferArray[combo.inputProcBufferIndex[1]].buffer[i] = inBufs[0][i]*this->inputLevel;
 				}
 				else
 				{
-					combo[currentComboStructIndex].procBufferArray[combo[currentComboStructIndex].inputProcBufferIndex[0]].buffer[i] = inBufs[0][i]*this->inputLevel;
-					combo[currentComboStructIndex].procBufferArray[combo[currentComboStructIndex].inputProcBufferIndex[1]].buffer[i] = inBufs[1][i]*this->inputLevel;
+					combo.procBufferArray[combo.inputProcBufferIndex[0]].buffer[i] = inBufs[0][i]*this->inputLevel;
+					combo.procBufferArray[combo.inputProcBufferIndex[1]].buffer[i] = inBufs[1][i]*this->inputLevel;
 				}
 
 				if(internalPosPeak[0] < inBufs[0][i]) internalPosPeak[0] = inBufs[0][i];
@@ -515,7 +538,7 @@ double testBuffer[10][BUFFER_SIZE];
 				if((inputsSwitched == false && this->gateOffThreshold < this->maxAmp[0]) || // noise gate
 						(inputsSwitched == true && this->gateOffThreshold < this->maxAmp[1]))
 				{
-		#if(dbg == 1)
+		#if(dbg >= 1)
 					cout << "level above noise gate high threshold: going to case 1." << endl;
 		#endif
 		#if(dbg >= 2)
@@ -526,7 +549,7 @@ double testBuffer[10][BUFFER_SIZE];
 
 				break;
 			case 1:
-		#if(dbg == 1)
+		#if(dbg >= 1)
 				cout << "case 1" << endl;
 		#endif
 				this->gateStatus = false;
@@ -555,7 +578,7 @@ double testBuffer[10][BUFFER_SIZE];
 
 				break;
 			case 2:	// trigger on
-		#if(dbg == 1)
+		#if(dbg >= 1)
 				cout << "case 2" << endl;
 		#endif
 				this->gateStatus = false;
@@ -568,7 +591,7 @@ double testBuffer[10][BUFFER_SIZE];
 				this->gateStatus = false;
 				//this->inputLevel = 1.0;
 				this->envTrigger = false;
-		#if(dbg == 1)
+		#if(dbg >= 1)
 				cout << "case 3" << endl;
 		#endif
 
@@ -607,13 +630,13 @@ double testBuffer[10][BUFFER_SIZE];
 
 
 			this->processingContextAllocationError = false;
-	#define dbg 0
+
 			//***************************** Run Controls for manipulating process parameters *************
 
 
-			for(int i = 0; i < combo[currentComboStructIndex].controlCount; i++)
+			for(int i = 0; i < combo.controlCount; i++)
 			{
-				if(control(1, this->envTrigger, &combo[currentComboStructIndex].controlSequence[i], combo[currentComboStructIndex].processSequence) < 0)
+				if(control('r', this->envTrigger, &combo.controlSequence[i], combo.processSequence) < 0)
 					this->processingContextAllocationError = true;
 			}
 
@@ -623,39 +646,39 @@ double testBuffer[10][BUFFER_SIZE];
 				//{
 				//	processDone = true; // initialize to TRUE.
 
-			for(int i = 0; i < combo[currentComboStructIndex].processCount; i++)
+			for(int i = 0; i < combo.processCount; i++)
 			{
-		#if(dbg == 1)
+		#if(dbg >= 1)
 				cout << "process number: " << i << endl;
 		#endif
-				switch(combo[currentComboStructIndex].processSequence[i].processType)
+				switch(combo.processSequence[i].processType)
 				{
 					case 0:
-						if(delayb(1, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus) < 0)
+						if(delayb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
 							this->processingContextAllocationError = true;
 						break;
 					case 1:
-						if(filter3bb(1, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus) < 0)
+						if(filter3bb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
 							this->processingContextAllocationError = true;
 						break;
 					case 2:
-						if(filter3bb2(1, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus) < 0)
+						if(filter3bb2('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
 							this->processingContextAllocationError = true;
 						break;
 					case 3:
-						if(lohifilterb(1, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus) < 0)
+						if(lohifilterb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
 							this->processingContextAllocationError = true;
 						break;
 					case 4:
-						if(mixerb(1, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus) < 0)
+						if(mixerb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
 							this->processingContextAllocationError = true;
 						break;
 					case 5:
-						if(volumeb(1, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus) < 0)
+						if(volumeb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
 							this->processingContextAllocationError = true;
 						break;
 					case 6:
-						if(waveshaperb(1, &combo[currentComboStructIndex].processSequence[i], combo[currentComboStructIndex].procBufferArray,this->footswitchStatus) < 0)
+						if(waveshaperb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
 							this->processingContextAllocationError = true;
 						break;
 					default:;
@@ -675,15 +698,26 @@ double testBuffer[10][BUFFER_SIZE];
 				{
 					if(inputsSwitched)
 					{
-						outBufs[1][i] = combo[currentComboStructIndex].procBufferArray[combo[currentComboStructIndex].outputProcBufferIndex[0]].buffer[i];
-						outBufs[0][i] = combo[currentComboStructIndex].procBufferArray[combo[currentComboStructIndex].outputProcBufferIndex[1]].buffer[i];
+						outBufs[1][i] = combo.procBufferArray[combo.outputProcBufferIndex[0]].buffer[i];
+						outBufs[0][i] = combo.procBufferArray[combo.outputProcBufferIndex[1]].buffer[i];
 					}
 					else
 					{
-						outBufs[0][i] = combo[currentComboStructIndex].procBufferArray[combo[currentComboStructIndex].outputProcBufferIndex[0]].buffer[i];
-						outBufs[1][i] = combo[currentComboStructIndex].procBufferArray[combo[currentComboStructIndex].outputProcBufferIndex[1]].buffer[i];
+						outBufs[0][i] = combo.procBufferArray[combo.outputProcBufferIndex[0]].buffer[i];
+						outBufs[1][i] = combo.procBufferArray[combo.outputProcBufferIndex[1]].buffer[i];
 					}
+
+					if(internalPosPeak[0] < inBufs[0][i]) internalPosPeak[0] = inBufs[0][i];
+					if(internalNegPeak[0] > inBufs[0][i]) internalNegPeak[0] = inBufs[0][i];
+					if(internalPosPeak[1] < inBufs[1][i]) internalPosPeak[1] = inBufs[1][i];
+					if(internalNegPeak[1] > inBufs[1][i]) internalNegPeak[1] = inBufs[1][i];
 				}
+
+				this->posPeak[0] = internalPosPeak[0];
+				this->negPeak[0] = internalNegPeak[0];
+				this->posPeak[1] = internalPosPeak[1];
+				this->negPeak[1] = internalNegPeak[1];
+
 			}
 			else //allocation error detected, send signal straight thru to avoid Jack crash
 			{
@@ -729,24 +763,12 @@ double testBuffer[10][BUFFER_SIZE];
 			this->posPeak[1] = internalPosPeak[1];
 			this->negPeak[1] = internalNegPeak[1];
 
-			if(this->updateProcessing == true)
+			/*if(this->updateProcessing == true)
 			{
 				cout << "stopping combo." << endl;
 				this->stopCombo();
 				cout << "loading combo." << endl;
 				this->loadCombo();
-				this->processingUpdated = true;
-				this->updateProcessing = false;
-				this->processingContextAllocationError = false;
-				cout << "combo loaded." << endl;
-			}
-			/*if(this->updateProcessing == true || this->processingContextAllocationError == true)
-			{
-				cout << "stopping combo." << endl;
-				this->stopCombo(audioCallbackComboIndex);
-				cout << "loading combo." << endl;
-				this->loadCombo(this->comboIndex);
-				audioCallbackComboIndex = this->comboIndex;
 				this->processingUpdated = true;
 				this->updateProcessing = false;
 				this->processingContextAllocationError = false;
@@ -761,8 +783,8 @@ double testBuffer[10][BUFFER_SIZE];
 		comboTime = stopTimer(NULL);
 	#endif
 
-	#if(dbg == 1)
-		//cout << "EXITING audioCallback:  " << endl;
+	#if(dbg >= 1)
+		cout << "EXITING audioCallback: " << status << endl;
 	#endif
 
 		return status;
@@ -804,6 +826,21 @@ int Processing::getProcessData(int index, double *data)
 
 	return status;
 }*/
+
+
+int loadComponentSymbols(void)
+{
+	delayb('c', NULL, NULL, NULL);
+	filter3bb('c', NULL, NULL, NULL);
+	filter3bb2('c', NULL, NULL, NULL);
+	lohifilterb('c', NULL, NULL, NULL);
+	mixerb('c', NULL, NULL, NULL);
+	volumeb('c', NULL, NULL, NULL);
+	waveshaperb('c', NULL, NULL, NULL);
+
+	return 0;
+}
+
 
 #if(COMBO_DATA_VECTOR == 1)
 	int Processing::stopCombo(int stopComboIndex)
@@ -907,7 +944,7 @@ int Processing::getProcessData(int index, double *data)
 #endif
 
 #if(COMBO_STRUCT == 1)
-#define dbg 1
+#define dbg 2
 	int Processing::stopCombo(void)
 	{
 		int status = 0;
@@ -921,47 +958,68 @@ int Processing::getProcessData(int index, double *data)
 		//if(stopComboIndex < 15)
 		{
 
-			for(int i = 0; i < combo[oldComboStructIndex].controlCount; i++)
+			for(int i = 0; i < combo.controlCount; i++)
 			{
-				control(3, false, &combo[oldComboStructIndex].controlSequence[i], NULL);
+				control('s', false, &combo.controlSequence[i], NULL);
 			}
 
-			for(int i = 0; i < combo[oldComboStructIndex].processCount; i++)
+			for(int i = 0; i < combo.processCount; i++)
 			{
-				switch(combo[oldComboStructIndex].processSequence[i].processType)
+				switch(combo.processSequence[i].processType)
 				{
 					case 0:
-						delayb(3, &combo[oldComboStructIndex].processSequence[i], combo[oldComboStructIndex].procBufferArray,this->footswitchStatus);
+						delayb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 						break;
 					case 1:
-						filter3bb(3, &combo[oldComboStructIndex].processSequence[i], combo[oldComboStructIndex].procBufferArray,this->footswitchStatus);
+						filter3bb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 						break;
 					case 2:
-						filter3bb2(3, &combo[oldComboStructIndex].processSequence[i], combo[oldComboStructIndex].procBufferArray,this->footswitchStatus);
+						filter3bb2('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 						break;
 					case 3:
-						lohifilterb(3, &combo[oldComboStructIndex].processSequence[i], combo[oldComboStructIndex].procBufferArray,this->footswitchStatus);
+						lohifilterb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 						break;
 					case 4:
-						mixerb(3, &combo[oldComboStructIndex].processSequence[i], combo[oldComboStructIndex].procBufferArray,this->footswitchStatus);
+						mixerb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 						break;
 					case 5:
-						volumeb(3, &combo[oldComboStructIndex].processSequence[i], combo[oldComboStructIndex].procBufferArray,this->footswitchStatus);
+						volumeb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 						break;
 					case 6:
-						waveshaperb(3, &combo[oldComboStructIndex].processSequence[i], combo[oldComboStructIndex].procBufferArray,this->footswitchStatus);
+						waveshaperb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 						break;
 					default:;
 				}
 			}
 
 		}
+		for(unsigned int bufferIndex = 0; bufferIndex < combo.bufferCount; bufferIndex++)
+		{
+			//initBufferAveParameters(combo.procBufferArray[bufferIndex]);
+#if(dbg >= 2)
+			cout << "clearing procBufferArray[" << bufferIndex << "]:" << endl;
+#endif
+#if(PROC_BUFFER_REF == 1)
+			clearProcBuffer(&combo.procBufferArray[bufferIndex]);
+#elif(PROC_BUFFER_VAL == 1)
+			clearProcBuffer(combo.procBufferArray[bufferIndex]);
+#endif
+		}
+#if(dbg >= 2)
+			cout << "clearing procBufferArray[58]:" << endl;
+#endif
+#if(PROC_BUFFER_REF == 1)
+			clearProcBuffer(&combo.procBufferArray[58]);
+#elif(PROC_BUFFER_VAL == 1)
+			clearProcBuffer(combo.procBufferArray[58]);
+#endif
+
 		//oldComboStructIndex = currentComboStructIndex;
 		//currentComboStructIndex ^= 1;
 		/*else
 			status = -1;*/
 #if(dbg >= 1)
-	cout << "EXITING: Processing::stopCombo" << endl;
+	cout << "EXITING: Processing::stopCombo: " << status << endl;
 #endif
 
 		return status;
@@ -993,7 +1051,7 @@ int Processing::updateFootswitch(int *footswitchStatus)
 #endif
 
 #if(dbg >= 1)
-	cout << "EXITING: Combo::updateFootswitch" << endl;
+	cout << "EXITING: Combo::updateFootswitch: " << status << endl;
 #endif
 	return status;
 }
@@ -1011,7 +1069,7 @@ int Processing::bypassAll()
 	}
 
 #if(dbg >= 2)
-	cout << "EXITING: Combo::bypassAll" << endl;
+	cout << "EXITING: Combo::bypassAll: " << status << endl;
 #endif
 	return status;
 }
@@ -1096,19 +1154,20 @@ int Processing::bypassAll()
 		// indexes can't be redone in getCombo or getParameterArray because
 		// they are used in updating combo files.
 
-		for(int processIndex = 0; processIndex < combo[currentComboStructIndex].processCount; processIndex++)
+		for(int processIndex = 0; processIndex < combo.processCount; processIndex++)
 		{
-			if(combo[currentComboStructIndex].processSequence[processIndex].processName.compare(processName) == 0)
+			if(combo.processSequence[processIndex].processName.compare(processName) == 0)
 			{
-				combo[currentComboStructIndex].processSequence[processIndex].parameters[parameterIndex] = parameterValue;
+				combo.processSequence[processIndex].parameters[parameterIndex] = parameterValue;
 				procSequenceIndex = processIndex;
 			}
 		}
-	#if(dbg==1)
+	#if(dbg>=2)
 		std::cout << "\t\tprocessName: " << processName << "\t\procSequenceIndex: " << procSequenceIndex << "parameterIndex: " << parameterIndex  << "\t\parameterValue: " << parameterValue << std::endl;
 	#endif
+
 #if(dbg >= 1)
-	cout << "EXITING: Processing::updateProcessParameter" << endl;
+	cout << "EXITING: Processing::updateProcessParameter: " << status << endl;
 #endif
 		return status;
 	}
@@ -1120,7 +1179,7 @@ int Processing::bypassAll()
 	#define dbg 0
 	int Processing::updateControlParameter(string controlName, int parameterIndex, int parameterValue)
 	{
-	#if(dbg==1)
+	#if(dbg>=1)
 		cout << "ENTERING: Processing::updateControlParameter" << endl;
 		cout << "controlName: " << controlName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
 	#endif
@@ -1157,7 +1216,7 @@ int Processing::bypassAll()
 	#define dbg 0
 	int Processing::updateControlParameter(string controlName, int parameterIndex, int parameterValue)
 	{
-	#if(dbg==1)
+	#if(dbg>=1)
 		cout << "ENTERING: Processing::updateControlParameter" << endl;
 		cout << "controlName: " << controlName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
 	#endif
@@ -1194,7 +1253,7 @@ int Processing::bypassAll()
 
 #endif
 #if(COMBO_STRUCT == 1)
-	#define dbg 2
+	#define dbg 1
 	int Processing::updateControlParameter(string controlName, int parameterIndex, int parameterValue)
 	{
 	#if(dbg >= 1)
@@ -1212,11 +1271,11 @@ int Processing::bypassAll()
 		for(controlIndex = 0; controlIndex < 20; controlIndex++)
 		{
 #if(dbg >= 2)
-			cout << "comparing: " << combo[currentComboStructIndex].controlSequence[controlIndex].name << " and " << controlName << endl;
+			cout << "comparing: " << combo.controlSequence[controlIndex].name << " and " << controlName << endl;
 #endif
-			if(combo[currentComboStructIndex].controlSequence[controlIndex].name.compare(controlName) == 0)
+			if(combo.controlSequence[controlIndex].name.compare(controlName) == 0)
 			{
-				combo[currentComboStructIndex].controlSequence[controlIndex].parameter[parameterIndex] = parameterValue;
+				combo.controlSequence[controlIndex].parameter[parameterIndex] = parameterValue;
 				cout << "UPDATING: control index: " << controlIndex << "\t parameter index: " << parameterIndex << "\t parameter value: " << parameterValue << endl;
 				controlSequenceIndex = controlIndex;
 				break;
@@ -1224,13 +1283,13 @@ int Processing::bypassAll()
 		}
 
 	#if(dbg >= 2)
-		std::cout << "\t\tcontrolName: " << controlName  << "parameterIndex: " << parameterIndex  << "\tparameterValue: " << combo[currentComboStructIndex].controlSequence[controlIndex].parameter[parameterIndex] << std::endl;
-		std::cout << "\t\ttargetProcessIndex: " << combo[currentComboStructIndex].controlSequence[controlIndex].paramContConnection[0].processIndex;
-		std::cout << "\t\ttargetProcessName: " << combo[currentComboStructIndex].processSequence[combo[currentComboStructIndex].controlSequence[controlIndex].paramContConnection[0].processIndex].processName;
-		std::cout << "\t\ttargetProcessParameterIndex: " << combo[currentComboStructIndex].controlSequence[controlIndex].paramContConnection[0].processParamIndex << endl;
+		std::cout << "\t\tcontrolName: " << controlName  << "parameterIndex: " << parameterIndex  << "\tparameterValue: " << combo.controlSequence[controlIndex].parameter[parameterIndex] << std::endl;
+		std::cout << "\t\ttargetProcessIndex: " << combo.controlSequence[controlIndex].paramContConnection[0].processIndex;
+		std::cout << "\t\ttargetProcessName: " << combo.processSequence[combo.controlSequence[controlIndex].paramContConnection[0].processIndex].processName;
+		std::cout << "\t\ttargetProcessParameterIndex: " << combo.controlSequence[controlIndex].paramContConnection[0].processParamIndex << endl;
 	#endif
 	#if(dbg >= 1)
-		cout << "EXITING: Processing::updateControlParameter" << endl;
+		cout << "EXITING: Processing::updateControlParameter: " << status << endl;
 	#endif
 		return status;
 	}
@@ -1240,6 +1299,7 @@ int Processing::bypassAll()
 #define dbg 1
 int Processing::enableProcessing()
 {
+
 #if(dbg==1)
 	cout << "ENTERING: Processing::enableProcessing" << endl;
 #endif
@@ -1267,3 +1327,24 @@ int Processing::disableProcessing()
 	return 0;
 }
 
+#define dbg 2
+double Processing::getOutputAmplitudes(void)
+{
+	double amplitude = 0.0000;
+
+#if(dbg >= 1)
+	cout << "ENTERING: Processing::getOutputAmplitudes" << endl;
+#endif
+	amplitude = this->posPeak[0] - this->negPeak[0];
+
+#if(dbg >= 2)
+	cout << "amplitude[0]: " <<  this->posPeak[0] - this->negPeak[0];
+	cout << "\tamplitude[1]: " <<  this->posPeak[1] - this->negPeak[1] << endl;
+#endif
+
+#if(dbg >= 1)
+	cout << "EXITING: Processing::getOutputAmplitudes: " << amplitude << endl;
+#endif
+
+	return amplitude;
+}

@@ -53,7 +53,7 @@ public:
 	int disableEffects();
 	int updateProcessParameter(int parameterIndex, int parameterValue);
 	int updateControlParameter(int parameterIndex, int parameterValue);
-
+	double getOutputAmplitudes(void);
 
 };
 

@@ -51,6 +51,7 @@
 #include "FileSystemFuncts.h"
 #include "GPIOClass.h"
 #include "ProcessingControl.h"
+#include "Effects2.h"
 
 using namespace std;
 /*#define COMBO_DATA_VECTOR 0
@@ -105,7 +106,7 @@ ComboDataInt currentCombo;
 int globalComboIndex = 0;
 string globalComboName;
 std::vector<linuxProcess> linuxProcessList;
-
+vector<string> componentVector;
 std::vector<string> componentDataList;
 std::vector<string> componentNameList;
 #if(COMBO_DATA_VECTOR == 1)
@@ -153,10 +154,11 @@ struct _jackParams jackParams;
 struct _processingParams processingParams;
 extern ProcessingControl procCont;
 extern int comboTime;
+
 int inputCouplingMode;
 int waveshaperMode;
 
-ComboStruct combo[2];
+ComboStruct combo;
 int comboStructIndex = 0;
 int currentComboStructIndex = 0;
 int oldComboStructIndex = 0;
@@ -266,6 +268,7 @@ int main(int argc, char *argv[])
 	signal(SIGVTALRM, signal_handler);
 	signal(SIGPROF, signal_handler);
 	//signal(SIGPIPE, SIG_IGN);
+	loadComponentSymbols();
 
 	printf("OfxMain PID: %d.\n", ofxPid);
 	SharedMemoryInt sharedMem;
@@ -408,7 +411,7 @@ int main(int argc, char *argv[])
 	        	//cout << "usb data received: " << hostUiRequestCharArray << endl;
 	        	//cout << "usb data size: " << strlen(hostUiRequestCharArray) << endl;
 	#if(hostUiDbg >= 1)
-				cout << "HOST UI REQUEST: " << hostUiRequest << endl;
+				cout << "HOST UI REQUEST: " << hostUiRequest.substr(0,50) << endl;
 				cout << "hostUiRequest size: " << hostUiRequest.size() << endl;
 	#endif
 				hostUiRequestIsValid = true;
@@ -434,7 +437,11 @@ int main(int argc, char *argv[])
 					}
 					else hostUiRequestCommand = hostUiRequest;
 
-					if(hostUiRequestCommand.compare("listCombos") == 0)
+					if(hostUiRequestCommand.compare("getComponents") == 0)
+					{
+						hostUi.sendComponentData();
+					}
+					else if(hostUiRequestCommand.compare("listCombos") == 0)
 					{
 						string comboNameArray;
 #if(COMBO_DATA_VECTOR == 1)
@@ -480,42 +487,33 @@ int main(int argc, char *argv[])
 						{
 							globalComboName = hostUiRequestData;
 							procCont.disableEffects();
-							/*for(vector<string>::size_type i = 0; i < comboList.size(); i++)
-							{
-								if(comboList[i].compare(hostUiRequestData) == 0)
-								{
-									globalComboIndex = i;
-									hostUi.sendComboToHost(hostUiRequestData);
-#if(hostUiDbg == 1)
-									cout << "sent hostUiJson" << endl;
-#endif
-
-									break;
-								}
-							}*/
-							hostUi.sendComboToHost(hostUiRequestData);
 #if(COMBO_DATA_VECTOR == 1)
 							int tempComboIndex = getComboVectorIndex(hostUiRequestData);
 							if(tempComboIndex >= 0)
-							{
-								globalComboIndex = tempComboIndex;
 #elif(COMBO_DATA_ARRAY == 1)
 							int tempComboIndex = getComboIndex(hostUiRequestData);
 							if(tempComboIndex >= 0)
-							{
-								globalComboIndex = tempComboIndex;
-#elif(COMBO_DATA_MAP == 1)
-							if(comboDataMap.find(globalComboName) != comboDataMap.end())
-							{
 #endif
+#if(COMBO_DATA_MAP == 1)
+							if(comboDataMap.find(globalComboName) != comboDataMap.end())
+#endif
+							{
+								//procCont.disableEffects();
+								//comboDataMap[globalComboName].loadComboStructFromName((char *)globalComboName.c_str());
+
 #if(COMBO_DATA_VECTOR == 1 || COMBO_DATA_ARRAY == 1)
+								globalComboIndex = tempComboIndex;
 								cout << globalComboName << ":" << globalComboIndex << endl;
 								if(procCont.load(globalComboIndex) >= 0)
 #elif(COMBO_DATA_MAP == 1)
 								cout << hostUiRequestData << endl;
+								hostUi.sendComboToHost(hostUiRequestData);
+
+
 								if(procCont.load(globalComboName) >= 0)
 #endif
 								{
+//									hostUi.sendComboToHost(hostUiRequestData);
 									strcpy(ofxMainStatus,"combo running");
 								}
 								else
@@ -524,6 +522,7 @@ int main(int argc, char *argv[])
 									strcpy(ofxMainStatus,"load failed");
 									status = -1;
 								}
+								//procCont.enableEffects();
 							}
 							else
 							{
@@ -681,22 +680,18 @@ int main(int argc, char *argv[])
 							string tempComboName = hostUi.getComboFromHost(hostUiRequestData); // new combo data is saved here.
 							procCont.disableEffects();
 
-							vector<string> newComboList = getComboListFromFS();
+							vector<string> newComboList = getComboListFromFileSystem();
 
 #if(COMBO_DATA_VECTOR == 1)
-							if(newComboList.size() != comboList.size()) // combo was added or deleted
+							if(newComboList.size() != comboList.size()) // combo was added
 #elif(COMBO_DATA_ARRAY == 1)
-							if(newComboList.size() != comboList.size()) // combo was added or deleted
+							if(newComboList.size() != comboList.size()) // combo was added
 #elif(COMBO_DATA_MAP == 1)
-							if(newComboList.size() != comboList.size()) // combo was added or deleted
+							if(comboDataMap.find(tempComboName) == comboDataMap.end())//if(newComboList.size() != comboList.size()) // combo was added
 #endif
 							{
 #if(COMBO_DATA_VECTOR == 1)
-								if(newComboList.size() < comboList.size())
-								{
-									cout << "combo deleted" << endl;
-								}
-								else if(newComboList.size() > comboList.size())
+								//if(newComboList.size() > comboList.size())
 								{
 									cout << "new combo added" << endl;
 									cout << "new combo data to be saved: " << endl;
@@ -704,11 +699,7 @@ int main(int argc, char *argv[])
 								}
 
 #elif(COMBO_DATA_ARRAY == 1)
-								if(newComboList.size() < comboList.size())
-								{
-									cout << "combo deleted" << endl;
-								}
-								else if(newComboList.size() > comboList.size())
+								//if(newComboList.size() > comboList.size())
 								{
 									cout << "new combo added" << endl;
 									cout << "new combo data to be saved: " << endl;
@@ -716,12 +707,9 @@ int main(int argc, char *argv[])
 								}
 
 #elif(COMBO_DATA_MAP == 1)
-								if(newComboList.size() < comboList.size())
+								//if(comboDataMap.find(tempComboName) != comboDataMap.end())
 								{
-									cout << "combo deleted" << endl;
-								}
-								else if(newComboList.size() > comboList.size())
-								{
+									globalComboName = tempComboName;
 									cout << "new combo added" << endl;
 									cout << "new combo data to be saved: " << endl;
 									cout << globalComboName << endl;
@@ -764,8 +752,8 @@ int main(int argc, char *argv[])
 							}
 							else
 							{
-								cout << "combo data to be updated: " << endl;
 
+								globalComboName = tempComboName;
 #if(COMBO_DATA_VECTOR == 1)
 								if(getComboVectorIndex(tempComboName) >= 0)
 								{
@@ -795,12 +783,13 @@ int main(int argc, char *argv[])
 #elif(COMBO_DATA_MAP == 1)
 								if(comboDataMap.find(tempComboName) != comboDataMap.end())
 								{
-									comboDataMap[globalComboName].loadComboStructFromName((char *)tempComboName.c_str());
+									comboDataMap.erase(globalComboName);
+									addComboStructToMapAndList(globalComboName);//comboDataMap[globalComboName].loadComboStructFromName((char *)globalComboName.c_str());
 									validComboIndexName = true;
 								}
 								else
 								{
-									cout << "invalid combo name: " << tempComboName << endl;
+									cout << "invalid combo name: " << globalComboName << endl;
 									validComboIndexName = false;
 								}
 #endif
@@ -877,9 +866,9 @@ int main(int argc, char *argv[])
 						{
 							//comboData.saveCombo();//saveCombo(requestData);
 
-							if(deleteComboFromFS(hostUiRequestData) == 0)
+							if(deleteComboFromFileSystem(hostUiRequestData) == 0)
 							{
-								comboList = getComboListFromFS();
+								comboList = getComboListFromFileSystem();
 
 								procCont.disableEffects();
 #if(COMBO_DATA_VECTOR == 1)
@@ -1068,9 +1057,9 @@ int main(int argc, char *argv[])
 						if(pedalUiRequestCommand.compare("listCombos") == 0)
 						{
 							//pedalUi.sendComboUiData(combo.pedalUiJson);
+							string comboNameArray;
 #if(COMBO_DATA_VECTOR == 1)
 							comboList = getComboVectorList();
-							string comboNameArray;
 							for(std::vector<string>::size_type i = 0; i < comboList.size(); i++)
 							{
 								comboNameArray.append(comboList.at(i).c_str());
@@ -1078,7 +1067,6 @@ int main(int argc, char *argv[])
 							}
 #elif(COMBO_DATA_ARRAY == 1)
 							comboList = getComboList();
-							string comboNameArray;
 							for(std::vector<string>::size_type i = 0; i < comboList.size(); i++)
 							{
 								comboNameArray.append(comboList.at(i).c_str());
@@ -1086,7 +1074,6 @@ int main(int argc, char *argv[])
 							}
 #elif(COMBO_DATA_MAP == 1)
 							comboList = getComboMapList();
-							string comboNameArray;
 							for(std::vector<string>::size_type i = 0; i < comboList.size(); i++)
 							{
 								comboNameArray.append(comboList.at(i).c_str());
@@ -1104,44 +1091,50 @@ int main(int argc, char *argv[])
 						else if(pedalUiRequestCommand.compare("getCombo") == 0)
 						{
 							//bypassAll();
-
 #if(COMBO_DATA_VECTOR == 1)
-							if((pedalUiRequestData.size() > 1) && (getComboVectorIndex(hostUiRequestData) >= 0))
+							if((pedalUiRequestData.size() > 1) && (getComboVectorIndex(pedalUiRequestData) >= 0))
 #elif(COMBO_DATA_ARRAY == 1)
-							if((pedalUiRequestData.size() > 1) && (getComboIndex(hostUiRequestData) >= 0))
+							if((pedalUiRequestData.size() > 1) && (getComboArrayIndex(pedalUiRequestData) >= 0))
 #elif(COMBO_DATA_MAP == 1)
-							if((pedalUiRequestData.size() > 1) && (comboDataMap.find(hostUiRequestData) != comboDataMap.end()))
+							if((pedalUiRequestData.size() > 1) && (comboDataMap.find(pedalUiRequestData) != comboDataMap.end()))
 #endif
 							{
-								globalComboName = hostUiRequestData;
-								procCont.disableEffects();
-								/*for(vector<string>::size_type i = 0; i < comboList.size(); i++)
-								{
-									if(comboList[i].compare(pedalUiRequestData) == 0)
-									{
-										globalComboIndex = i;
-										break;
-									}
-								}*/
+								//globalComboName = pedalUiRequestData;
 #if(COMBO_DATA_VECTOR == 1)
-								int globalComboIndex = getComboVectorIndex(pedalUiRequestData);
-								cout << pedalUiRequestData << ":" << globalComboIndex << endl;
-								if(0 <= globalComboIndex && globalComboIndex < comboList.size())
+								int tempComboIndex = getComboVectorIndex(globalComboName);
+								//if(tempComboIndex >= 0)
+								if(0 <= tempComboIndex && tempComboIndex < comboList.size())
 #elif(COMBO_DATA_ARRAY == 1)
-								int globalComboIndex = getComboIndex(pedalUiRequestData);
-								cout << pedalUiRequestData << ":" << globalComboIndex << endl;
-								if(0 <= globalComboIndex && globalComboIndex < comboList.size())
+								int tempComboIndex = getComboArrayIndex(globalComboName);
+								//if(tempComboIndex >= 0)
+								if(0 <= tempComboIndex && tempComboIndex < comboList.size())
 #elif(COMBO_DATA_MAP == 1)
 								if(comboDataMap.find(pedalUiRequestData) != comboDataMap.end())
-								{
 #endif
+								{
+									procCont.disableEffects();
+
+#if(COMBO_DATA_VECTOR == 1)
+									globalComboIndex = tempComboIndex;
+									//if(0 <= globalComboIndex && globalComboIndex < comboList.size())
+#elif(COMBO_DATA_ARRAY == 1)
+									globalComboIndex = tempComboIndex;
+									//if(0 <= globalComboIndex && globalComboIndex < comboList.size())
+#elif(COMBO_DATA_MAP == 1)
+									globalComboName = pedalUiRequestData;
+#endif
+
 #if(COMBO_DATA_VECTOR == 1  || COMBO_DATA_ARRAY == 1)
+									cout << globalComboName << ":" << globalComboIndex << endl;
 									if(procCont.load(globalComboIndex) >= 0)
 #elif(COMBO_DATA_MAP == 1)
-									if(procCont.load(pedalUiRequestData) >= 0)
+									cout << globalComboName << endl;
+									//comboDataMap[globalComboName].loadComboStructFromName((char *)globalComboName.c_str());
+									if(procCont.load(globalComboName) >= 0)
 #endif
 									{
 										//comboDataArray[globalComboIndex].getPedalUi();
+										comboDataMap[globalComboName].getPedalUi();
 #if(COMBO_DATA_VECTOR == 1)
 										pedalUi.sendComboUiData(comboDataVector[globalComboIndex].pedalUiJson);
 #elif(COMBO_DATA_ARRAY == 1)
@@ -1158,6 +1151,7 @@ int main(int argc, char *argv[])
 										strcpy(ofxMainStatus,"load failed");
 										status = -1;
 									}
+									procCont.enableEffects();
 								}
 								else
 								{
@@ -1165,6 +1159,12 @@ int main(int argc, char *argv[])
 									strcpy(ofxMainStatus,"load failed");
 									status = -1;
 								}
+
+							}
+							else
+							{
+								cout << "invalid pedalUiRequestData: " << pedalUiRequestData << endl;
+								status = -1;
 							}
 						}
 						else if(pedalUiRequestCommand.compare("changeValue") == 0)
@@ -1193,15 +1193,17 @@ int main(int argc, char *argv[])
 
 #if(COMBO_DATA_VECTOR == 1)
 								if((0 <= absParamIndex && absParamIndex < comboDataVector[globalComboIndex].controlParameterArray.size()) && (0 <= valueIndex && valueIndex <= 255))
-								{
-									comboDataVector[globalComboIndex].updateControl(absParamIndex, valueIndex);
 #elif(COMBO_DATA_ARRAY == 1)
 								if((0 <= absParamIndex && absParamIndex < comboDataArray[globalComboIndex].controlParameterArray.size()) && (0 <= valueIndex && valueIndex <= 255))
-								{
-									comboDataArray[globalComboIndex].updateControl(absParamIndex, valueIndex);
 #elif(COMBO_DATA_MAP == 1)
 								if((0 <= absParamIndex && absParamIndex < comboDataMap[globalComboName].controlParameterArray.size()) && (0 <= valueIndex && valueIndex <= 255))
+#endif
 								{
+#if(COMBO_DATA_VECTOR == 1)
+									comboDataVector[globalComboIndex].updateControl(absParamIndex, valueIndex);
+#elif(COMBO_DATA_ARRAY == 1)
+									comboDataArray[globalComboIndex].updateControl(absParamIndex, valueIndex);
+#elif(COMBO_DATA_MAP == 1)
 									comboDataMap[globalComboName].updateControl(absParamIndex, valueIndex);
 #endif
 									//// enter into controlsStruct element
@@ -1225,14 +1227,57 @@ int main(int argc, char *argv[])
 						}
 						else if(pedalUiRequestCommand.compare("saveCombo") == 0)
 						{
+							//if(pedalUiRequestData.empty() == false)
+							{
+								bool validComboIndexName;
+
+								//string tempComboName = pedalUiRequestData; // new combo data is saved here.
+								procCont.disableEffects();
 #if(COMBO_DATA_VECTOR == 1)
-							comboDataVector[globalComboIndex].saveCombo();//saveCombo(requestData);
+								//if(getComboVectorIndex(tempComboName) >= 0)
+								{
+									comboDataVector[globalComboIndex].saveCombo();//saveCombo(requestData);
+									usleep(200000);
+									validComboIndexName = true;
+								}
+								/*else
+								{
+									cout << "combo not found." << endl;
+								}*/
+
 #elif(COMBO_DATA_ARRAY == 1)
-							comboDataArray[globalComboIndex].saveCombo();//saveCombo(requestData);
+								//if(getComboArrayIndex(tempComboName) >= 0)
+								{
+									//cout << "loadComboStructFromName try #" << i << endl;
+									comboDataArray[globalComboIndex].saveCombo();//saveCombo(requestData);
+									usleep(200000);
+									validComboIndexName = true;
+								}
+								/*else
+								{
+									cout << "combo not found." << endl;
+								}*/
 #elif(COMBO_DATA_MAP == 1)
-							comboDataMap[globalComboName].saveCombo();//saveCombo(requestData);
+								//if(comboDataMap.find(tempComboName) != comboDataMap.end())
+								{
+									comboDataMap[globalComboName].saveCombo();//saveCombo(requestData);
+									usleep(200000);
+									validComboIndexName = true;
+								}
+								/*else
+								{
+									cout << "invalid combo name: " << tempComboName << endl;
+									validComboIndexName = false;
+								}*/
 #endif
-							strcpy(ofxMainStatus,"combo saved");
+								strcpy(ofxMainStatus,"combo saved");
+								procCont.enableEffects();
+							}
+							/*else
+							{
+								cout << "no data given to save." << endl;
+							}*/
+
 						}
 						else if(pedalUiRequestCommand.compare("getCurrentValues") == 0)
 						{
@@ -1276,6 +1321,7 @@ int main(int argc, char *argv[])
 							cout << "combo processing time: " << comboTime << endl;
 #endif
 							pedalUi.sendCurrentStatus(ofxMainStatus);
+							//procCont.getOutputAmplitudes();
 							//pedalUi->sendCurrentStatus(ofxMainStatus);
 							//strcpy(ofxMainStatus," ");
 							//cout << "sent current data" << endl;
@@ -1300,11 +1346,6 @@ int main(int argc, char *argv[])
 					pedalUiRequest.clear();
 					pedalUiRequestCommand.clear();
 					pedalUiRequestData.clear();
-					//					pedalUi.clearSharedMemorySection();
-
-					//					pedalUi.dataProcessingStatus(1);
-					//					pedalUi.waitForAccessRelease();
-					//					pedalUi.dataProcessingStatus(0);
 				}
 			}
 

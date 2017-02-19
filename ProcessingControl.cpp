@@ -15,10 +15,24 @@
 #define COMBO_DATA_MAP 1*/
 
 
-extern ComboStruct combo[2];
+extern ComboStruct combo;
 extern int currentComboStructIndex;
 extern int oldComboStructIndex;
 
+
+/**************************************
+#if(dbg >= 1)
+	cout << "***** ENTERING: ProcessingControl::" << endl;
+	cout << ": " <<  << endl;
+#endif
+
+#if(dbg >= 1)
+	cout << "***** EXITING: ProcessingControl::: " << status << endl;
+#endif
+
+#if(dbg >=2)
+#endif
+********************************************/
 extern int globalComboIndex;
 extern bool justPoweredUp;
 extern bool inputsSwitched;
@@ -105,18 +119,24 @@ int audioCallbackComboIndex = 100;
 		this->processing->comboName = comboName;
 		cout << "comboName: " << comboName << endl;
 		//oldCombo = transferComboStruct(combo);
-		oldComboStructIndex = currentComboStructIndex;
-		currentComboStructIndex ^= 1;
+		cout << "stopping combo." << endl;
+		this->processing->stopCombo();
+
+		/*oldComboStructIndex = currentComboStructIndex;
+		currentComboStructIndex ^= 1;*/
 		cout << "oldComboStructIndex: " << oldComboStructIndex << "\tcurrentComboStructIndex: " << currentComboStructIndex << endl;
-		combo[currentComboStructIndex] = getComboStructFromComboName(this->processing->comboName);
+		combo = getComboStructFromComboName(this->processing->comboName);
 
-
-		this->processing->updateProcessing = true;
-		this->processing->processingUpdated = false;
+		cout << "loading combo." << endl;
+		this->processing->loadCombo();
+		this->processing->processingUpdated = true;
+		this->processing->updateProcessing = false;
+		this->processing->processingContextAllocationError = false;
+		cout << "combo loaded." << endl;
 
 
 	#if(dbg >= 1)
-		cout << "EXIT: ProcessingControl::load (using Map of ComboDataInts)" << endl;
+		cout << "EXIT: ProcessingControl::load (using Map of ComboDataInts): " << status << endl;
 	#endif
 		return status;
 	}
@@ -128,31 +148,35 @@ int audioCallbackComboIndex = 100;
 int ProcessingControl::start() // start clients and connect them
 {
 	int status = 0;
+#if(dbg >= 1)
+	cout << "***** ENTERING: ProcessingControl::start" << endl;
+#endif
 
-#if(dbg == 1)
+
+#if(dbg >= 1)
 	cout << "starting combo." << endl;
 #endif
 	this->processing = new Processing;// initial ports from constructor created here.
 	//this->processing->load();
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "processing Constructor successful." << endl;
 #endif
 	this->processing->start();	// activate the client
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "process started." << endl;
 #endif
 	// reporting some client info
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << endl << "my name: " << this->processing->getName() << endl;
 #endif
 
 	// test to see if it is real time
 	if (this->processing->isRealTime())
-#if(dbg == 1)
+#if(dbg >= 1)
 #endif
 		cout << "is realtime " << endl;
 	else
-#if(dbg == 1)
+#if(dbg >= 1)
 #endif
 		cout << "is not realtime " << endl;
 
@@ -163,16 +187,16 @@ int ProcessingControl::start() // start clients and connect them
 	//this->connectToPhysical(0,0);	// connects this client in port 0 to physical source port 0
 	//this->connectToPhysical(1,1);	// connects this client in port 1 to physical source port 1
 	//char connToString[25];
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "connecting processes." << endl;
 #endif
 
 	this->processing->connectToPhysical(0,0);		// connects this client out port 0 to physical destination port 0
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "connecting processes: " << this->processing->getOutputPortName(0) << endl;
 #endif
 	this->processing->connectToPhysical(1,1);		// connects this client out port 1 to physical destination port 1
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "connecting processes: " << this->processing->getOutputPortName(1) << endl;
 #endif
 
@@ -183,6 +207,9 @@ int ProcessingControl::start() // start clients and connect them
 		justPoweredUp = false;
 	}
 
+#if(dbg >= 1)
+	cout << "***** EXITING: ProcessingControl::start: " << status << endl;
+#endif
 
 	return status;
 
@@ -192,6 +219,10 @@ int ProcessingControl::start() // start clients and connect them
 int ProcessingControl::stop() // stop clients and disconnect them
 {
 	int status = 0;
+#if(dbg >= 1)
+	cout << "***** ENTERING: ProcessingControl::stop" << endl;
+#endif
+
 	//this->processing->bypassAll(); // set to straight-thru to avoid XRun
 	//this->processing->stopEffects();
 	//sleep(2);
@@ -213,6 +244,9 @@ int ProcessingControl::stop() // stop clients and disconnect them
 	cout << "delete this->processing" << endl;
 #endif
 	//exit(0);
+#if(dbg >= 1)
+	cout << "***** EXITING: ProcessingControl::stop: " << status << endl;
+#endif
 
 	return status;
 }
@@ -251,7 +285,7 @@ int ProcessingControl::updateFootswitch(int *footswitchStatus)
 	return status;
 }
 
-#define dbg 2
+#define dbg 1
 
 int ProcessingControl::updateProcessParameter(int parameterIndex, int parameterValue)
 {
@@ -288,13 +322,13 @@ int ProcessingControl::updateProcessParameter(int parameterIndex, int parameterV
 	this->processing->updateProcessParameter(processName, processParameterIndex, parameterValue);
 
 #if(dbg >= 1)
-	cout << "EXIT: ProcessingControl::updateProcessParameter" << endl;
+	cout << "EXIT: ProcessingControl::updateProcessParameter: " << status << endl;
 #endif
 
 	return status;
 }
 
-#define dbg 2
+#define dbg 1
 int ProcessingControl::updateControlParameter(int parameterIndex, int parameterValue)
 {
 	int status = 0;
@@ -335,7 +369,7 @@ int ProcessingControl::updateControlParameter(int parameterIndex, int parameterV
 
 #if(dbg >= 1)
 	cout << "control: " << controlName << "\t\tparameter: " << parameter.controlParamName << endl;
-	cout << "EXITING: ProcessingControl::updateControlParameter" << endl;
+	cout << "EXITING: ProcessingControl::updateControlParameter: " << status << endl;
 #endif
 
 	return status;
@@ -344,20 +378,50 @@ int ProcessingControl::updateControlParameter(int parameterIndex, int parameterV
 
 int ProcessingControl::enableEffects()
 {
+	int status = 0;
+#if(dbg >= 1)
+	cout << "***** ENTERING: ProcessingControl::enableEffects" << endl;
+#endif
 
-	this->processing->enableProcessing();
+
+	status = this->processing->enableProcessing();
 	//this->start();
-	return 0;
+#if(dbg >= 1)
+	cout << "***** EXITING: ProcessingControl::enableEffects: " << status << endl;
+#endif
+	return status;
 }
 
 int ProcessingControl::disableEffects()
 {
+	int status = 0;
+#if(dbg >= 1)
+	cout << "***** ENTERING: ProcessingControl::disableEffects" << endl;
+#endif
 
-	this->processing->disableProcessing();
+
+	status = this->processing->disableProcessing();
 	//this->stop();
-	return 0;
+#if(dbg >= 1)
+	cout << "***** EXITING: ProcessingControl::disableEffects: " << status << endl;
+#endif
+	return status;
 }
 
+#define dbg 2
+double ProcessingControl::getOutputAmplitudes(void)
+{
+	double amplitude = 0.000;
+#if(dbg >= 1)
+	cout << "ENTERING: ProcessingControl::getOutputAmplitudes" << endl;
+#endif
 
+	amplitude = this->processing->getOutputAmplitudes();
+
+#if(dbg >= 1)
+	cout << "EXITING: ProcessingControl::getOutputAmplitudes: " << amplitude << endl;
+#endif
+	return amplitude;
+}
 
 

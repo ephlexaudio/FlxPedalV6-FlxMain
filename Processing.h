@@ -9,7 +9,7 @@
 #define PROCESSING_H_
 
 #include <iostream>
-
+#include "config.h"
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
@@ -26,7 +26,7 @@
 #include "ComboDataInt.h"
 #include "utilityFunctions.h"
 #include "jackaudioio.h"
-#define BUFFER_SIZE 1024
+
 
 
 extern ComboDataInt comboData[15];
@@ -69,8 +69,8 @@ private:
 	double negPeakArray[4][2];
 	int chan1GndCount;
 	int chan2GndCount;
-	double comboInputBuffer[2][BUFFER_SIZE];
-	double comboOutputBuffer[2][BUFFER_SIZE];
+	//double comboInputBuffer[2][BUFFER_SIZE];
+	//double comboOutputBuffer[2][BUFFER_SIZE];
 	double inputLevel = 0.01;
 	bool gateStatus;
 	double envGenTriggerMultiple = 5.0;
@@ -109,7 +109,7 @@ public:
 	int clearCheckInputs();*/
 	bool areInputsSwitched(); // needs to be public to access sysfs (?)
 
-	int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::Value> connectionsJson);
+	//int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::Value> connectionsJson);
 	int loadCombo(int comboIndex);
 	int loadCombo(void);
 	int enableComboBypass();
@@ -131,6 +131,8 @@ public:
 	int bypassAll();
 	int updateProcessParameter(string processName, int parameterIndex, int parameterValue);
 	int updateControlParameter(string controlName, int parameterIndex, int parameterValue);
+	double getOutputAmplitudes(void);
 };
 
+int loadComponentSymbols(void);
 #endif /* COMBO_H_ */

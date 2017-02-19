@@ -59,7 +59,7 @@ public:
 	GPIOClass dataProcessed;// = GPIOClass(SHARED_MEMORY_PROCESSED);//, "out");
 	int spiFD;
 	uint8_t status;
-	void dataProcessingStatus(uint8_t status);
+	void dataProcessingStatus(uint8_t pinStatus);
 	uint8_t sendData(uint16_t address, char *data, uint16_t length);
 	uint8_t getData(uint16_t address, char *data, uint16_t length);
 	/*uint8_t sendData(uint8_t fromIndex, uint8_t toIndex, char *data, uint16_t length);

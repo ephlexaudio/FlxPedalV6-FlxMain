@@ -95,6 +95,9 @@ private:
 	Json::Value mergeConnections(Json::Value srcConn, Json::Value destConn);
 	bool compareConnectionsSrc2Dest(Json::Value conn1, Json::Value conn2);
 	int transferConnection(Json::Value conn, vector<Json::Value> *srcConnArray, vector<Json::Value> *destConnArray);
+	int getProcessSequenceIndex(string processName);
+	int getControlSequenceIndex(string controlName);
+
 public:
 	ComboDataInt();
 	~ComboDataInt();
@@ -143,6 +146,7 @@ public:
 	int getCombo(char *comboName); //get JSON data from file and parse into effectComboJson
 	int getCombo(string comboData); //get JSON data from input string and parse into effectComboJson
 	int getPedalUi(void); // setup pedalUiJson using effectComboJson
+	int setPedalUiParameter();
 	int getConnections(void); // setup connectionsJson using effectComboJson
 	int getConnections2(void);
 	int getProcesses(void); // setup processesStruct and unsortedParameterArray using effectComboJson
@@ -151,7 +155,7 @@ public:
 
 	int initProcBuffers(struct ProcessBuffer *procBufferArray);
 	int setProcBuffer(struct ProcessBuffer procBufferArray, int processed, int ready);
-	int resetProcBuffer(struct ProcessBuffer procBufferArray);
+	//int resetProcBuffer(struct ProcessBuffer procBufferArray);
 
 	int setProcData(struct ProcessEvent *procEvent, Process processStruct);
 
@@ -160,8 +164,8 @@ public:
 	int initProcInputBufferIndexes(struct ProcessEvent *procEvent);
 	int initProcOutputBufferIndexes(struct ProcessEvent *procEvent);
 
-	int setProcInputBufferIndex(struct ProcessEvent *procEvent, int processInputIndex, int inputBufferIndex, struct ProcessBuffer *procBufferArray);
-	int setProcOutputBufferIndex(struct ProcessEvent *procEvent, int processOutputIndex, int outputBufferIndex, struct ProcessBuffer *procBufferArray);
+	//int setProcInputBufferIndex(struct ProcessEvent *procEvent, int processInputIndex, int inputBufferIndex, struct ProcessBuffer *procBufferArray);
+	//int setProcOutputBufferIndex(struct ProcessEvent *procEvent, int processOutputIndex, int outputBufferIndex, struct ProcessBuffer *procBufferArray);
 
 	int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::Value> connectionsJson);
 	int connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray();
@@ -169,7 +173,7 @@ public:
 	int initializeControlDataIntoControlEventElement();
 	int loadComboStructFromName(char *comboName);
 	int loadComboStructFromJsonString(string comboJson);
-
+	int loadComboStructFromName2(char *comboName);
 	int saveComboStruct(ComboStruct comboStructData);
 
 	void getProcParameters(int procIndex, int params[10]);
@@ -182,6 +186,9 @@ public:
 	int getControlIndex(string targetProcessName, string targetParameterName);
 	int getProcessParameterIndex(string processName, string parameterName);
 	int getControlParameterIndex(string controlName, string parameterName);
+	int setProcessSequenceParameter(string processName, int parameterIndex, int valueIndex);
+	int setControlSequenceParameter(string controlName, int parameterIndex, int valueIndex);
+
 	int updateProcess(int absParamIndex, int valueIndex);
 	int updateControl(int absParamIndex, int valueIndex);
 	string getName();

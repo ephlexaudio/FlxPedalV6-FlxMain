@@ -33,7 +33,7 @@ public:
 	int connect();
 	int disconnect();
 	int isConnected();
-
+	int sendComponentData();
 	int checkForNewHostData(void);
 	string getUserRequest(void);
 	int sendComboList(string comboLists);
