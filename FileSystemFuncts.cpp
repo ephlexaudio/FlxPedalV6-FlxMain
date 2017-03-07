@@ -167,7 +167,7 @@ int validateJsonBuffer(char *jsonBuffer)
 {
 #if(dbg >= 1)
 	cout << "***** ENTERING: FileSystemFuncts::validateJsonBuffer" << endl;
-	cout << "jsonBuffer: " << jsonBuffer << endl;
+	//cout << "jsonBuffer: " << jsonBuffer << endl;
 #endif
 	int status = 0;
 	Json::Value jsonClean;

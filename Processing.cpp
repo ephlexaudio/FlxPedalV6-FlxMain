@@ -235,6 +235,9 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 				case 6:
 					waveshaperb(0, &comboDataVector[loadComboIndex].processSequence[i], comboDataVector[loadComboIndex].procBufferArray,this->footswitchStatus);
 					break;
+				case 7:
+					reverbb(0, &comboDataVector[loadComboIndex].processSequence[i], comboDataVector[loadComboIndex].procBufferArray,this->footswitchStatus);
+					break;
 				default:;
 			}
 		}
@@ -301,6 +304,9 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 				case 6:
 					waveshaperb(0, &comboDataArray[loadComboIndex].processSequence[i], comboDataArray[loadComboIndex].procBufferArray,this->footswitchStatus);
 					break;
+				case 7:
+					reverbb(0, &comboDataArray[loadComboIndex].processSequence[i], comboDataArray[loadComboIndex].procBufferArray,this->footswitchStatus);
+					break;
 				default:;
 			}
 		}
@@ -323,7 +329,7 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 #endif
 
 #if(COMBO_STRUCT == 1)
-#define dbg 2
+#define dbg 1
 	int Processing::loadCombo(void)
 	{
 		int status = 0;
@@ -372,6 +378,18 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 				case 6:
 					waveshaperb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 					break;
+				case 7:
+					reverbb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+					break;
+				case 8:
+					samplerb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+					break;
+				case 9:
+					oscillatorb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+					break;
+				/*case ?:
+					blankb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+					break;*/
 				default:;
 			}
 		}
@@ -626,13 +644,12 @@ double testBuffer[10][BUFFER_SIZE];
 			this->prevMaxAmp[1] = this->maxAmp[1];
 			this->prevSignalLevel = this->signalLevel;
 
-
-
-
 			this->processingContextAllocationError = false;
 
-			//***************************** Run Controls for manipulating process parameters *************
+			//this->getPitch(!this->gateStatus, combo.procBufferArray[combo.inputProcBufferIndex[0]].buffer);
 
+
+			//***************************** Run Controls for manipulating process parameters *************
 
 			for(int i = 0; i < combo.controlCount; i++)
 			{
@@ -681,6 +698,22 @@ double testBuffer[10][BUFFER_SIZE];
 						if(waveshaperb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
 							this->processingContextAllocationError = true;
 						break;
+					case 7:
+						if(reverbb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
+							this->processingContextAllocationError = true;
+						break;
+					case 8:
+						if(samplerb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
+							this->processingContextAllocationError = true;
+						break;
+					case 9:
+						if(oscillatorb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
+							this->processingContextAllocationError = true;
+						break;
+					/*case ?:
+						if(blankb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus) < 0)
+							this->processingContextAllocationError = true;
+						break;*/
 					default:;
 				}
 				if(this->processingContextAllocationError == true)
@@ -813,6 +846,207 @@ int Processing::getProcessData(int index, double *data)
 	return status;
 }
 
+
+
+//double pitchDetectionBuffer[PITCH_DETECTION_BUFFER_SIZE]
+struct peak{
+	double amplitude;
+	int bufferPosition;
+};
+
+int zeroCrossingCountArray[2];
+int zeroCrossingCount;
+struct peak tempPreFilterHigh;
+struct peak tempPreFilterLow;
+struct peak tempPostFilterHigh;
+struct peak tempPostFilterLow;
+struct peak preFilterHigh;
+struct peak preFilterLow;
+struct peak postFilterHigh;
+struct peak postFilterLow;
+int getPitchFilterIndexAddendIndex = 0;
+int tempPitch;
+/*preFilterHigh.amplitude = 0.0000;
+preFilterLow.amplitude = 0.0000;
+postFilterHigh.amplitude = 0.0000;
+postFilterLow.amplitude = 0.0000;*/
+
+int getPitchFilterIndex = 30;
+#define dbg 0
+int Processing::getPitch(bool activate, double *signal)
+{
+	static int pitch;
+	int getPitchFilterIndexAddends[6] = {1,3,6,11,22,45};
+	double lp_a[4], lp_b[4];
+	static double lp_y[4], lp_x[4]; // needs to be static to retain data from previous processing
+	double filterOutSample[2];
+	int zeroCrossingPosition[2];
+	filterOutSample[0] = 0.00000;
+	filterOutSample[1] = 0.00000;
+	zeroCrossingPosition[0] = 0;
+	zeroCrossingPosition[1] = 0;
+	double preFilterPeakToPeakAmplitude = 0.0000;
+	double postFilterPeakToPeakAmplitude = 0.0000;
+	double postPreAmplitudeRatio = 0.000;
+
+
+	lp_a[0] = lp3[getPitchFilterIndex][0];
+	lp_a[1] = lp3[getPitchFilterIndex][1];
+	lp_a[2] = lp3[getPitchFilterIndex][2];
+	lp_a[3] = lp3[getPitchFilterIndex][3];
+	//lp_a[i][4] = lp[tempIndex][4];
+	lp_b[1] = lp3[getPitchFilterIndex][5];
+	lp_b[2] = lp3[getPitchFilterIndex][6];
+	lp_b[3] = lp3[getPitchFilterIndex][7];
+	//lp_b[i][4] = lp[tempIndex][9];
+
+#if(dbg >= 1)
+	cout << "ENTERING: ProcessingControl::getPitch" << endl;
+#endif
+
+	//filter signal and get peak amplitudes. Get buffer positions using zero-crossing detection
+
+
+	for(unsigned int i = 0; i < bufferSize; i++)
+	{
+		lp_x[0] = signal[i];
+
+		if(lp_x[0] > tempPreFilterHigh.amplitude)
+		{
+			tempPreFilterHigh.amplitude = lp_x[0];
+		}
+		else if(lp_x[0] < tempPreFilterLow.amplitude)
+		{
+			tempPreFilterLow.amplitude = lp_x[0];
+		}
+
+		lp_y[0] = lp_a[0]*lp_x[0] + lp_a[1]*lp_x[1] + lp_a[2]*lp_x[2] + lp_a[3]*lp_x[3] - lp_b[1]*lp_y[1] - lp_b[2]*lp_y[2] - lp_b[3]*lp_y[3];
+
+		lp_x[3] = lp_x[2];
+		lp_x[2] = lp_x[1];
+		lp_x[1] = lp_x[0];
+
+		lp_y[3] = lp_y[2];
+		lp_y[2] = lp_y[1];
+		lp_y[1] = lp_y[0];
+
+
+		if(lp_y[0] > tempPostFilterHigh.amplitude)
+		{
+			tempPostFilterHigh.amplitude = lp_y[0];
+		}
+		else if(lp_y[0] < tempPostFilterLow.amplitude)
+		{
+			tempPostFilterLow.amplitude = lp_y[0];
+		}
+
+		filterOutSample[1] = filterOutSample[0];
+		filterOutSample[0] = lp_y[0];
+
+		if(filterOutSample[1] < 0.0000  &&  filterOutSample[0] > 0.0000) // positive-slope zero-crossing
+		{
+			tempPostFilterHigh.amplitude = 0.0000; //reset to get new positive peak
+			tempPreFilterHigh.amplitude = 0.0000; //reset to get new positive peak
+			postFilterLow.amplitude = tempPostFilterLow.amplitude; // reset to get new negative peak
+			preFilterLow.amplitude = tempPreFilterLow.amplitude; // reset to get new negative peak
+			{
+				zeroCrossingCountArray[1] = zeroCrossingCountArray[0];
+				zeroCrossingCountArray[0] = zeroCrossingCount;
+				tempPitch = zeroCrossingCountArray[0] - zeroCrossingCountArray[1];
+			}
+			//cout << "posSlope: " << filterOutSample[0] << ":" << filterOutSample[1] << endl;
+		}
+
+		if(filterOutSample[1] > 0.0000  &&  filterOutSample[0] < 0.0000) // negative-slope zero-crossing
+		{
+			tempPostFilterLow.amplitude = 0.0000; // reset to get new negative peak
+			tempPreFilterLow.amplitude = 0.0000; // reset to get new negative peak
+			postFilterHigh.amplitude = tempPostFilterHigh.amplitude; //reset to get new positive peak
+			preFilterHigh.amplitude = tempPreFilterHigh.amplitude; //reset to get new positive peak
+			//cout << "negSlope: " << filterOutSample[0] << ":" << filterOutSample[1] << endl;
+		}
+
+		if(zeroCrossingCount > 10000)
+		{
+			zeroCrossingCountArray[0] = 0;
+			zeroCrossingCountArray[1] = 0;
+			zeroCrossingCount = 0;
+		}
+		else zeroCrossingCount++;
+	}
+
+	preFilterPeakToPeakAmplitude = preFilterHigh.amplitude - preFilterLow.amplitude;
+
+	postFilterPeakToPeakAmplitude = postFilterHigh.amplitude - postFilterLow.amplitude;
+
+	postPreAmplitudeRatio = postFilterPeakToPeakAmplitude/preFilterPeakToPeakAmplitude;
+
+	if(preFilterPeakToPeakAmplitude > 0.1) // signal is present
+	{
+		if( 0.100 < postPreAmplitudeRatio && postPreAmplitudeRatio < 0.500)
+		{
+			if(zeroCrossingCountArray[0] != 0 && zeroCrossingCountArray[1] != 0)
+			{
+				//int tempPitch = zeroCrossingCountArray[0] - zeroCrossingCountArray[1];
+				//if(0 < tempPitch && tempPitch < 1000)
+					pitch = tempPitch;
+			}
+			//cout << "preFilterAmp: " << preFilterPeakToPeakAmplitude << "\tAmpRatio: " << postPreAmplitudeRatio  << "\tzCrossings: " << zeroCrossingCountArray[0] << ":" << zeroCrossingCountArray[1] << "\tpitch: " << pitch << "\tgetPitchFilterIndex: " << getPitchFilterIndex << endl;
+		}
+		else
+		{
+			/*if(getPitchFilterIndexAddendIndex == 0)
+			{
+				getPitchFilterIndexAddendIndex = 5;
+				getPitchFilterIndex = getPitchFilterIndexAddends[getPitchFilterIndexAddendIndex];
+
+			}
+			else
+			{
+				if(postPreAmplitudeRatio >= 0.500) // filtered signal too big: lower cut-off frequency
+				{
+					getPitchFilterIndex -= getPitchFilterIndexAddends[getPitchFilterIndexAddendIndex+1];
+					getPitchFilterIndex += getPitchFilterIndexAddends[getPitchFilterIndexAddendIndex];
+				}
+				else if(postPreAmplitudeRatio <= 0.100) // filtered signal too small: raise cut-off frequency
+				{
+					getPitchFilterIndex += getPitchFilterIndexAddends[getPitchFilterIndexAddendIndex];
+				}
+			}
+			getPitchFilterIndexAddendIndex--;*/
+			if(postPreAmplitudeRatio >= 0.100  && getPitchFilterIndex > 0) // filtered signal too big: lower cut-off frequency
+			{
+				getPitchFilterIndex--;
+			}
+			else if(getPitchFilterIndex < 99)// filtered signal too small: raise cut-off frequency
+			{
+				getPitchFilterIndex++;
+			}
+
+			cout << "getPitchFilterIndex: " << getPitchFilterIndex << "\tgetPitchFilterIndexAddendIndex: " << getPitchFilterIndexAddendIndex << endl;
+		}
+		cout << "preFilterAmp: " << preFilterPeakToPeakAmplitude << "\tAmpRatio: " << postPreAmplitudeRatio  << "\tzCrossings: " << zeroCrossingCountArray[0] << ":" << zeroCrossingCountArray[1] << "\tpitch: " << pitch << "\tgetPitchFilterIndex: " << getPitchFilterIndex << endl;
+
+	}
+	else
+	{
+		zeroCrossingCountArray[0] = 0;
+		zeroCrossingCountArray[1] = 0;
+		zeroCrossingCount = 0;
+		pitch = 0;
+	}
+
+#if(dbg >= 1)
+	cout << "EXITING ProcessingControl::getPitch: ";
+#if(dbg >= 2)
+	cout << "preFilterAmp: " << preFilterPeakToPeakAmplitude << "\tAmpRatio: " << postPreAmplitudeRatio  << "\tzCrossings: " << zeroCrossingCountArray[0] << ":" << zeroCrossingCountArray[1] << "\\tpitch: " << pitch << "\tgetPitchFilterIndex: " << getPitchFilterIndex << endl;
+#else
+	cout << endl;
+	#endif
+#endif
+
+	return pitch;
+}
 /*int Processing::clearProcessData(int index, double *data)
 {
 	int status = 0;
@@ -827,16 +1061,27 @@ int Processing::getProcessData(int index, double *data)
 	return status;
 }*/
 
-
+#define dbg 0
 int loadComponentSymbols(void)
 {
+#if(dbg >= 1)
+	cout << "ENTERING: ProcessingControl::loadComponentSymbols" << endl;
+#endif
+
 	delayb('c', NULL, NULL, NULL);
 	filter3bb('c', NULL, NULL, NULL);
 	filter3bb2('c', NULL, NULL, NULL);
 	lohifilterb('c', NULL, NULL, NULL);
 	mixerb('c', NULL, NULL, NULL);
 	volumeb('c', NULL, NULL, NULL);
+	//reverbb('c', NULL, NULL, NULL);
 	waveshaperb('c', NULL, NULL, NULL);
+	//samplerb('c', NULL, NULL, NULL);
+	//oscillatorb('c', NULL, NULL, NULL);
+	//blankb('c', NULL, NULL, NULL);
+#if(dbg >= 1)
+	cout << "EXITING ProcessingControl::loadComponentSymbols" << endl;
+#endif
 
 	return 0;
 }
@@ -880,6 +1125,9 @@ int loadComponentSymbols(void)
 						break;
 					case 6:
 						waveshaperb(3, &comboDataVector[stopComboIndex].processSequence[i], comboDataVector[stopComboIndex].procBufferArray,this->footswitchStatus);
+						break;
+					case 7:
+						reverbb(3, &comboDataVector[stopComboIndex].processSequence[i], comboDataVector[stopComboIndex].procBufferArray,this->footswitchStatus);
 						break;
 					default:;
 				}
@@ -930,6 +1178,9 @@ int loadComponentSymbols(void)
 					case 6:
 						waveshaperb(3, &comboDataArray[stopComboIndex].processSequence[i], comboDataArray[stopComboIndex].procBufferArray,this->footswitchStatus);
 						break;
+					case 7:
+						reverbb(3, &comboDataArray[stopComboIndex].processSequence[i], comboDataArray[stopComboIndex].procBufferArray,this->footswitchStatus);
+						break;
 					default:;
 				}
 			}
@@ -944,7 +1195,7 @@ int loadComponentSymbols(void)
 #endif
 
 #if(COMBO_STRUCT == 1)
-#define dbg 2
+#define dbg 1
 	int Processing::stopCombo(void)
 	{
 		int status = 0;
@@ -988,6 +1239,18 @@ int loadComponentSymbols(void)
 					case 6:
 						waveshaperb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
 						break;
+					case 7:
+						reverbb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						break;
+					case 8:
+						samplerb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						break;
+					case 9:
+						oscillatorb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						break;
+					/*case ?:
+						blankb('s', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						break;*/
 					default:;
 				}
 			}
@@ -1327,7 +1590,7 @@ int Processing::disableProcessing()
 	return 0;
 }
 
-#define dbg 2
+#define dbg 1
 double Processing::getOutputAmplitudes(void)
 {
 	double amplitude = 0.0000;

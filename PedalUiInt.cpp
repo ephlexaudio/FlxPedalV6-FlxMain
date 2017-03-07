@@ -84,7 +84,7 @@ int PedalUiInt::checkForNewPedalData(void)
 }
 
 
-#define dbg 2
+#define dbg 1
 
 int PedalUiInt::sendComboUiData(Json::Value uiJson)
 {

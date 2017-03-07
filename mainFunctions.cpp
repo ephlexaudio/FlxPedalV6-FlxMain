@@ -704,18 +704,30 @@ int stopCombo(void)
 ComboDataInt getComboObject(string comboName)
 {
 	ComboDataInt comboObject;
+	ComboDataInt nullObject;
+	int status = 0;
 #if(dbg >= 1)
 	cout << "*****ENTERING mainFunctions::getComboObject" << endl;
 	cout << "comboName: " << comboName << endl;
 #endif
 
-	comboObject.loadComboStructFromName((char *)comboName.c_str());
+	status = comboObject.loadComboStructFromName((char *)comboName.c_str());
 
+
+	//if(status >= 0)
+	{
 #if(dbg >= 1)
-	cout << "***** EXITING mainFunctions::getComboObject" << endl;
+		cout << "***** EXITING mainFunctions::getComboObject: " << comboObject.comboName << endl;
 #endif
-	return comboObject;
-
+		return comboObject;
+	}
+	/*else
+	{
+#if(dbg >= 1)
+		cout << "***** EXITING mainFunctions::getComboObject: " << nullObject.comboName << endl;
+#endif
+		return nullObject;
+	}*/
 }
 
 

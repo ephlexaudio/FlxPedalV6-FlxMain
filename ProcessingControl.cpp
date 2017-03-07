@@ -125,14 +125,22 @@ int audioCallbackComboIndex = 100;
 		/*oldComboStructIndex = currentComboStructIndex;
 		currentComboStructIndex ^= 1;*/
 		cout << "oldComboStructIndex: " << oldComboStructIndex << "\tcurrentComboStructIndex: " << currentComboStructIndex << endl;
-		combo = getComboStructFromComboName(this->processing->comboName);
 
-		cout << "loading combo." << endl;
-		this->processing->loadCombo();
-		this->processing->processingUpdated = true;
-		this->processing->updateProcessing = false;
-		this->processing->processingContextAllocationError = false;
-		cout << "combo loaded." << endl;
+		combo = getComboStructFromComboName(this->processing->comboName);
+		if(combo.name.empty() == false)
+		{
+			cout << "loading combo." << endl;
+			this->processing->loadCombo();
+			this->processing->processingUpdated = true;
+			this->processing->updateProcessing = false;
+			this->processing->processingContextAllocationError = false;
+			cout << "combo loaded." << endl;
+		}
+		else
+		{
+			cout << "combo struct is blank or invalid." << endl;
+			status = -1;
+		}
 
 
 	#if(dbg >= 1)
@@ -408,7 +416,7 @@ int ProcessingControl::disableEffects()
 	return status;
 }
 
-#define dbg 2
+#define dbg 1
 double ProcessingControl::getOutputAmplitudes(void)
 {
 	double amplitude = 0.000;

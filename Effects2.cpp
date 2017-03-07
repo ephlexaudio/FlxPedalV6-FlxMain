@@ -52,7 +52,11 @@ int filter3bb2Count = 0;
 int lohifilterbCount = 0;
 int mixerbCount = 0;
 int volumebCount = 0;
+int reverbbCount = 0;
 int waveshaperbCount = 0;
+int samplerbCount = 0;
+int oscillatorbCount = 0;
+int blankbCount = 0;
 
 /*************************************
 #if(dbg >= 1)
@@ -234,6 +238,7 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 				std::cout << "LfoContext control calloc succeeded." << std::endl;
 				((LfoContext *)(controlEvent->controlContext))->cycleTimeValueIndex = 0;
 			}*/
+
 			controlEvent->controlTypeIndex = lfoCount;
 			lfoCount++;
 			lfoContext[controlEvent->controlTypeIndex].cycleTimeValueIndex = 0;
@@ -245,6 +250,7 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 		if(controlEvent->type == 0)
 		{
 			controlEvent->int_output = controlEvent->parameter[0];  // direct transfer of parameter value
+			controlEvent->int_outputInv = 100-controlEvent->parameter[0];  // direct transfer of parameter value
 #if(dbg >= 2)
 			//cout << "PARAM CONTROL: Normal" << endl;
 #endif
@@ -282,8 +288,8 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 			//double slewRate = ((EnvGenContext *)(controlEvent->controlContext))->slewRate;
 			int stageTimeValue = envGenContext[controlEvent->controlTypeIndex].stageTimeValue;
 			double slewRate = envGenContext[controlEvent->controlTypeIndex].slewRate;
-			int attack = controlEvent->parameter[0];
-			int decay = controlEvent->parameter[1];
+			int attack = 99-controlEvent->parameter[0];
+			int decay = 99-controlEvent->parameter[1];
 			//int sustain = controlEvent->parameter[2];
 			//int release = controlEvent->parameter[3];
 			int attackPeakValueIndex = 100;//controlEvent->parameter[4];
@@ -295,6 +301,7 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 			{
 			case 0: // idle
 				controlEvent->output = 0.0;
+				controlEvent->outputInv = 100.0;
 				// pick detected, go to attack
 				if(controlEvent->envTriggerStatus == true)
 				{
@@ -303,7 +310,7 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 #if(dbg >= 3)
 				cout << "case 0: output: " << controlEvent->output << endl;
 #endif
-					slewRate = 10.1 - envTime[attack];
+					slewRate = /*10.1 - */envTime[attack]*0.2;
 #if(dbg >= 2)
 					cout << "ATTACK" << endl;
 #endif
@@ -313,6 +320,7 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 				if(controlEvent->output < double(attackPeakValueIndex))
 				{
 					controlEvent->output += slewRate;
+					controlEvent->outputInv -= slewRate;
 #if(dbg >= 3)
 				cout << "case 1: output: " << controlEvent->output << endl;
 #endif
@@ -322,7 +330,7 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 				{
 					//((EnvGenContext *)(controlEvent->controlContext))->envStage = 2;
 					envGenContext[controlEvent->controlTypeIndex].envStage = 2;
-					slewRate = 10.1 - envTime[decay];
+					slewRate = /*10.1 -*/ envTime[decay]*0.2;
 #if(dbg >= 2)
 					cout << "DECAY" << endl;
 #endif
@@ -347,7 +355,7 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 				{
 					//((EnvGenContext *)(controlEvent->controlContext))->envStage = 1;
 					envGenContext[controlEvent->controlTypeIndex].envStage = 1;
-					slewRate = 10.1 - envTime[attack];
+					slewRate = /*10.1 - */envTime[attack]*0.2;
 #if(dbg >= 2)
 					cout << "ATTACK" << endl;
 #endif
@@ -356,6 +364,7 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 				{
 					//((EnvGenContext *)(controlEvent->controlContext))->envStage = 0;//envStage++;
 					controlEvent->output -= slewRate;
+					controlEvent->outputInv += slewRate;
 				}
 				else // output is below decay bottom value
 				{
@@ -379,9 +388,18 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 			default:;
 			}
 			controlEvent->int_output  = (int)(controlEvent->output);
+			controlEvent->int_outputInv  = (int)(controlEvent->outputInv);
 
-			if(controlEvent->int_output < 0) controlEvent->int_output = 0;
-			if(controlEvent->int_output > 99) controlEvent->int_output = 99;
+			if(controlEvent->int_output < 0)
+			{
+				controlEvent->int_output = 0;
+				controlEvent->int_outputInv = 99;
+			}
+			if(controlEvent->int_output > 99)
+			{
+				controlEvent->int_output = 99;
+				controlEvent->int_outputInv = 0;
+			}
 
 
 
@@ -420,11 +438,22 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 				if(int_cyclePositionValue < 0) int_cyclePositionValue = 0;
 				if(int_cyclePositionValue > 99) int_cyclePositionValue = 99;
 				controlEvent->output = lfoAmp[amplitudeIndex]*lfoSine[int_cyclePositionValue]+lfoOffset[offsetIndex];
+				controlEvent->outputInv = -lfoAmp[amplitudeIndex]*lfoSine[int_cyclePositionValue]+lfoOffset[offsetIndex];
 			}
 
 
 			controlEvent->int_output  = (unsigned int)(controlEvent->output);
-			if(controlEvent->int_output > 99) controlEvent->int_output = 99;
+			controlEvent->int_outputInv  = (unsigned int)(controlEvent->outputInv);
+
+			if(controlEvent->int_output > 99)
+			{
+				controlEvent->int_output = 99;
+			}
+			if(controlEvent->int_outputInv > 99)
+			{
+				controlEvent->int_outputInv = 99;
+			}
+
 			{
 #if(dbg >= 2)
 				cout << "PARAM CONTROL[" << controlEvent->name << "]: LFO: value index " << controlEvent->int_output << endl;
@@ -445,6 +474,17 @@ int control(/*int*/ char action, bool gate, struct ControlEvent *controlEvent, s
 			/*cout << "procEvent[" << paramContProcessIndex << "].parameters[" << paramContParameterIndex << "]: " <<
 					procEvent[paramContProcessIndex].parameters[paramContParameterIndex] << endl;*/
 		}
+
+		for(int paramControlConnectionIndexInv = 0; paramControlConnectionIndexInv < controlEvent->paramContConnectionCountInv; paramControlConnectionIndexInv++)
+		{
+			int paramContProcessIndex = controlEvent->paramContConnectionInv[paramControlConnectionIndexInv].processIndex;
+			int paramContParameterIndex = controlEvent->paramContConnectionInv[paramControlConnectionIndexInv].processParamIndex;
+
+			procEvent[paramContProcessIndex].parameters[paramContParameterIndex] = controlEvent->int_outputInv;
+			/*cout << "procEvent[" << paramContProcessIndex << "].parameters[" << paramContParameterIndex << "]: " <<
+					procEvent[paramContProcessIndex].parameters[paramContParameterIndex] << endl;*/
+		}
+
 	}
 	else if(action == 'd')
 	{
@@ -547,17 +587,6 @@ int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		procEvent->processTypeIndex = delaybCount;//processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
 		delaybCount++;
-		/*if(procEvent->processContext == NULL)
-		{
-			std::cout << "delayb calloc failed." << std::endl;
-		}
-		else
-		{
-			std::cout << "delayb calloc succeeded." << std::endl;
-			((DelayContext *)(procEvent->processContext))->inputPtr = 0;
-			((DelayContext *)(procEvent->processContext))->outputPtr = 0;
-			((DelayContext *)(procEvent->processContext))->delayBuffer[0]=0.0;
-		}*/
 		context[procEvent->processTypeIndex].inputPtr = 0;
 		context[procEvent->processTypeIndex].outputPtr = 0;
 		for(unsigned int delayBufferIndex = 0; delayBufferIndex < DELAY_BUFFER_LENGTH; delayBufferIndex++)
@@ -773,7 +802,8 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 		double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
 		double couplingFilter_y[4], couplingFilter_x[4];
 		double noiseFilter_y[4], noiseFilter_x[4];
-
+		int lpOutputPhaseInversion = 0;
+		int hpOutputPhaseInversion = 0;
 		/*if(procEvent->processContext == NULL)
 		{
 			cout << "audioCallback filter3bb context not allocated" << endl;
@@ -829,32 +859,37 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 #endif
 
 		//int tempIndex = valueIndex;
-		for(i = 0; i < NUMBER_OF_BANDS; i++)
+		//for(i = 0; i < NUMBER_OF_BANDS; i++)
 		{
 			//if(i == 0)
 			{
 #if(dbg == 1)
 				cout << procEvent->parameters[i] << ", ";
 #endif
-				lp_a[i][0] = lp[procEvent->parameters[i]][0];
-				lp_a[i][1] = lp[procEvent->parameters[i]][1];
-				lp_a[i][2] = lp[procEvent->parameters[i]][2];
-				//lp_a[i][3] = lp2[procEvent->parameters[i]][3];
-				//lp_a[i][4] = lp[tempIndex][4];
-				lp_b[i][1] = lp[procEvent->parameters[i]][4];
-				lp_b[i][2] = lp[procEvent->parameters[i]][5];
-				//lp_b[i][3] = lp2[procEvent->parameters[i]][7];
-				//lp_b[i][4] = lp[tempIndex][9];
+				lp_a[0][0] = lp[procEvent->parameters[0]][0];
+				lp_a[0][1] = lp[procEvent->parameters[0]][1];
+				lp_a[0][2] = lp[procEvent->parameters[0]][2];
+				lp_b[0][1] = lp[procEvent->parameters[0]][4];
+				lp_b[0][2] = lp[procEvent->parameters[0]][5];
+				hp_a[0][0] = hp[procEvent->parameters[0]][0];
+				hp_a[0][1] = hp[procEvent->parameters[0]][1];
+				hp_a[0][2] = hp[procEvent->parameters[0]][2];
+				hp_b[0][1] = hp[procEvent->parameters[0]][4];
+				hp_b[0][2] = hp[procEvent->parameters[0]][5];
 
-				hp_a[i][0] = hp[procEvent->parameters[i]][0];
-				hp_a[i][1] = hp[procEvent->parameters[i]][1];
-				hp_a[i][2] = hp[procEvent->parameters[i]][2];
-				//hp_a[i][3] = hp2[procEvent->parameters[i]][3];
-				//hp_a[i][4] = hp[tempIndex][4];
-				hp_b[i][1] = hp[procEvent->parameters[i]][4];
-				hp_b[i][2] = hp[procEvent->parameters[i]][5];
-				//hp_b[i][3] = hp2[procEvent->parameters[i]][7];
-				//hp_b[i][4] = hp[tempIndex][9];
+				lp_a[1][0] = lp[procEvent->parameters[1]][0];
+				lp_a[1][1] = lp[procEvent->parameters[1]][1];
+				lp_a[1][2] = lp[procEvent->parameters[1]][2];
+				lp_b[1][1] = lp[procEvent->parameters[1]][4];
+				lp_b[1][2] = lp[procEvent->parameters[1]][5];
+				hp_a[1][0] = hp[procEvent->parameters[1]][0];
+				hp_a[1][1] = hp[procEvent->parameters[1]][1];
+				hp_a[1][2] = hp[procEvent->parameters[1]][2];
+				hp_b[1][1] = hp[procEvent->parameters[1]][4];
+				hp_b[1][2] = hp[procEvent->parameters[1]][5];
+
+				lpOutputPhaseInversion = procEvent->parameters[2];
+				hpOutputPhaseInversion = procEvent->parameters[3];
 			}
 		}
 #if(dbg == 1)
@@ -917,7 +952,12 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 						hp_x[j][0] = tempInput; // get input data for BD0 from process input
 
 						lp_y[j][0] = lp_a[j][0]*lp_x[j][0] + lp_a[j][1]*lp_x[j][1] + lp_a[j][2]*lp_x[j][2]/* + lp_a[j][3]*lp_x[j][3]*/ - lp_b[j][1]*lp_y[j][1] - lp_b[j][2]*lp_y[j][2]/* - lp_b[j][3]*lp_y[j][3]*/;
-						procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = lp_y[j][0];
+
+						if(lpOutputPhaseInversion < 50)
+							procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = -lp_y[j][0];
+						else
+							procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = lp_y[j][0];
+
 						processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
 						outputSum[0] += procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
 						//lp_x[j][3] = lp_x[j][2];
@@ -976,7 +1016,10 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 						noiseFilter_x[0] = hp_y[j][0];
 						noiseFilter_y[0] = 0.01870016*noiseFilter_x[0] + 0.00304999*noiseFilter_x[1] + 0.01870016*noiseFilter_x[2] - (-1.69729152)*noiseFilter_y[1] - 0.73774183*noiseFilter_y[2];
 
-						procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = hp_y[j][0];
+						if(hpOutputPhaseInversion < 50)
+							procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = -hp_y[j][0];
+						else
+							procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = hp_y[j][0];
 						//procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = noiseFilter_y[0];
 						processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[2]]);
 
@@ -1169,6 +1212,8 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 		double hp_y[4], hp_x[4]; // needs to be static to retain data from previous processing
 		double couplingFilter_y[3], couplingFilter_x[3];
 		double noiseFilter_y[3], noiseFilter_x[3];
+		int lpOutputPhaseInversion = 0;
+		int hpOutputPhaseInversion = 0;
 
 		/*if(procEvent->processContext == NULL)
 		{
@@ -1233,6 +1278,8 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 		hp_b[1] = hp2[tempIndex][4];
 		hp_b[2] = hp2[tempIndex][5];
 
+		lpOutputPhaseInversion = procEvent->parameters[2];
+		hpOutputPhaseInversion = procEvent->parameters[3];
 
 
 #if(dbg == 1)
@@ -1298,7 +1345,11 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 				lp_y[1] = lp_y[0];
 
 
-				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = lp_y[0];
+				if(lpOutputPhaseInversion < 50)
+					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = -lp_y[0];
+				else
+					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = lp_y[0];
+
 				//*********************** Bandpass filter ****************************
 				bp_y[0] = bp_a[0]*bp_x[0] + bp_a[1]*bp_x[1] + bp_a[2]*bp_x[2] + bp_a[3]*bp_x[3] + bp_a[4]*bp_x[4] - bp_b[1]*bp_y[1] - bp_b[2]*bp_y[2] - bp_b[3]*bp_y[3] - bp_b[4]*bp_y[4];
 				procBufferArray[procEvent->outputBufferIndexes[1]].buffer[i] = bp_y[0];
@@ -1328,7 +1379,10 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 				//procOutputBuffer.buffer[i] = hp_y[0];
 				// j = 0 case is processed above
 
-				procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = hp_y[0];
+				if(hpOutputPhaseInversion < 50)
+					procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = -hp_y[0];
+				else
+					procBufferArray[procEvent->outputBufferIndexes[2]].buffer[i] = hp_y[0];
 
 
 				processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
@@ -1867,6 +1921,182 @@ int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessB
 	return status;
 }
 
+const float tapLvlTest[20] = {0.2000,0.1900,0.1800,0.1700,0.1600,0.1500,0.1400,0.1300,0.1200,0.1100,
+		0.1000,0.0900,0.0800,0.0700,0.0600,0.0500,0.0400,0.0300,0.0200,0.0100};
+
+int reverbb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+	unsigned int i,j;
+	int status = 0;
+	static ReverbbContext context[20];
+
+#if(dbg >= 1)
+	cout << "***** ENTERING: Effects2::reverbb" << endl;
+	cout << "action: " << action << endl;
+#endif
+
+	if(action == 'c')
+	{
+		componentVector.push_back(string(reverbbSymbol));
+	}
+	else if(action == 'l')
+	{
+		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+		procEvent->processTypeIndex = reverbbCount;//processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
+		reverbbCount++;
+
+		context[procEvent->processTypeIndex].inputPtr = 0;
+		for(unsigned int outputPtrIndex = 0; outputPtrIndex < REVERB_TAP_COUNT; outputPtrIndex++)
+		{
+			context[procEvent->processTypeIndex].outputPtr[outputPtrIndex] = 0;
+			for(unsigned int delayBufferIndex = 0; delayBufferIndex < DELAY_BUFFER_LENGTH; delayBufferIndex++)
+			{
+				context[procEvent->processTypeIndex].delayBuffer[outputPtrIndex][delayBufferIndex]=0.0;
+			}
+		}
+
+		for(i = 0; i < 256; i++)
+		{
+			procEvent->internalData[i] = 0.0;
+		}
+		status = 0;
+	}
+	else if(action == 'r')
+	{
+		//double internalPosPeak = 0.0;
+		//double internalNegPeak = 0.0;
+		double outputSum = 0.00000;
+		volatile double tempInput;
+		volatile unsigned int tapDelay = delayTime[procEvent->parameters[0]];
+		volatile float tapLevel = linAmp[procEvent->parameters[1]];
+		volatile float lvlDecay = linAmp[procEvent->parameters[2]];
+		volatile float stagger = linAmp[procEvent->parameters[3]];
+
+		volatile unsigned int i;
+		volatile unsigned int inputPtr = context[procEvent->processTypeIndex].inputPtr;
+		volatile unsigned int outputPtr[REVERB_TAP_COUNT];
+		volatile float tapLvl[REVERB_TAP_COUNT];
+		volatile unsigned int tapSpacing = 1;
+
+		for(unsigned int i = 0; i < REVERB_TAP_COUNT; i++)
+		{
+			outputPtr[i] = context[procEvent->processTypeIndex].outputPtr[i];
+		}
+
+
+		while(inputPtr >= DELAY_BUFFER_LENGTH)
+		{
+			inputPtr -= DELAY_BUFFER_LENGTH;
+		}
+
+		for(unsigned int i = 0; i < REVERB_TAP_COUNT; i++)
+		{
+			tapLvl[i] = tapLevel*tapLvlTest[i];
+
+			if(inputPtr >= tapDelay*(i*tapSpacing+1))
+			{
+				outputPtr[i] = inputPtr - tapDelay*(i*tapSpacing+1);
+			}
+			else
+			{
+				outputPtr[i] = DELAY_BUFFER_LENGTH - (tapDelay*(i*tapSpacing+1) - inputPtr);
+			}
+
+			while(outputPtr[i] >= DELAY_BUFFER_LENGTH)
+			{
+				outputPtr[i] -= DELAY_BUFFER_LENGTH;
+			}
+		}
+
+		/*if(inputPtr >= delay) outputPtr = inputPtr - delay;
+		else outputPtr = DELAY_BUFFER_LENGTH - (delay - inputPtr);*/
+
+
+
+#if(dbg >= 2)
+		cout << "procEvent->parameters[0]: " << procEvent->parameters[0];
+		cout << "procEvent->parameters[1]: " << procEvent->parameters[1];
+		cout << "delayCoarse: " << delayCoarse;
+		cout << "delayFine: " << delayFine;
+		cout << "delay: " << delay;
+		cout << "inputPtr: " << inputPtr;
+		cout << "outputPtr: " << outputPtr << endl;
+#endif
+
+		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+		double accumulator;
+
+		for(i = 0; i < bufferSize; i++)
+		{
+#if(FOOTSWITCH_ALWAYS_ON == 0)
+			if(footswitchStatus[procEvent->footswitchNumber] == 0)
+			{
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				if(inputPtr >= DELAY_BUFFER_LENGTH) inputPtr = 0;
+				/*for(unsigned int outputPtrIndex = 0; outputPtrIndex < REVERB_TAP_COUNT; outputPtrIndex++)
+				{
+					context[procEvent->processTypeIndex].delayBuffer[outputPtrIndex][inputPtr++] = 0.0;
+				}*/
+			}
+			else
+#endif
+			{
+				accumulator = 0.000;
+				for(unsigned int outputPtrIndex = 0; outputPtrIndex < REVERB_TAP_COUNT; outputPtrIndex++)
+				{
+					//if(outputPtrIndex == 1)
+					{
+						tempInput = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+
+						context[procEvent->processTypeIndex].delayBuffer[outputPtrIndex][inputPtr] = tempInput + tapLvl[outputPtrIndex]*context[procEvent->processTypeIndex].delayBuffer[outputPtrIndex][outputPtr[outputPtrIndex]];
+
+						accumulator += context[procEvent->processTypeIndex].delayBuffer[outputPtrIndex][inputPtr];//tempInput + tapLvl[i]*context[procEvent->processTypeIndex].delayBuffer[outputPtr[outputPtrIndex]];
+
+						if(outputPtr[outputPtrIndex] >= unsigned(DELAY_BUFFER_LENGTH)) outputPtr[outputPtrIndex] = 0;
+						else outputPtr[outputPtrIndex]++;
+					}
+				}
+				if(inputPtr >= unsigned(DELAY_BUFFER_LENGTH)) inputPtr = 0;
+				else inputPtr++;
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = accumulator;
+			}
+			processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+		}
+
+		updateBufferOffset(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+
+		context[procEvent->processTypeIndex].inputPtr = inputPtr;
+
+		for(unsigned int outputPtrIndex = 0; outputPtrIndex < REVERB_TAP_COUNT; outputPtrIndex++)
+		{
+			context[procEvent->processTypeIndex].outputPtr[outputPtrIndex] = outputPtr[outputPtrIndex];
+		}
+
+		procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+		status = 0;
+	}
+	else if(action == 'd')
+	{
+		status = 0;
+	}
+	else if(action == 's')
+	{
+		reverbbCount--;
+
+		status = 0;
+	}
+	else
+	{
+		std::cout << "reverbb: invalid actiond: " << action << std::endl;
+		status = 0;
+	}
+
+#if(dbg >= 1)
+	cout << "***** EXITING: Effects2::reverbb: " << status << endl;
+#endif
+	return status;
+}
+
 int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
 {
 	unsigned int i,j;
@@ -2240,6 +2470,227 @@ int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 #endif
 	return status;
 }
+
+
+int samplerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+		unsigned int i,j;
+		int status = 0;
+	#if(dbg >= 1)
+		cout << "***** ENTERING: Effects2::samplerb" << endl;
+		cout << "action: " << action << endl;
+	#endif
+
+		static SamplerbContext context[20];
+
+		if(action == 'c')
+		{
+			componentVector.push_back(string(samplerbSymbol));
+		}
+		else if(action == 'l')
+		{
+			initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+			procEvent->processTypeIndex = samplerbCount;//processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
+			samplerbCount++;
+			context[procEvent->processTypeIndex].blankInt = 0;
+
+			for(i = 0; i < 256; i++)
+			{
+				procEvent->internalData[i] = 0.0;
+			}
+			status = 0;
+		}
+		else if(action == 'r')
+		{
+			resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+			for(i = 0; i < bufferSize; i++)
+			{
+	#if(FOOTSWITCH_ALWAYS_ON == 0)
+				if(footswitchStatus[procEvent->footswitchNumber] == 0)
+				{
+					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				}
+				else
+	#endif
+				{
+					// PROCESS HERE
+				}
+				processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+			}
+			updateBufferOffset(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+
+			procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+
+			status = 0;
+		}
+		else if(action == 'd')
+		{
+			status = 0;
+		}
+		else if(action == 's')
+		{
+
+			samplerbCount--;
+			status = 0;
+		}
+		else
+		{
+			std::cout << "samplerb: invalid action: " << action << std::endl;
+			status = 0;
+		}
+
+	#if(dbg >= 1)
+		cout << "***** EXITING: Effects2::samplerb: " << status << endl;
+	#endif
+		return status;
+}
+
+int oscillatorb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+		unsigned int i,j;
+		int status = 0;
+	#if(dbg >= 1)
+		cout << "***** ENTERING: Effects2::oscillatorb" << endl;
+		cout << "action: " << action << endl;
+	#endif
+
+		static OscillatorbContext context[20];
+
+		if(action == 'c')
+		{
+			componentVector.push_back(string(oscillatorbSymbol));
+		}
+		else if(action == 'l')
+		{
+			initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+			procEvent->processTypeIndex = oscillatorbCount;//processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
+			oscillatorbCount++;
+			context[procEvent->processTypeIndex].blankInt = 0;
+
+			for(i = 0; i < 256; i++)
+			{
+				procEvent->internalData[i] = 0.0;
+			}
+			status = 0;
+		}
+		else if(action == 'r')
+		{
+			resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+			for(i = 0; i < bufferSize; i++)
+			{
+	#if(FOOTSWITCH_ALWAYS_ON == 0)
+				if(footswitchStatus[procEvent->footswitchNumber] == 0)
+				{
+					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				}
+				else
+	#endif
+				{
+					// PROCESS HERE
+				}
+				processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+			}
+			updateBufferOffset(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+
+			procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+
+			status = 0;
+		}
+		else if(action == 'd')
+		{
+			status = 0;
+		}
+		else if(action == 's')
+		{
+
+			oscillatorbCount--;
+			status = 0;
+		}
+		else
+		{
+			std::cout << "oscillatorb: invalid actiond: " << action << std::endl;
+			status = 0;
+		}
+
+	#if(dbg >= 1)
+		cout << "***** EXITING: Effects2::oscillatorb: " << status << endl;
+	#endif
+		return status;
+}
+
+int blankb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+{
+		unsigned int i,j;
+		int status = 0;
+	#if(dbg >= 1)
+		cout << "***** ENTERING: Effects2::blankb" << endl;
+		cout << "action: " << action << endl;
+	#endif
+
+		static BlankbContext context[20];
+
+		if(action == 'c')
+		{
+			componentVector.push_back(string(blankbSymbol));
+		}
+		else if(action == 'l')
+		{
+			initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+			procEvent->processTypeIndex = delaybCount;//processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
+			blankbCount++;
+			context[procEvent->processTypeIndex].blankInt = 0;
+
+			for(i = 0; i < 256; i++)
+			{
+				procEvent->internalData[i] = 0.0;
+			}
+			status = 0;
+		}
+		else if(action == 'r')
+		{
+			resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+			for(i = 0; i < bufferSize; i++)
+			{
+	#if(FOOTSWITCH_ALWAYS_ON == 0)
+				if(footswitchStatus[procEvent->footswitchNumber] == 0)
+				{
+					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
+				}
+				else
+	#endif
+				{
+					// PROCESS HERE
+				}
+				processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
+			}
+			updateBufferOffset(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+
+			procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
+
+			status = 0;
+		}
+		else if(action == 'd')
+		{
+			status = 0;
+		}
+		else if(action == 's')
+		{
+
+			blankbCount--;
+			status = 0;
+		}
+		else
+		{
+			std::cout << "blankb: invalid actiond: " << action << std::endl;
+			status = 0;
+		}
+
+	#if(dbg >= 1)
+		cout << "***** EXITING: Effects2::blankb: " << status << endl;
+	#endif
+		return status;
+}
+
 
 
 

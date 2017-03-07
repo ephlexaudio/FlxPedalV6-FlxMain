@@ -105,7 +105,16 @@ int mixerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 
 int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
 
+int reverbb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+
 int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+
+int samplerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+
+int oscillatorb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+
+int blankb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+
 
 
 #endif /* EFFECTS_H_ */

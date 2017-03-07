@@ -124,6 +124,7 @@ public:
 					// A vector of pointers to each output port.
 					audioBufVector outBufs);
 	int getProcessData(int index, double *data);
+	int getPitch(bool activate, double *signal);
 	int clearProcessData(int index, double *data);
 	int updateFootswitch(int footswitchStatus[]);
 	int enableProcessing();

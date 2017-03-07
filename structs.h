@@ -72,6 +72,13 @@ struct LohifilterbContext{
 	double noiseFilter_y[3], noiseFilter_x[3];
 };
 
+struct ReverbbContext{
+	unsigned int inputPtr;
+	unsigned int outputPtr[REVERB_TAP_COUNT];
+	double delayBuffer[REVERB_TAP_COUNT][DELAY_BUFFER_LENGTH];
+};
+
+
 struct WaveshaperbContext{
 	double v[4];
 	double x[6],y[6];
@@ -81,6 +88,17 @@ struct WaveshaperbContext{
 	double outMeasure;
 };
 
+struct BlankbContext{
+	int blankInt;
+};
+
+struct SamplerbContext{
+	int blankInt;
+};
+
+struct OscillatorbContext{
+	int blankInt;
+};
 
 
 struct ProcessParams{
@@ -112,8 +130,10 @@ struct Control{
 	string parentEffect;
 	string type;
 	vector<ControlParameter> params;
-	vector<unsigned int> absProcessParameterIndexes;
-	int targetParameterType;   // using same type system as ProcessParams and ControlParameter
+	vector<unsigned int> absProcessParameterIndexes;  // index from sortedParameterArray
+	vector<unsigned int> absProcessParameterIndexesInv;  // index from sortedParameterArray
+	//int targetParameterType;   // using same type system as ProcessParams and ControlParameter
+	//int targetParameterTypeInv;   // using same type system as ProcessParams and ControlParameter
 };
 
 
@@ -229,17 +249,21 @@ struct ControlEvent{
 							//			parameter[4]=
 
 
-	ParameterControlConnection paramContConnection[5];
 	//int absProcessParameterIndex[5];  // from unsortedParameterArray, using variable absParamIndex
 								// get process:parameter from ControlConnection.dest, then
 								// get index using getProcessParameterIndex(dest.process, dest.parameter)
+	ParameterControlConnection paramContConnection[5];
 	int paramContConnectionCount; // number of process parameters being written to by this control
+	ParameterControlConnection paramContConnectionInv[5];
+	int paramContConnectionCountInv; // number of process parameters being written to by this control
 	//void *controlContext;
 	int controlTypeIndex;
 	bool gateStatus;
 	bool envTriggerStatus;
 	double output;
+	double outputInv;
 	unsigned int int_output;
+	unsigned int int_outputInv;
 };
 
 
