@@ -24,7 +24,7 @@ using std::endl;
 #if(dbg >=2)
 #endif
 ********************************************/
-#define BUFFER_SIZE 1024
+//#define BUFFER_SIZE 1024
 #define TEST_PROCESS_COUNT 6
 #define SIGNAL_DELTA_THRESHOLD 0.03
 #define TIMING_DBG 0

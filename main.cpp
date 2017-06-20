@@ -51,7 +51,8 @@
 #include "FileSystemFuncts.h"
 #include "GPIOClass.h"
 #include "ProcessingControl.h"
-#include "Effects2.h"
+
+//#include "Effects2.h"
 
 using namespace std;
 /*#define COMBO_DATA_VECTOR 0
@@ -75,11 +76,12 @@ using namespace std;
 
 #define OFX_MAIN_READY 45
 
+/*
 #if(COMBO_DATA_VECTOR == 1)
 #elif(COMBO_DATA_ARRAY == 1)
 #elif(COMBO_DATA_MAP == 1)
 #endif
-
+*/
 
 struct linuxProcess {
 	int pid;
@@ -107,6 +109,7 @@ int globalComboIndex = 0;
 string globalComboName;
 std::vector<linuxProcess> linuxProcessList;
 vector<string> componentVector;
+vector<string> controlTypeVector;
 std::vector<string> componentDataList;
 std::vector<string> componentNameList;
 #if(COMBO_DATA_VECTOR == 1)
@@ -157,6 +160,7 @@ extern int comboTime;
 
 int inputCouplingMode;
 int waveshaperMode;
+int antiAliasingNumber;
 
 ComboStruct combo;
 int comboStructIndex = 0;
@@ -228,7 +232,7 @@ int main(int argc, char *argv[])
 	strcpy(gpioStr,"out");
 	gpioStatus = ofxMainRdy.setdir_gpio(gpioStr);
 	gpioStatus = ofxMainRdy.setval_gpio(0/*"0"*/);
-	char ofxParamString[200];
+	char ofxParamString[500];
 	Json::Value ofxParamJsonData;
 	Json::Reader ofxParamJsonReader;
 	Json::Reader hostUiJsonReader;
@@ -269,7 +273,7 @@ int main(int argc, char *argv[])
 	signal(SIGPROF, signal_handler);
 	//signal(SIGPIPE, SIG_IGN);
 	loadComponentSymbols();
-
+	loadControlTypeSymbols();
 	printf("OfxMain PID: %d.\n", ofxPid);
 	SharedMemoryInt sharedMem;
 
@@ -284,15 +288,36 @@ int main(int argc, char *argv[])
 	/******* Get JACK initialization data ***************/
 	int ofxParamsFD = open("/home/ofxParams.txt",O_RDONLY);
 	/* read file into temp string */
-	read(ofxParamsFD, ofxParamString, 200);
+	read(ofxParamsFD, ofxParamString, 500);
 
 	ofxParamJsonData.clear();
+
 	if(ofxParamJsonReader.parse(ofxParamString, ofxParamJsonData) == false)
 	{
 		cout << "failed to read JACK initialization data file.\n" << endl;
 		/************ Should use default initialization data here ****************/
 		return -1;
 	}
+	antiAliasingNumber = atoi(ofxParamJsonData["antiAliasingNumber"].asString().c_str());
+	if(antiAliasingNumber > 1)
+	{
+		cout << "anti-aliasing: on." << endl;
+	}
+	else
+	{
+		cout << "anti-aliasing: off." << endl;
+	}
+
+	/*if(ofxParamJsonData["antiAliasingNumber"].asString().compare("on") == 0)
+	{
+		antiAliasing = true;
+		cout << "anti-aliasing: on." << endl;
+	}
+	else
+	{
+		antiAliasing = false;
+		cout << "anti-aliasing: off." << endl;
+	}*/
 
 	if(ofxParamJsonData["inputCoupling"].asString().compare("offset") == 0)
 	{
@@ -437,7 +462,11 @@ int main(int argc, char *argv[])
 					}
 					else hostUiRequestCommand = hostUiRequest;
 
-					if(hostUiRequestCommand.compare("getComponents") == 0)
+					if(hostUiRequestCommand.compare("getControlTypes") == 0)
+					{
+						hostUi.sendControlTypeData();
+					}
+					else if(hostUiRequestCommand.compare("getComponents") == 0)
 					{
 						hostUi.sendComponentData();
 					}

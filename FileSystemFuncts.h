@@ -5,8 +5,8 @@
  *      Author: mike
  */
 
-#ifndef DATAFUNCTS_H_
-#define DATAFUNCTS_H_
+#ifndef FILESYSTEMFUNCTS_H_
+#define FILESYSTEMFUNCTS_H_
 
 #include <cstring>
 #include <iostream>

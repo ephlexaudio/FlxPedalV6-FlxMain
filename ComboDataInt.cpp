@@ -2265,7 +2265,7 @@ int ComboDataInt::getProcesses(void)
     return status;
 }
 
-#define dbg 1
+#define dbg 2
 int ComboDataInt::getControls(void)
 {
 	int status = 0;
@@ -2441,21 +2441,26 @@ int ComboDataInt::getControls(void)
 							cout << "invalid syntax in control connection: " << this->controlConnectionsStruct[connIndex].dest << endl;
 
 						int paramIndex = this->getProcessParameterIndex(process, parameter);
-						//enter the parameter index into the target parameter index array in the controlsStruct
+						//if valid, enter the parameter index into the target parameter index array in the controlsStruct
+						if(0 <= paramIndex && paramIndex < 100)
+						{
+							if(controlOutput.compare("output") == 0)
+							{
+	#if(dbg >= 2)
+								cout << "pushing paramIndex " << paramIndex << " for " << process << ":" << parameter << " into absProcessParameterIndexes" << endl;
+	#endif
+								this->controlsStruct[controlIndex].absProcessParameterIndexes.push_back(paramIndex);
+							}
+							else if(controlOutput.compare("outputInv") == 0)
+							{
+	#if(dbg >= 2)
+								cout << "pushing paramIndex " << paramIndex << " for " << process << ":" << parameter << " into absProcessParameterIndexesInv" << endl;
+	#endif
+								this->controlsStruct[controlIndex].absProcessParameterIndexesInv.push_back(paramIndex);
+							}
+							else
+								cout << "invalid control output name." << endl;
 
-						if(controlOutput.compare("output") == 0)
-						{
-#if(dbg >= 2)
-							cout << "pushing paramIndex " << paramIndex << " for " << process << ":" << parameter << " into absProcessParameterIndexes" << endl;
-#endif
-							this->controlsStruct[controlIndex].absProcessParameterIndexes.push_back(paramIndex);
-						}
-						else if(controlOutput.compare("outputInv") == 0)
-						{
-#if(dbg >= 2)
-							cout << "pushing paramIndex " << paramIndex << " for " << process << ":" << parameter << " into absProcessParameterIndexesInv" << endl;
-#endif
-							this->controlsStruct[controlIndex].absProcessParameterIndexesInv.push_back(paramIndex);
 						}
 						else
 							cout << "invalid control output name." << endl;
@@ -2788,7 +2793,7 @@ int ComboDataInt::setProcParameters(struct ProcessEvent *procEvent, Process proc
 	{
 		procEvent->parameters[paramArrayIndex] = processStruct.params[paramArrayIndex].value;
 
-#if(dbg == 1)
+#if(dbg >= 1)
 		std::cout << "parameter[" << paramArrayIndex << "]: " << procEvent.parameters[paramArrayIndex] << std::endl;
 #endif
 	}
@@ -3026,6 +3031,7 @@ int ComboDataInt::connectProcessInputsToProcessOutputBuffersUsingConnectionsJson
 	return status;
 }
 
+#define dbg 2
 int ComboDataInt::initializeControlDataIntoControlEventElement()
 {
 	int status = 0;
@@ -4461,6 +4467,7 @@ void ComboDataInt::listParameters(void)
 
 }
 
+#define dbg 0
 int ComboDataInt::getProcessIndex(int parameterIndex)
 {
 	int processIndex = 0;
@@ -4487,7 +4494,7 @@ int ComboDataInt::getProcessIndex(int parameterIndex)
 	return processIndex;
 }
 
-
+#define dbg 1
 int ComboDataInt::getControlIndex(string targetProcessName, string targetParameterName)
 {
 	unsigned int controlIndex = -1;
@@ -4532,11 +4539,11 @@ int ComboDataInt::getControlIndex(string targetProcessName, string targetParamet
 	return controlIndex;
 }
 
-#define dbg 0
+#define dbg 2
 int ComboDataInt::getProcessParameterIndex(string processName, string parameterName)
 {
 	int paramIndex = -1;
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "ENTERING: ComboDataInt::getProcessParameterIndex" << endl;
 	cout << "processName: " << processName << "\tparameterName: " << parameterName << endl;
 #endif
@@ -4554,14 +4561,20 @@ int ComboDataInt::getProcessParameterIndex(string processName, string parameterN
 	{
 		string compProcessString = this->sortedParameterArray.at(parameterArrayIndex).processName;
 		string compParamString = this->sortedParameterArray.at(parameterArrayIndex).paramName;
+#if(dbg >= 2)
+		{
+			cout << "Comparing with: " << compProcessString << ":" << compParamString << endl;
+		}
+#endif
 		if(processName.compare(compProcessString) == 0 && parameterName.compare(compParamString) == 0)
 		{
 			paramIndex = parameterArrayIndex;
+			break;
 		}
 	}
 
-#if(dbg == 1)
-	cout << "EXITING: ComboDataInt::getProcessParameterIndex" << endl;
+#if(dbg >= 1)
+	cout << "EXITING: ComboDataInt::getProcessParameterIndex: " << paramIndex << endl;
 #endif
 	return paramIndex;
 }
@@ -4570,7 +4583,7 @@ int ComboDataInt::getProcessParameterIndex(string processName, string parameterN
 int ComboDataInt::getControlParameterIndex(string controlName, string parameterName)
 {
 	int paramIndex = -1;
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "ENTERING: ComboDataInt::getControlParameterIndex" << endl;
 	cout << "controlName: " << controlName << "\tparameterName: " << parameterName << endl;
 #endif
@@ -4583,17 +4596,18 @@ int ComboDataInt::getControlParameterIndex(string controlName, string parameterN
 			paramIndex = parameterArrayIndex;
 		}
 	}
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "EXITING: ComboDataInt::getControlParameterIndex: " << paramIndex << endl;
 #endif
 
 	return paramIndex;
 }
 
+#define dbg 0
 int ComboDataInt::setProcessSequenceParameter(string processName, int parameterIndex, int valueIndex)
 {
 	int status = 0;
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "ENTERING: ComboDataInt::setProcessSequenceParameter" << endl;
 	cout << "\tprocessName: " << processName <<  "\tparameterIndex: " << parameterIndex <<  "\tvalueIndex: " << valueIndex << endl;
 #endif
@@ -4601,16 +4615,17 @@ int ComboDataInt::setProcessSequenceParameter(string processName, int parameterI
 	int procSeqIndex = this->getProcessSequenceIndex(processName);
 	this->processSequence[procSeqIndex].parameters[parameterIndex] = valueIndex;
 
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "EXITING: ComboDataInt::setProcessSequenceParameter: " << status << endl;
 #endif
 	return status;
 }
 
+#define dbg 0
 int ComboDataInt::setControlSequenceParameter(string controlName, int parameterIndex, int valueIndex)
 {
 	int status = 0;
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "ENTERING: ComboDataInt::setControlSequenceParameter" << endl;
 	cout << "\tcontrolName: " << controlName << "\tparameterIndex: " << parameterIndex << "\tvalueIndex: " << valueIndex << endl;
 #endif
@@ -4627,12 +4642,13 @@ int ComboDataInt::setControlSequenceParameter(string controlName, int parameterI
 		status = -1;
 	}
 
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "EXITING: ComboDataInt::setControlSequenceParameter: " << status << endl;
 #endif
 	return status;
 }
 
+#define dbg 0
 int ComboDataInt::updateProcess(int absParamIndex, int valueIndex)
 {
 #if(dbg >= 1)

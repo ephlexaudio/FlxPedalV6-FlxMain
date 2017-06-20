@@ -33,6 +33,7 @@ public:
 	int connect();
 	int disconnect();
 	int isConnected();
+	int sendControlTypeData();
 	int sendComponentData();
 	int checkForNewHostData(void);
 	string getUserRequest(void);

@@ -54,15 +54,15 @@ struct Filter3bbContext{
 	double lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
 	double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
 	double couplingFilter_y[4], couplingFilter_x[4];
-	double noiseFilter_y[4], noiseFilter_x[4];
+	double rolloffFilter_y[4], rolloffFilter_x[4];
 };
 
 struct Filter3bb2Context{
 	double lp_y[4], lp_x[4]; // needs to be static to retain data from previous processing
-	double bp_y[5], bp_x[5]; // needs to be static to retain data from previous processing
+	double bp_y[7], bp_x[7]; // needs to be static to retain data from previous processing
 	double hp_y[4], hp_x[4]; // needs to be static to retain data from previous processing
 	double couplingFilter_y[3], couplingFilter_x[3];
-	double noiseFilter_y[3], noiseFilter_x[3];
+	double rolloffFilter_y[3], rolloffFilter_x[3];
 };
 
 struct LohifilterbContext{
@@ -80,11 +80,12 @@ struct ReverbbContext{
 
 
 struct WaveshaperbContext{
-	double v[4];
+	double v[5];
 	double x[6],y[6];
 	double m[5],b[5];
 	double couplingFilter_y[3], couplingFilter_x[3];
 	double noiseFilter_y[3], noiseFilter_x[3];
+	double antiAliasingFilter_y[2][3], antiAliasingFilter_x[2][3];
 	double outMeasure;
 };
 

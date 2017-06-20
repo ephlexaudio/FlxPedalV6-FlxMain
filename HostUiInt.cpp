@@ -14,6 +14,8 @@
 //#define JSON_STRING_SIZE 32000
 #define SHARED_MEMORY_FILE_ADDRESS 32768
 extern vector<string> componentVector;
+extern vector<string> controlTypeVector;
+
 /*
 #if(dbg >= 1)
 	cout << "***** ENTERING: HostUiInt::" << endl;
@@ -113,6 +115,49 @@ int HostUiInt::sendComponentData(void)
 
 	return status;
 }
+
+int HostUiInt::sendControlTypeData(void)
+{
+	int status = 0;
+#if(dbg >= 1)
+	cout << "***** ENTERING: HostUiInt::sendControlTypeData" << endl;
+#endif
+	string controlTypeDataString;
+	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
+
+	sprintf(this->hostUiResponseCharArray,"ControlTypeData:[");
+	for(vector<string>::size_type controlTypeIndex = 0; controlTypeIndex < controlTypeVector.size(); controlTypeIndex++)
+	{
+		strcat(this->hostUiResponseCharArray,controlTypeVector[controlTypeIndex].c_str());
+		if(controlTypeIndex < controlTypeVector.size()-1)
+			strcat(this->hostUiResponseCharArray,",");
+	}
+	strcat(this->hostUiResponseCharArray,"]");
+
+	#if(dbg >= 2)
+		cout << "Data retrieved, sending to host...." << this->hostUiResponseCharArray << endl;
+	#endif
+
+	if(usb.writeData(this->hostUiResponseCharArray) >= 0)
+	{
+#if(dbg >= 2)
+		cout << "combo data: " << this->hostUiResponseCharArray << endl;
+#endif
+
+	}
+	else
+	{
+		cout << "error sending data to host" << endl;
+		status = -1;
+	}
+
+#if(dbg >= 1)
+	cout << "***** EXITING: HostUiInt::sendControlTypeData:" << status << endl;
+#endif
+
+	return status;
+}
+
 
 int HostUiInt::isConnected()
 {

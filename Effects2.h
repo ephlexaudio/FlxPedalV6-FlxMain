@@ -29,7 +29,7 @@
 #include "delayValues.h"
 #include "lfoFreqValues.h"
 #include "envGenTimeValues.h"*/
-#include "valueArrays.h"
+#include "ComponentSymbols.h"
 
 using namespace std;
 
@@ -81,11 +81,6 @@ int initProcOutputBufferIndexes(struct ProcessEvent *procEvent);
 
 int setProcInputBufferIndex(struct ProcessEvent *procEvent, int processInputIndex, int inputBufferIndex, struct ProcessBuffer *procBufferArray);
 int setProcOutputBufferIndex(struct ProcessEvent *procEvent, int processOutputIndex, int outputBufferIndex, struct ProcessBuffer *procBufferArray);
-
-//******************************** Controls for manipulating process parameters ********************************
-
-int control(/*int*/ char action, bool envTrigger, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
-
 
 //************************ processing *************************************************
 void initBufferAveParameters(struct ProcessBuffer *bufferArray);

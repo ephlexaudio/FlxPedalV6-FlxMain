@@ -6,6 +6,8 @@
  */
 #include "config.h"
 #include "Processing.h"
+#include "valueArrays.h"
+
 //#include "Filter3bb.h"
 using std::cout;
 using std::endl;
@@ -67,24 +69,25 @@ Processing::Processing():JackCpp::AudioIO("processing", 2,2)
 	//this->inputsSwitched = false;
 	this->envTrigger = false;
 	this->envTriggerPeriods = 0;
-	this->maxAmpFilterIndex = 0;
-	this->signalLevelLowPeak = 0.0;
-	this->signalLevelHighPeak = 0.0;
+	this->inMaxAmpFilterIndex = 0;
+	this->inSignalLevelLowPeak = 0.0;
+	this->inSignalLevelHighPeak = 0.0;
 	this->gateEnvStatus = 0;
-	this->signalDeltaPositiveCount = 0;
-	this->signalDeltaNegativeCount = 0;
+	this->inSignalDeltaPositiveCount = 0;
+	this->inSignalDeltaNegativeCount = 0;
 	this->chan1GndCount = 0;
 	this->chan2GndCount = 0;
-	this->maxAmpFilterOut = 0;
-	this->prevMaxAmpFilterOut = 0.0;
-	this->prevSignalLevel = 0.0;
-	this->signalDeltaFilterIndex = 0;
-	this->signalDeltaFilterOut = 0.0;
-	this->signalLevel = 0.0;
+	this->inMaxAmpFilterOut = 0;
+	this->inPrevMaxAmpFilterOut = 0.0;
+	this->inPrevSignalLevel = 0.0;
+	this->inSignalDeltaFilterIndex = 0;
+	this->inSignalDeltaFilterOut = 0.0;
+	this->inSignalLevel = 0.0;
 	this->processingEnabled = true;
 	this->processingUpdated = false;
 	this->processingContextAllocationError = false;
 	this->updateProcessing = false;
+	this->outGain = 1.000;
 }
 
 Processing::~Processing()
@@ -132,32 +135,32 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 	system("echo \"1\" > /sys/class/gpio/gpio43/value");
 	usleep(100000);
 
-	posPeakArray[0][0] = posPeak[0];
-	negPeakArray[0][0] = negPeak[0];
-	posPeakArray[0][1] = posPeak[1];
-	negPeakArray[0][1] = negPeak[1];
-	fprintf(stderr,"posPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", posPeak[0], negPeak[0], posPeak[1], negPeak[1]);
+	inPosPeakArray[0][0] = inPosPeak[0];
+	inNegPeakArray[0][0] = inNegPeak[0];
+	inPosPeakArray[0][1] = inPosPeak[1];
+	inNegPeakArray[0][1] = inNegPeak[1];
+	fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
 	usleep(50000);
 
-	posPeakArray[1][0] = posPeak[0];
-	negPeakArray[1][0] = negPeak[0];
-	posPeakArray[1][1] = posPeak[1];
-	negPeakArray[1][1] = negPeak[1];
-	fprintf(stderr,"posPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", posPeak[0], negPeak[0], posPeak[1], negPeak[1]);
+	inPosPeakArray[1][0] = inPosPeak[0];
+	inNegPeakArray[1][0] = inNegPeak[0];
+	inPosPeakArray[1][1] = inPosPeak[1];
+	inNegPeakArray[1][1] = inNegPeak[1];
+	fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
 	usleep(50000);
 
-	posPeakArray[2][0] = posPeak[0];
-	negPeakArray[2][0] = negPeak[0];
-	posPeakArray[2][1] = posPeak[1];
-	negPeakArray[2][1] = negPeak[1];
-	fprintf(stderr,"posPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", posPeak[0], negPeak[0], posPeak[1], negPeak[1]);
+	inPosPeakArray[2][0] = inPosPeak[0];
+	inNegPeakArray[2][0] = inNegPeak[0];
+	inPosPeakArray[2][1] = inPosPeak[1];
+	inNegPeakArray[2][1] = inNegPeak[1];
+	fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
 	usleep(50000);
 
-	posPeakArray[3][0] = posPeak[0];
-	negPeakArray[3][0] = negPeak[0];
-	posPeakArray[3][1] = posPeak[1];
-	negPeakArray[3][1] = negPeak[1];
-	fprintf(stderr,"posPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", posPeak[0], negPeak[0], posPeak[1], negPeak[1]);
+	inPosPeakArray[3][0] = inPosPeak[0];
+	inNegPeakArray[3][0] = inNegPeak[0];
+	inPosPeakArray[3][1] = inPosPeak[1];
+	inNegPeakArray[3][1] = inNegPeak[1];
+	fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
 
 	system("echo \"1\" > /sys/class/gpio/gpio41/value");
 	system("echo \"0\" > /sys/class/gpio/gpio43/value");
@@ -167,8 +170,8 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 	chan2GndCount = 0;
 	for(int i = 0; i < 4; i++)
 	{
-		if((0.098 < posPeakArray[i][0] && posPeakArray[i][0] < 0.1)) chan1GndCount++;
-		if((0.098 < posPeakArray[i][1] && posPeakArray[i][1] < 0.1)) chan2GndCount++;
+		if((0.098 < inPosPeakArray[i][0] && inPosPeakArray[i][0] < 0.1)) chan1GndCount++;
+		if((0.098 < inPosPeakArray[i][1] && inPosPeakArray[i][1] < 0.1)) chan2GndCount++;
 	}
 
 	cout << "chan1GndCount: " << chan1GndCount << "\tchan2GndCount: " << chan2GndCount << endl;
@@ -441,13 +444,19 @@ double testBuffer[10][BUFFER_SIZE];
 
 		this->audioCallbackRunning = true;
 		bool processDone = false;
-		double internalPosPeak[2];
-		double internalNegPeak[2];
-
-		internalPosPeak[0] = 0.00;
-		internalNegPeak[0] = 0.00;
-		internalPosPeak[1] = 0.00;
-		internalNegPeak[1] = 0.00;
+		double inPosPeak[2];
+		double inNegPeak[2];
+		double outPosPeak[2];
+		double outNegPeak[2];
+		double tempOutBufs[2];
+		inPosPeak[0] = 0.00;
+		inNegPeak[0] = 0.00;
+		inPosPeak[1] = 0.00;
+		inNegPeak[1] = 0.00;
+		outPosPeak[0] = 0.00;
+		outNegPeak[0] = 0.00;
+		outPosPeak[1] = 0.00;
+		outNegPeak[1] = 0.00;
 	#if(dbg >= 1)
 		//cout << "ENTERING audioCallback:  " << endl;
 	#endif
@@ -474,75 +483,75 @@ double testBuffer[10][BUFFER_SIZE];
 					combo.procBufferArray[combo.inputProcBufferIndex[1]].buffer[i] = inBufs[1][i]*this->inputLevel;
 				}
 
-				if(internalPosPeak[0] < inBufs[0][i]) internalPosPeak[0] = inBufs[0][i];
-				if(internalNegPeak[0] > inBufs[0][i]) internalNegPeak[0] = inBufs[0][i];
-				if(internalPosPeak[1] < inBufs[1][i]) internalPosPeak[1] = inBufs[1][i];
-				if(internalNegPeak[1] > inBufs[1][i]) internalNegPeak[1] = inBufs[1][i];
+				if(inPosPeak[0] < inBufs[0][i]) inPosPeak[0] = inBufs[0][i];
+				if(inNegPeak[0] > inBufs[0][i]) inNegPeak[0] = inBufs[0][i];
+				if(inPosPeak[1] < inBufs[1][i]) inPosPeak[1] = inBufs[1][i];
+				if(inNegPeak[1] > inBufs[1][i]) inNegPeak[1] = inBufs[1][i];
 
 			}
 			//cout << "testBuffer[0]: " << testBuffer[0][0] << "\ttestBuffer[1]: " << testBuffer[1][0] << endl;
-			this->posPeak[0] = internalPosPeak[0];
-			this->negPeak[0] = internalNegPeak[0];
-			this->posPeak[1] = internalPosPeak[1];
-			this->negPeak[1] = internalNegPeak[1];
+			this->inPosPeak[0] = inPosPeak[0];
+			this->inNegPeak[0] = inNegPeak[0];
+			this->inPosPeak[1] = inPosPeak[1];
+			this->inNegPeak[1] = inNegPeak[1];
 
-			this->maxAmp[0] = this->posPeak[0] - this->negPeak[0];
-			this->maxAmp[1] = this->posPeak[1] - this->negPeak[1];
+			this->inMaxAmp[0] = this->inPosPeak[0] - this->inNegPeak[0];
+			this->inMaxAmp[1] = this->inPosPeak[1] - this->inNegPeak[1];
 
 			//********************** Noise gate function *********************
-//			if(this->gateStatus == false && ((inputsSwitched == false && this->gateOnThreshold > this->maxAmp[0]) || // noise gate
-//					(inputsSwitched == true && this->gateOnThreshold > this->maxAmp[1])))
+//			if(this->gateStatus == false && ((inputsSwitched == false && this->gateOnThreshold > this->inMaxAmp[0]) || // noise gate
+//					(inputsSwitched == true && this->gateOnThreshold > this->inMaxAmp[1])))
 //			{
 //				this->gateStatus = true;
 //				this->inputLevel = processingParams.noiseGate.gain;
 //			}
-//			if(this->gateStatus == true && ((inputsSwitched == false && this->gateOffThreshold < this->maxAmp[0]) || // noise gate
-//					(inputsSwitched == true && this->gateOffThreshold < this->maxAmp[1])))
+//			if(this->gateStatus == true && ((inputsSwitched == false && this->gateOffThreshold < this->inMaxAmp[0]) || // noise gate
+//					(inputsSwitched == true && this->gateOffThreshold < this->inMaxAmp[1])))
 //			{
 //				this->gateStatus = false;
 //				this->inputLevel = 1.0;
 //			}
 
-			if(this->maxAmpFilterIndex < 15)
+			if(this->inMaxAmpFilterIndex < 15)
 			{
-				this->maxAmpFilter[this->maxAmpFilterIndex++] = this->maxAmp[0];
+				this->inMaxAmpFilter[this->inMaxAmpFilterIndex++] = this->inMaxAmp[0];
 			}
 			else
 			{
-				this->maxAmpFilter[this->maxAmpFilterIndex] = this->maxAmp[0];
-				this->maxAmpFilterIndex = 0;
+				this->inMaxAmpFilter[this->inMaxAmpFilterIndex] = this->inMaxAmp[0];
+				this->inMaxAmpFilterIndex = 0;
 			}
 
-			this->maxAmpFilterOut = (this->maxAmpFilter[0] + this->maxAmpFilter[1] + this->maxAmpFilter[2] +
-					this->maxAmpFilter[3] + this->maxAmpFilter[4] + this->maxAmpFilter[5] +
-					this->maxAmpFilter[6] + this->maxAmpFilter[7] + this->maxAmpFilter[8] +
-					this->maxAmpFilter[9] + this->maxAmpFilter[10] + this->maxAmpFilter[11] +
-					this->maxAmpFilter[12] + this->maxAmpFilter[13] + this->maxAmpFilter[14] +
-					this->maxAmpFilter[15])/16;
-			this->signalLevel = this->maxAmpFilterOut;
+			this->inMaxAmpFilterOut = (this->inMaxAmpFilter[0] + this->inMaxAmpFilter[1] + this->inMaxAmpFilter[2] +
+					this->inMaxAmpFilter[3] + this->inMaxAmpFilter[4] + this->inMaxAmpFilter[5] +
+					this->inMaxAmpFilter[6] + this->inMaxAmpFilter[7] + this->inMaxAmpFilter[8] +
+					this->inMaxAmpFilter[9] + this->inMaxAmpFilter[10] + this->inMaxAmpFilter[11] +
+					this->inMaxAmpFilter[12] + this->inMaxAmpFilter[13] + this->inMaxAmpFilter[14] +
+					this->inMaxAmpFilter[15])/16;
+			this->inSignalLevel = this->inMaxAmpFilterOut;
 
 
-			if(this->signalDeltaFilterIndex < 15)
+			if(this->inSignalDeltaFilterIndex < 15)
 			{
-				this->signalDeltaFilter[this->signalDeltaFilterIndex++] = this->signalLevel - this->prevSignalLevel;
+				this->inSignalDeltaFilter[this->inSignalDeltaFilterIndex++] = this->inSignalLevel - this->inPrevSignalLevel;
 			}
 			else
 			{
-				this->signalDeltaFilter[this->signalDeltaFilterIndex] = this->signalLevel - this->prevSignalLevel;
-				this->signalDeltaFilterIndex = 0;
+				this->inSignalDeltaFilter[this->inSignalDeltaFilterIndex] = this->inSignalLevel - this->inPrevSignalLevel;
+				this->inSignalDeltaFilterIndex = 0;
 			}
-			this->signalDeltaFilterOut = (this->signalDeltaFilter[0] + this->signalDeltaFilter[1] + this->signalDeltaFilter[2] +
-					this->signalDeltaFilter[3] + this->signalDeltaFilter[4] + this->signalDeltaFilter[5] +
-					this->signalDeltaFilter[6] + this->signalDeltaFilter[7] + this->signalDeltaFilter[8] +
-					this->signalDeltaFilter[9] + this->signalDeltaFilter[10] + this->signalDeltaFilter[11] +
-					this->signalDeltaFilter[12] + this->signalDeltaFilter[13] + this->signalDeltaFilter[14] +
-					this->signalDeltaFilter[15])/16;
-			//this->signalLevel = this->maxAmpFilterOut;
+			this->inSignalDeltaFilterOut = (this->inSignalDeltaFilter[0] + this->inSignalDeltaFilter[1] + this->inSignalDeltaFilter[2] +
+					this->inSignalDeltaFilter[3] + this->inSignalDeltaFilter[4] + this->inSignalDeltaFilter[5] +
+					this->inSignalDeltaFilter[6] + this->inSignalDeltaFilter[7] + this->inSignalDeltaFilter[8] +
+					this->inSignalDeltaFilter[9] + this->inSignalDeltaFilter[10] + this->inSignalDeltaFilter[11] +
+					this->inSignalDeltaFilter[12] + this->inSignalDeltaFilter[13] + this->inSignalDeltaFilter[14] +
+					this->inSignalDeltaFilter[15])/16;
+			//this->inSignalLevel = this->inMaxAmpFilterOut;
 
 
 
 		#if(dbg >= 2)
-			cout << "signal: " << this->signalLevel << ",signal delta: " << this->signalDeltaFilterOut << endl;
+			cout << "signal: " << this->inSignalLevel << ",signal delta: " << this->inSignalDeltaFilterOut << endl;
 		#endif
 			//***************************** Envelope trigger function *********************************
 
@@ -553,14 +562,14 @@ double testBuffer[10][BUFFER_SIZE];
 				this->inputLevel = processingParams.noiseGate.gain;
 				this->envTriggerPeriods = 0;
 				this->envTrigger = false;
-				if((inputsSwitched == false && this->gateOffThreshold < this->maxAmp[0]) || // noise gate
-						(inputsSwitched == true && this->gateOffThreshold < this->maxAmp[1]))
+				if((inputsSwitched == false && this->gateOffThreshold < this->inMaxAmp[0]) || // noise gate
+						(inputsSwitched == true && this->gateOffThreshold < this->inMaxAmp[1]))
 				{
 		#if(dbg >= 1)
 					cout << "level above noise gate high threshold: going to case 1." << endl;
 		#endif
 		#if(dbg >= 2)
-					cout << "signalLevel: " << this->signalLevel << "\tsignalLevelLowPeak: " << this->signalLevelLowPeak << "\tsignalLevelHighPeak: " << this->signalLevelHighPeak << endl;
+					cout << "inSignalLevel: " << this->inSignalLevel << "\tsignalLevelLowPeak: " << this->inSignalLevelLowPeak << "\tsignalLevelHighPeak: " << this->inSignalLevelHighPeak << endl;
 		#endif
 					this->gateEnvStatus = 1;
 				}
@@ -575,22 +584,22 @@ double testBuffer[10][BUFFER_SIZE];
 				this->envTrigger = false;
 
 
-				if((inputsSwitched == false && this->gateOnThreshold > this->maxAmp[0]) ||  // going below noise gate threshold
-						(inputsSwitched == true && this->gateOnThreshold > this->maxAmp[1]))
+				if((inputsSwitched == false && this->gateOnThreshold > this->inMaxAmp[0]) ||  // going below noise gate threshold
+						(inputsSwitched == true && this->gateOnThreshold > this->inMaxAmp[1]))
 				{
 		#if(dbg >= 1)
 					cout << "level below noise gate low threshold: going to case 0." << endl;
 		#endif
 					this->gateEnvStatus = 0;
 				}
-				else if(this->signalDeltaFilterOut > this->triggerHighThreshold)
+				else if(this->inSignalDeltaFilterOut > this->triggerHighThreshold)
 				{
 					// pick applied to string, causing damping
 					this->envTriggerPeriods = 0;
-					//this->signalLevelLowPeak = this->signalLevel;
+					//this->inSignalLevelLowPeak = this->inSignalLevel;
 					this->gateEnvStatus = 2;
 		#if(dbg >= 2)
-					cout << "signalLevel: " << this->signalLevel << "\tsignalLevelLowPeak: " << this->signalLevelLowPeak << "\tsignalLevelHighPeak: " << this->signalLevelHighPeak << endl;
+					cout << "inSignalLevel: " << this->inSignalLevel << "\tsignalLevelLowPeak: " << this->inSignalLevelLowPeak << "\tsignalLevelHighPeak: " << this->inSignalLevelHighPeak << endl;
 		#endif
 				}
 
@@ -613,25 +622,25 @@ double testBuffer[10][BUFFER_SIZE];
 				cout << "case 3" << endl;
 		#endif
 
-				if((inputsSwitched == false && this->gateOnThreshold > this->maxAmp[0]) ||  // going below noise gate threshold
-						(inputsSwitched == true && this->gateOnThreshold > this->maxAmp[1]))
+				if((inputsSwitched == false && this->gateOnThreshold > this->inMaxAmp[0]) ||  // going below noise gate threshold
+						(inputsSwitched == true && this->gateOnThreshold > this->inMaxAmp[1]))
 				{
 		#if(dbg >= 1)
 					cout << "level below noise gate low threshold: going to case 0." << endl;
 		#endif
 					this->gateEnvStatus = 0;
 				}
-				else if(this->signalDeltaFilterOut < this->triggerLowThreshold)
+				else if(this->inSignalDeltaFilterOut < this->triggerLowThreshold)
 				{
 					// pick releasing string, causing new vibration
 		#if(dbg >= 1)
 					cout << "pick released: going to case 1." << endl;
 		#endif
 					this->envTriggerPeriods = 0;
-					this->signalLevelHighPeak = this->signalLevel;
+					this->inSignalLevelHighPeak = this->inSignalLevel;
 					this->gateEnvStatus = 1;
 		#if(dbg >= 2)
-					cout << "signalLevel: " << this->signalLevel << "\tsignalLevelLowPeak: " << this->signalLevelLowPeak << "\tsignalLevelHighPeak: " << this->signalLevelHighPeak << endl;
+					cout << "inSignalLevel: " << this->inSignalLevel << "\tsignalLevelLowPeak: " << this->inSignalLevelLowPeak << "\tsignalLevelHighPeak: " << this->inSignalLevelHighPeak << endl;
 		#endif
 				}
 
@@ -640,9 +649,9 @@ double testBuffer[10][BUFFER_SIZE];
 				this->gateEnvStatus = 0;
 
 			}
-			this->prevMaxAmpFilterOut = this->maxAmpFilterOut;
-			this->prevMaxAmp[1] = this->maxAmp[1];
-			this->prevSignalLevel = this->signalLevel;
+			this->inPrevMaxAmpFilterOut = this->inMaxAmpFilterOut;
+			this->inPrevMaxAmp[1] = this->inMaxAmp[1];
+			this->inPrevSignalLevel = this->inSignalLevel;
 
 			this->processingContextAllocationError = false;
 
@@ -666,7 +675,7 @@ double testBuffer[10][BUFFER_SIZE];
 			for(int i = 0; i < combo.processCount; i++)
 			{
 		#if(dbg >= 1)
-				cout << "process number: " << i << endl;
+				//cout << "process number: " << i << endl;
 		#endif
 				switch(combo.processSequence[i].processType)
 				{
@@ -729,28 +738,70 @@ double testBuffer[10][BUFFER_SIZE];
 			{
 				for(unsigned int i = 0; i < bufferSize; i++)
 				{
+
 					if(inputsSwitched)
 					{
-						outBufs[1][i] = combo.procBufferArray[combo.outputProcBufferIndex[0]].buffer[i];
-						outBufs[0][i] = combo.procBufferArray[combo.outputProcBufferIndex[1]].buffer[i];
+						tempOutBufs[1] = combo.procBufferArray[combo.outputProcBufferIndex[0]].buffer[i];
+						tempOutBufs[0] = combo.procBufferArray[combo.outputProcBufferIndex[1]].buffer[i];
 					}
 					else
 					{
-						outBufs[0][i] = combo.procBufferArray[combo.outputProcBufferIndex[0]].buffer[i];
-						outBufs[1][i] = combo.procBufferArray[combo.outputProcBufferIndex[1]].buffer[i];
+						tempOutBufs[0] = combo.procBufferArray[combo.outputProcBufferIndex[0]].buffer[i];
+						tempOutBufs[1] = combo.procBufferArray[combo.outputProcBufferIndex[1]].buffer[i];
 					}
 
-					if(internalPosPeak[0] < inBufs[0][i]) internalPosPeak[0] = inBufs[0][i];
-					if(internalNegPeak[0] > inBufs[0][i]) internalNegPeak[0] = inBufs[0][i];
-					if(internalPosPeak[1] < inBufs[1][i]) internalPosPeak[1] = inBufs[1][i];
-					if(internalNegPeak[1] > inBufs[1][i]) internalNegPeak[1] = inBufs[1][i];
+					/*if(inPosPeak[0] < inBufs[0][i]) inPosPeak[0] = inBufs[0][i];
+					if(inNegPeak[0] > inBufs[0][i]) inNegPeak[0] = inBufs[0][i];
+					if(inPosPeak[1] < inBufs[1][i]) inPosPeak[1] = inBufs[1][i];
+					if(inNegPeak[1] > inBufs[1][i]) inNegPeak[1] = inBufs[1][i];*/
+
+					outBufs[0][i] = tempOutBufs[0]*this->outGain;
+					outBufs[1][i] = tempOutBufs[1]*this->outGain;
+
+					if(outPosPeak[0] < outBufs[0][i]) outPosPeak[0] = outBufs[0][i];
+					if(outNegPeak[0] > outBufs[0][i]) outNegPeak[0] = outBufs[0][i];
+					if(outPosPeak[1] < outBufs[1][i]) outPosPeak[1] = outBufs[1][i];
+					if(outNegPeak[1] > outBufs[1][i]) outNegPeak[1] = outBufs[1][i];
+
+					/*if(outPosPeak[0] < tempOutBufs[0]) outPosPeak[0] = tempOutBufs[0];
+					if(outNegPeak[0] > tempOutBufs[0]) outNegPeak[0] = tempOutBufs[0];
+					if(outPosPeak[1] < tempOutBufs[1]) outPosPeak[1] = tempOutBufs[1];
+					if(outNegPeak[1] > tempOutBufs[1]) outNegPeak[1] = tempOutBufs[1];*/
+
 				}
 
-				this->posPeak[0] = internalPosPeak[0];
-				this->negPeak[0] = internalNegPeak[0];
-				this->posPeak[1] = internalPosPeak[1];
-				this->negPeak[1] = internalNegPeak[1];
+				this->outPosPeak[0] = outPosPeak[0];
+				this->outNegPeak[0] = outNegPeak[0];
+				this->outPosPeak[1] = outPosPeak[1];
+				this->outNegPeak[1] = outNegPeak[1];
 
+				this->outMaxAmp[0][0] = this->outPosPeak[0] - this->outNegPeak[0];
+				this->outMaxAmp[1][0] = this->outPosPeak[1] - this->outNegPeak[1];
+				this->outMaxAmp[0][1] = this->outMaxAmp[0][0];
+				this->outMaxAmp[1][1] = this->outMaxAmp[1][0];
+#if(dbg >= 1)
+				cout << "out gain: " << this->outGain << "\toutput levels: " << this->outMaxAmp[0][0] << '\t' << this->outMaxAmp[1][0] << endl;
+#endif
+
+				if(this->outMaxAmp[0][1] > this->outMaxAmp[0][0]) this->outMaxAmp[0][0] = this->outMaxAmp[0][1];
+
+				if(this->outMaxAmp[0][0] > 1.500)
+				{
+					if(this->outGain > 0.1)
+					{
+						//this->outGain = 1.000/this->outMaxAmp[0][0];
+						this->outGain -= 0.02;
+					}
+				}
+				else if(this->outGain < 1.000)
+				{
+					this->outGain += 0.02;
+				}
+				else
+				{
+
+					this->outGain = 1.000;
+				}
 			}
 			else //allocation error detected, send signal straight thru to avoid Jack crash
 			{
@@ -784,17 +835,17 @@ double testBuffer[10][BUFFER_SIZE];
 				outBufs[0][i] = inBufs[0][i];
 				outBufs[1][i] = inBufs[1][i];
 
-				if(internalPosPeak[0] < inBufs[0][i]) internalPosPeak[0] = inBufs[0][i];
-				if(internalNegPeak[0] > inBufs[0][i]) internalNegPeak[0] = inBufs[0][i];
-				if(internalPosPeak[1] < inBufs[1][i]) internalPosPeak[1] = inBufs[1][i];
-				if(internalNegPeak[1] > inBufs[1][i]) internalNegPeak[1] = inBufs[1][i];
+				if(inPosPeak[0] < inBufs[0][i]) inPosPeak[0] = inBufs[0][i];
+				if(inNegPeak[0] > inBufs[0][i]) inNegPeak[0] = inBufs[0][i];
+				if(inPosPeak[1] < inBufs[1][i]) inPosPeak[1] = inBufs[1][i];
+				if(inNegPeak[1] > inBufs[1][i]) inNegPeak[1] = inBufs[1][i];
 			}
 
 			//cout << "testBuffer[0]: " << testBuffer[0][0] << "\ttestBuffer[1]: " << testBuffer[1][0] << endl;
-			this->posPeak[0] = internalPosPeak[0];
-			this->negPeak[0] = internalNegPeak[0];
-			this->posPeak[1] = internalPosPeak[1];
-			this->negPeak[1] = internalNegPeak[1];
+			this->inPosPeak[0] = inPosPeak[0];
+			this->inNegPeak[0] = inNegPeak[0];
+			this->inPosPeak[1] = inPosPeak[1];
+			this->inNegPeak[1] = inNegPeak[1];
 
 			/*if(this->updateProcessing == true)
 			{
@@ -817,7 +868,7 @@ double testBuffer[10][BUFFER_SIZE];
 	#endif
 
 	#if(dbg >= 1)
-		cout << "EXITING audioCallback: " << status << endl;
+		//cout << "EXITING audioCallback: " << status << endl;
 	#endif
 
 		return status;
@@ -890,14 +941,14 @@ int Processing::getPitch(bool activate, double *signal)
 	double postPreAmplitudeRatio = 0.000;
 
 
-	lp_a[0] = lp3[getPitchFilterIndex][0];
-	lp_a[1] = lp3[getPitchFilterIndex][1];
-	lp_a[2] = lp3[getPitchFilterIndex][2];
-	lp_a[3] = lp3[getPitchFilterIndex][3];
+	lp_b[0] = lp3[getPitchFilterIndex][0];
+	lp_b[1] = lp3[getPitchFilterIndex][1];
+	lp_b[2] = lp3[getPitchFilterIndex][2];
+	lp_b[3] = lp3[getPitchFilterIndex][3];
 	//lp_a[i][4] = lp[tempIndex][4];
-	lp_b[1] = lp3[getPitchFilterIndex][5];
-	lp_b[2] = lp3[getPitchFilterIndex][6];
-	lp_b[3] = lp3[getPitchFilterIndex][7];
+	lp_a[1] = lp3[getPitchFilterIndex][5];
+	lp_a[2] = lp3[getPitchFilterIndex][6];
+	lp_a[3] = lp3[getPitchFilterIndex][7];
 	//lp_b[i][4] = lp[tempIndex][9];
 
 #if(dbg >= 1)
@@ -920,7 +971,7 @@ int Processing::getPitch(bool activate, double *signal)
 			tempPreFilterLow.amplitude = lp_x[0];
 		}
 
-		lp_y[0] = lp_a[0]*lp_x[0] + lp_a[1]*lp_x[1] + lp_a[2]*lp_x[2] + lp_a[3]*lp_x[3] - lp_b[1]*lp_y[1] - lp_b[2]*lp_y[2] - lp_b[3]*lp_y[3];
+		lp_y[0] = lp_b[0]*lp_x[0] + lp_b[1]*lp_x[1] + lp_b[2]*lp_x[2] + lp_b[3]*lp_x[3] - lp_a[1]*lp_y[1] - lp_a[2]*lp_y[2] - lp_a[3]*lp_y[3];
 
 		lp_x[3] = lp_x[2];
 		lp_x[2] = lp_x[1];
@@ -1081,6 +1132,29 @@ int loadComponentSymbols(void)
 	//blankb('c', NULL, NULL, NULL);
 #if(dbg >= 1)
 	cout << "EXITING ProcessingControl::loadComponentSymbols" << endl;
+#endif
+
+	return 0;
+}
+
+#define dbg 1
+int loadControlTypeSymbols(void)
+{
+#if(dbg >= 1)
+	cout << "ENTERING: ProcessingControl::loadControlTypeSymbols" << endl;
+#endif
+
+	struct ControlEvent loadControlType;
+	loadControlType.type = 0; // load Normal control type symbol data
+	control('c', NULL, &loadControlType, NULL);
+	loadControlType.type = 1; // load Envelope Generator control type symbol data;
+	control('c', NULL, &loadControlType, NULL);
+	loadControlType.type = 2; // load LFO control type symbol data;
+	control('c', NULL, &loadControlType, NULL);
+	loadControlType.type = 3; // load test control type symbol data;
+	control('c', NULL, &loadControlType, NULL);
+#if(dbg >= 1)
+	cout << "EXITING ProcessingControl::loadControlTypeSymbols" << endl;
 #endif
 
 	return 0;
@@ -1598,11 +1672,11 @@ double Processing::getOutputAmplitudes(void)
 #if(dbg >= 1)
 	cout << "ENTERING: Processing::getOutputAmplitudes" << endl;
 #endif
-	amplitude = this->posPeak[0] - this->negPeak[0];
+	amplitude = this->inPosPeak[0] - this->inNegPeak[0];
 
 #if(dbg >= 2)
-	cout << "amplitude[0]: " <<  this->posPeak[0] - this->negPeak[0];
-	cout << "\tamplitude[1]: " <<  this->posPeak[1] - this->negPeak[1] << endl;
+	cout << "amplitude[0]: " <<  this->inPosPeak[0] - this->inNegPeak[0];
+	cout << "\tamplitude[1]: " <<  this->inPosPeak[1] - this->inNegPeak[1] << endl;
 #endif
 
 #if(dbg >= 1)

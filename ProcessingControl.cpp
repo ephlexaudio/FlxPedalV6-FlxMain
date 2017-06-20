@@ -235,20 +235,20 @@ int ProcessingControl::stop() // stop clients and disconnect them
 	//this->processing->stopEffects();
 	//sleep(2);
 	this->processing->disconnectInPort(0);	// Disconnecting ports.
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "this->disconnectInPort(0)" << endl;
 #endif
 	this->processing->disconnectOutPort(1);
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "this->processing->disconnectOutPort(1)" << endl;
 #endif
 	this->processing->stop();
 	this->processing->close();	// stop client.
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "this->processing->close()" << endl;
 #endif
 	delete this->processing;	// always clean up after yourself.
-#if(dbg == 1)
+#if(dbg >= 1)
 	cout << "delete this->processing" << endl;
 #endif
 	//exit(0);

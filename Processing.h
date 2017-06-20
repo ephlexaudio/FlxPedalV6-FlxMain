@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <json/json.h>
 #include <jack/jack.h>
+#include "Controls.h"
 #include "Effects2.h"
 //#include "Combo.h"
 #include "structs.h"
@@ -61,12 +62,12 @@ private:
 	int switchedStatus = 0;
 	double gateOnThreshold = 0.01;
 	double gateOffThreshold = 0.30;
-	double posPeak[2];
-	double negPeak[2];
-	double maxAmp[2];
-	double prevMaxAmp[2];
-	double posPeakArray[4][2];
-	double negPeakArray[4][2];
+	double inPosPeak[2];
+	double inNegPeak[2];
+	double inMaxAmp[2];
+	double inPrevMaxAmp[2];
+	double inPosPeakArray[4][2];
+	double inNegPeakArray[4][2];
 	int chan1GndCount;
 	int chan2GndCount;
 	//double comboInputBuffer[2][BUFFER_SIZE];
@@ -78,21 +79,25 @@ private:
 	double triggerLowThreshold;
 	bool envTrigger;
 	int envTriggerPeriods;
-	double maxAmpFilter[16];
-	double maxAmpFilterOut;
-	double prevMaxAmpFilterOut;
-	int maxAmpFilterIndex;
+	double inMaxAmpFilter[16];
+	double inMaxAmpFilterOut;
+	double inPrevMaxAmpFilterOut;
+	int inMaxAmpFilterIndex;
 	int gateEnvStatus;
-	double signalLevel;
-	double prevSignalLevel;
-	double signalLevelHighPeak;
-	double signalLevelLowPeak;
-	double signalDeltaFilter[16];
-	double signalDeltaFilterOut;
-	int signalDeltaFilterIndex;
-	int signalDeltaPositiveCount;
-	int signalDeltaNegativeCount;
+	double inSignalLevel;
+	double inPrevSignalLevel;
+	double inSignalLevelHighPeak;
+	double inSignalLevelLowPeak;
+	double inSignalDeltaFilter[16];
+	double inSignalDeltaFilterOut;
+	int inSignalDeltaFilterIndex;
+	int inSignalDeltaPositiveCount;
+	int inSignalDeltaNegativeCount;
 	int aveArrayIndex;
+	double outPosPeak[2];
+	double outNegPeak[2];
+	double outMaxAmp[2][2];
+	double outGain;
 	bool audioCallbackRunning;
 	bool processingEnabled;
 
@@ -136,4 +141,5 @@ public:
 };
 
 int loadComponentSymbols(void);
-#endif /* COMBO_H_ */
+int loadControlTypeSymbols(void);
+#endif /* PROCESSING_H_ */
