@@ -17,11 +17,11 @@ extern std::vector<string> jsonProcessList;*/
 /**********************************************************************************/
 /**************************************
 #if(dbg >= 1)
-	cout << "***** ENTERING: FileSystemFuncts::" << endl;
+	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::" << endl;
 #endif
 
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::" << endl;
+	if(debugOutput) cout << "***** EXITING: FileSystemFuncts::" << endl;
 #endif
 
 #if(dbg >=2)
@@ -33,17 +33,19 @@ extern std::vector<string> jsonProcessList;*/
 #define COMBO_DATA_ARRAY 0
 #define COMBO_DATA_MAP 1
 
+extern bool debugOutput;
+
 struct _segFaultInfo {
 	string function;
 	int line;
 };
 
-#define dbg 1
+#define dbg 0
 int validateJsonString(std::string jsonString)
 {
 #if(dbg >= 1)
-	cout << "***** ENTERING: FileSystemFuncts::validateJsonString" << endl;
-	cout << "jsonString: " << jsonString << endl;
+	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::validateJsonString" << endl;
+	if(debugOutput) cout << "jsonString: " << jsonString << endl;
 #endif
 
 	int status = 0;
@@ -68,14 +70,14 @@ int validateJsonString(std::string jsonString)
 	newlineIndex = tempBufferString.find("\n");
 	if(newlineIndex != std::string::npos)
 	{
-		cout << "newline found" << endl;
+		if(debugOutput) cout << "newline found" << endl;
 #if(dbg >=2)
 #endif
 		dirtyBufferString = tempBufferString.substr(0,newlineIndex);
 	}
 	else
 	{
-		cout << "no newline found" << endl;
+		if(debugOutput) cout << "no newline found" << endl;
 #if(dbg >=2)
 #endif
 		dirtyBufferString.assign(tempBufferString);
@@ -83,43 +85,43 @@ int validateJsonString(std::string jsonString)
 
 
 #if(dbg >=2)
-	cout << "Dirty string: " << dirtyBufferString << endl;
-	cout << "Dirty string length: " << dirtyBufferString.size() << endl;
+	if(debugOutput) cout << "Dirty string: " << dirtyBufferString << endl;
+	if(debugOutput) cout << "Dirty string length: " << dirtyBufferString.size() << endl;
 #endif
 	if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 	{
-		cout << "JSON name: " << jsonClean["name"] << endl;
+		if(debugOutput) cout << "JSON name: " << jsonClean["name"] << endl;
 		cleanBufferString = jsonCleanWriter.write(jsonClean);
 
 #if(dbg >=2)
-		cout << "Clean string: " << cleanBufferString << endl;
-		cout << "Clean string length: " << cleanBufferString.size() << endl;
+		if(debugOutput) cout << "Clean string: " << cleanBufferString << endl;
+		if(debugOutput) cout << "Clean string length: " << cleanBufferString.size() << endl;
 #endif
 
 		if(dirtyBufferString.size() == cleanBufferString.size())
 		{
-			cout << "jsonString is clean" << endl;
+			if(debugOutput) cout << "jsonString is clean" << endl;
 			status = 1;
 		}
 		else /*if(dirtyBufferString.size() > cleanBufferString.size())*/
 		{
 			/*if(dirtyBufferString.size()/2 > cleanBufferString.size()) // something went REALLY wrong
 			{
-				cout << "jsonString is highly corrupted and cannot be repaired" << endl;
+				if(debugOutput) cout << "jsonString is highly corrupted and cannot be repaired" << endl;
 				status = -1; // jsonString is highly corrupted and cannot be repaired
 			}
 			else*/
 			{
 				dirtyBufferString.clear();
 				dirtyBufferString.assign(cleanBufferString);
-				cout << "confirming clean..." << endl;
+				if(debugOutput) cout << "confirming clean..." << endl;
 				if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 				{
-					cout << "JSON name2: " << jsonClean["name"] << endl;
+					if(debugOutput) cout << "JSON name2: " << jsonClean["name"] << endl;
 					cleanBufferString = jsonCleanWriter.write(jsonClean);
 #if(dbg >=2)
-					cout << "Clean string2: " << cleanBufferString << endl;
-					cout << "Clean string length2: " << cleanBufferString.size() << endl;
+					if(debugOutput) cout << "Clean string2: " << cleanBufferString << endl;
+					if(debugOutput) cout << "Clean string length2: " << cleanBufferString.size() << endl;
 #endif
 
 					if(dirtyBufferString.size() == cleanBufferString.size() ||
@@ -127,12 +129,12 @@ int validateJsonString(std::string jsonString)
 					{
 						jsonString.clear();
 						jsonString.assign(cleanBufferString);
-						cout << "jsonString needed cleaning/repair" << endl;
+						if(debugOutput) cout << "jsonString needed cleaning/repair" << endl;
 						status = 0; // jsonString needed cleaning/repair
 					}
 					else
 					{
-						cout << "jsonString cleaning failed" << endl;
+						if(debugOutput) cout << "jsonString cleaning failed" << endl;
 						status = -1;
 						jsonString.clear();
 					}
@@ -140,7 +142,7 @@ int validateJsonString(std::string jsonString)
 				}
 				else
 				{
-					cout << "jsonString cleaning failed" << endl;
+					if(debugOutput) cout << "jsonString cleaning failed" << endl;
 					status = -1;
 					jsonString.clear();
 				}
@@ -150,24 +152,24 @@ int validateJsonString(std::string jsonString)
 	}
 	else
 	{
-		cout << "jsonString could not be parsed" << endl;
+		if(debugOutput) cout << "jsonString could not be parsed" << endl;
 		status = -1;
 		jsonString.clear();
 	}
 
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::validateJsonString: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: FileSystemFuncts::validateJsonString: " << status << endl;
 #endif
 
 	return status;
 }
 
-#define dbg 1
+#define dbg 0
 int validateJsonBuffer(char *jsonBuffer)
 {
 #if(dbg >= 1)
-	cout << "***** ENTERING: FileSystemFuncts::validateJsonBuffer" << endl;
-	//cout << "jsonBuffer: " << jsonBuffer << endl;
+	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::validateJsonBuffer" << endl;
+	//if(debugOutput) cout << "jsonBuffer: " << jsonBuffer << endl;
 #endif
 	int status = 0;
 	Json::Value jsonClean;
@@ -190,80 +192,80 @@ int validateJsonBuffer(char *jsonBuffer)
 
 	newlineIndex = tempBufferString.find("\n");
 #if(dbg >=2)
-	cout << "tempBufferString: " << tempBufferString << endl;
-	cout << "tempBufferString length: " << tempBufferString.size() << endl;
+	if(debugOutput) cout << "tempBufferString: " << tempBufferString << endl;
+	if(debugOutput) cout << "tempBufferString length: " << tempBufferString.size() << endl;
 #endif
-	cout << "newline found at: " << newlineIndex << endl;
+	if(debugOutput) cout << "newline found at: " << newlineIndex << endl;
 	if(newlineIndex == (tempBufferString.length()-1)) newlineIndex = std::string::npos; // ignore newline at end of string
 	if((newlineIndex != std::string::npos))
 	{
-		//cout << "newline found at: " << newlineIndex << endl;
+		//if(debugOutput) cout << "newline found at: " << newlineIndex << endl;
 		dirtyBufferString = tempBufferString.substr(0,newlineIndex);
 	}
 	else
 	{
-		cout << "no newline found" << endl;
+		if(debugOutput) cout << "no newline found" << endl;
 		dirtyBufferString.assign(tempBufferString);
 	}
 	dirtyBufferString.erase(remove(dirtyBufferString.begin(),dirtyBufferString.end(),'\n'),dirtyBufferString.end());
 
 
 #if(dbg >=2)
-	cout << "Dirty string: " << dirtyBufferString << endl;
-	cout << "Dirty string length: " << dirtyBufferString.size() << endl;
+	if(debugOutput) cout << "Dirty string: " << dirtyBufferString << endl;
+	if(debugOutput) cout << "Dirty string length: " << dirtyBufferString.size() << endl;
 #endif
 
 	//printAsciiNumbers(dirtyBufferString);
 
 	if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 	{
-		cout << "JSON name: " << jsonClean["name"] << endl;
+		if(debugOutput) cout << "JSON name: " << jsonClean["name"] << endl;
 		cleanBufferString = jsonCleanWriter.write(jsonClean);
 		cleanBufferString.erase(remove(cleanBufferString.begin(),cleanBufferString.end(),'\n'),cleanBufferString.end());
 #if(dbg >=2)
-		cout << "Clean string: " << cleanBufferString << endl;
-		cout << "Clean string length: " << cleanBufferString.size() << endl;
+		if(debugOutput) cout << "Clean string: " << cleanBufferString << endl;
+		if(debugOutput) cout << "Clean string length: " << cleanBufferString.size() << endl;
 #endif
 
 		//printAsciiNumbers(cleanBufferString);
 
 		if(dirtyBufferString.size() == cleanBufferString.size() && (newlineIndex == std::string::npos))
 		{
-			cout << "jsonString is clean" << endl;
+			if(debugOutput) cout << "jsonString is clean" << endl;
 			status = 1;
 		}
 		else /*if(dirtyBufferString.size() > cleanBufferString.size())*/
 		{
 			/*if(dirtyBufferString.size()/2 > cleanBufferString.size()) // something went REALLY wrong
 			{
-				cout << "jsonString is highly corrupted and cannot be repaired" << endl;
+				if(debugOutput) cout << "jsonString is highly corrupted and cannot be repaired" << endl;
 				status = -1; // jsonString is highly corrupted and cannot be repaired
 			}
 			else*/
 			{
 				dirtyBufferString.clear();
 				dirtyBufferString.assign(cleanBufferString);
-				cout << "confirming clean..." << endl;
+				if(debugOutput) cout << "confirming clean..." << endl;
 				if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 				{
-					cout << "JSON name: " << jsonClean["name"] << endl;
+					if(debugOutput) cout << "JSON name: " << jsonClean["name"] << endl;
 					cleanBufferString = jsonCleanWriter.write(jsonClean);
 					cleanBufferString.erase(remove(cleanBufferString.begin(),cleanBufferString.end(),'\n'),cleanBufferString.end());
 #if(dbg >=2)
-					cout << "Clean string: " << cleanBufferString << endl;
-					cout << "Clean string length: " << cleanBufferString.size() << endl;
+					if(debugOutput) cout << "Clean string: " << cleanBufferString << endl;
+					if(debugOutput) cout << "Clean string length: " << cleanBufferString.size() << endl;
 #endif
 
 					if(dirtyBufferString.size() == cleanBufferString.size())
 					{
 						clearBuffer(jsonBuffer, JSON_BUFFER_LENGTH);
 						strncpy(jsonBuffer,cleanBufferString.c_str(),JSON_BUFFER_LENGTH);
-						cout << "jsonString needed cleaning/repair" << endl;
+						if(debugOutput) cout << "jsonString needed cleaning/repair" << endl;
 						status = 0; // jsonString needed cleaning/repair
 					}
 					else
 					{
-						cout << "jsonString cleaning failed" << endl;
+						if(debugOutput) cout << "jsonString cleaning failed" << endl;
 						status = -1;
 						clearBuffer(jsonBuffer, JSON_BUFFER_LENGTH);
 					}
@@ -271,7 +273,7 @@ int validateJsonBuffer(char *jsonBuffer)
 				}
 				else
 				{
-					cout << "jsonString cleaning failed" << endl;
+					if(debugOutput) cout << "jsonString cleaning failed" << endl;
 					status = -1;
 				}
 
@@ -280,11 +282,11 @@ int validateJsonBuffer(char *jsonBuffer)
 	}
 	else
 	{
-		cout << "jsonString could not be parsed" << endl;
+		if(debugOutput) cout << "jsonString could not be parsed" << endl;
 		status = -1;
 	}
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::validateJsonBuffer: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: FileSystemFuncts::validateJsonBuffer: " << status << endl;
 #endif
 
 
@@ -296,7 +298,7 @@ Json::Reader dataReader;
 std::vector<string> getComponentList(void)
 {
 #if(dbg >= 1)
-	cout << "***** ENTERING: FileSystemFuncts::getComponentList" << endl;
+	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::getComponentList" << endl;
 #endif
 	std::vector<string> compList;
 	FILE *fdCompList = popen("ls /home/Components","r");
@@ -338,7 +340,7 @@ std::vector<string> getComponentList(void)
 
 	if(fdCompList != NULL) pclose(fdCompList);
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::getComponentList" << endl;
+	if(debugOutput) cout << "***** EXITING: FileSystemFuncts::getComponentList" << endl;
 #endif
 	return compList;
 }
@@ -348,8 +350,8 @@ std::vector<string> getComponentList(void)
 std::string getComponentData(std::string componentName)
 {
 #if(dbg >= 1)
-	cout << "***** ENTERING: FileSystemFuncts::getComponentData" << endl;
-	cout << "componentName: " << componentName << endl;
+	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::getComponentData" << endl;
+	if(debugOutput) cout << "componentName: " << componentName << endl;
 #endif
 	char compString[50];
 	sprintf(compString,"/home/Components/%s.txt", componentName.c_str());
@@ -371,7 +373,7 @@ std::string getComponentData(std::string componentName)
 	}
 	fclose(fdComp);
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::getComponentData" << endl;
+	if(debugOutput) cout << "***** EXITING: FileSystemFuncts::getComponentData" << endl;
 #endif
 	return std::string(outputString);
 }
@@ -388,7 +390,7 @@ std::string getComponentData(std::string componentName)
 std::vector<string> getComboListFromFileSystem(void)
 {
 #if(dbg >= 1)
-	cout << "***** ENTERING: FileSystemFuncts::getComboFileList" << endl;
+	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::getComboFileList" << endl;
 #endif
 
 	std::vector<string> comList;
@@ -405,7 +407,7 @@ std::vector<string> getComboListFromFileSystem(void)
 	if(fdComboList == NULL)
 	{
 #if(dbg>=2)
-		cout << "popen failed." << endl;
+		if(debugOutput) cout << "popen failed." << endl;
 #endif
 		status = 1;
 	}
@@ -417,7 +419,7 @@ std::vector<string> getComboListFromFileSystem(void)
 			strcpy(buffer,strtok(buffer,"."));
 			comList.push_back(buffer);
 #if(dbg>=2)
-			cout << buffer << endl;
+			if(debugOutput) cout << buffer << endl;
 #endif
 
 			for(int i = 0; i<20;i++) buffer[i] = 0;
@@ -427,7 +429,7 @@ std::vector<string> getComboListFromFileSystem(void)
 
 	if(fdComboList != NULL) pclose(fdComboList);
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::getComboList" << endl;
+	if(debugOutput) cout << "***** EXITING: FileSystemFuncts::getComboList" << endl;
 #endif
 	return comList;
 }
@@ -438,8 +440,8 @@ std::vector<string> getComboListFromFileSystem(void)
 std::string getComboDataFromFileSystem(std::string comboName)
 {
 #if(dbg >= 1)
-	cout << "***** ENTERING: FileSystemFuncts::getComboData" << endl;
-	cout << "comboName: " << comboName << endl;
+	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::getComboData" << endl;
+	if(debugOutput) cout << "comboName: " << comboName << endl;
 #endif
 	errno = 0;
 	char comboString[50];
@@ -473,24 +475,24 @@ std::string getComboDataFromFileSystem(std::string comboName)
 
 		if(result == 0) // file needed cleaning, so replacing with cleaned file
 		{
-			cout << "file needed cleaning, so replacing with cleaned file" << endl;
+			if(debugOutput) cout << "file needed cleaning, so replacing with cleaned file" << endl;
 			fclose(fdCombo);
 			fdCombo = fopen(comboString, "w");
 			if(fputs(jsonBufferString.c_str(),fdCombo) == -1)
 			{
 				jsonBufferString.clear();
-				cout << "error writing jsonBufferString back to combo file." << endl;
+				if(debugOutput) cout << "error writing jsonBufferString back to combo file." << endl;
 			}
 		}
 		else if(result == -1) // file is too corrupted to clean
 		{
 			jsonBufferString.clear();
-			cout << "error parsing jsonBufferString" << endl;
+			if(debugOutput) cout << "error parsing jsonBufferString" << endl;
 		}
 		fclose(fdCombo);
 	}
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::getComboData" << endl;
+	if(debugOutput) cout << "***** EXITING: FileSystemFuncts::getComboData" << endl;
 #endif
 	return jsonBufferString;
 }
@@ -499,7 +501,7 @@ std::string getComboDataFromFileSystem(std::string comboName)
 string saveComboToFileSystem(std::string comboJson)
 {
 #if(dbg >= 1)
-	cout << "***** ENTERING: FileSystemFuncts::saveComboToFileSystem" << endl;
+	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::saveComboToFileSystem" << endl;
 #endif
 	int status = 0;
 	string name;
@@ -517,13 +519,13 @@ string saveComboToFileSystem(std::string comboJson)
 	char fileNameBuffer[40];
 
 #if(dbg>=2)
-	cout << "pre parsed JSON string: " << comboJson.c_str() << endl;
+	if(debugOutput) cout << "pre parsed JSON string: " << comboJson.c_str() << endl;
 #endif
 	if(dataReader.parse(comboJson.c_str(), tempJsonCombo))
 	{
 		sprintf(fileNameBuffer, "/home/Combos/%s.txt", tempJsonCombo["name"].asString().c_str());
 #if(dbg>=2)
-		std::cout << "saveComboToFileSystem: " << fileNameBuffer << '\n';
+		if(debugOutput) std::cout << "saveComboToFileSystem: " << fileNameBuffer << '\n';
 #endif
 		//saveComboFD = fopen(fileNameString,"w");
 		if((saveComboFD = fopen(fileNameBuffer,"w")) != NULL )
@@ -532,29 +534,29 @@ string saveComboToFileSystem(std::string comboJson)
 			for(int i = 0; comboDataBuffer[i] != 0; i++) charCount++;
 			strncpy(parsedComboDataBuffer, comboDataBuffer, charCount);
 #if(dbg>=2)
-			std::cout << "OfxMain/FileSystemFuncts/saveComboToFileSystem size: " << strlen(parsedComboDataBuffer) << endl;
+			if(debugOutput) std::cout << "OfxMain/FileSystemFuncts/saveComboToFileSystem size: " << strlen(parsedComboDataBuffer) << endl;
 #endif
 			int bytesWritten = fwrite(parsedComboDataBuffer,1,charCount,saveComboFD);
 #if(dbg>=2)
-			std::cout << "OfxMain/FileSystemFuncts/saveComboToFileSystem bytes written: " << bytesWritten << endl;
+			if(debugOutput) std::cout << "OfxMain/FileSystemFuncts/saveComboToFileSystem bytes written: " << bytesWritten << endl;
 #endif
 			fclose(saveComboFD);
 			name = tempJsonCombo["name"].asString();
 		}
 		else
 		{
-			cout << "failed to open combo file for writing." << endl;
+			if(debugOutput) cout << "failed to open combo file for writing." << endl;
 			status = 1;
 		}
 	}
 	else
 	{
-		cout << "error parsing combo data. Possible corruption." << endl;
+		if(debugOutput) cout << "error parsing combo data. Possible corruption." << endl;
 		status = 1;
 	}
 
 #if(dbg >= 1)
-	cout << "***** EXITING: FileSystemFuncts::saveComboToFileSystem: " << name << endl;
+	if(debugOutput) cout << "***** EXITING: FileSystemFuncts::saveComboToFileSystem: " << name << endl;
 #endif
 	return name;
 }
@@ -564,18 +566,18 @@ int deleteComboFromFileSystem(std::string comboName)
 {
 	int status = 0;
 #if(dbg >= 1)
-	cout << "***** ENTERING: FileSystemFuncts::deleteComboFromFileSystem" << endl;
-	cout << "comboName: " << comboName << endl;
+	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::deleteComboFromFileSystem" << endl;
+	if(debugOutput) cout << "comboName: " << comboName << endl;
 #endif
 
 	char cliString[50];
 	char cliResult[100];
 	sprintf(cliString, "rm /home/Combos/%s.txt", comboName.c_str());
 #if(hostUiDbg == 1)
-	cout << "CLI string for delete: " << cliString << endl;
+	if(debugOutput) cout << "CLI string for delete: " << cliString << endl;
 #endif
 	strcpy(cliResult,strerror(system(cliString)));
-	cout << "delete result: " << cliResult << endl;
+	if(debugOutput) cout << "delete result: " << cliResult << endl;
 
 	if(strncmp(cliResult,"Success",7) == 0)
 	{
@@ -586,7 +588,7 @@ int deleteComboFromFileSystem(std::string comboName)
 		status = -1;
 	}
 #if(dbg >= 1)
-		cout << "***** EXITING: FileSystemFuncts::deleteComboFromFileSystem: " << status << endl;
+		if(debugOutput) cout << "***** EXITING: FileSystemFuncts::deleteComboFromFileSystem: " << status << endl;
 #endif
 
 	return status;

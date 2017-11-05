@@ -88,28 +88,28 @@ void resetBufferAve(struct ProcessBuffer *bufferArray);
 int processBufferAveSample(double sample, struct ProcessBuffer *bufferArray);
 void updateBufferOffset(struct ProcessBuffer *bufferArray);
 
-int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int mixerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int mixerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int reverbb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int reverbb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int samplerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int samplerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int oscillatorb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int oscillatorb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int blankb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, int *footswitchStatus);
+int blankb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
 
 
-#endif /* EFFECTS_H_ */
+#endif /* EFFECTS2_H_ */

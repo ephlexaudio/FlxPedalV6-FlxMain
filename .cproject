@@ -1,109 +1,107 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
-		<cconfiguration id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.505851156">
-			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.505851156" moduleId="org.eclipse.cdt.core.settings" name="debug">
+		<cconfiguration id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.2047983589">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.2047983589" moduleId="org.eclipse.cdt.core.settings" name="debug">
 				<externalSettings/>
 				<extensions>
+					<extension id="org.eclipse.cdt.core.GNU_ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GNU_ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.505851156" name="debug" parent="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug">
-					<folderInfo id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.505851156." name="/" resourcePath="">
-						<toolChain id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.1630752179" name="Buildroot ARM (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug">
-							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.platform.base.815800428" isAbstract="false" name="Buildroot ARM Platform (/home/buildrooteclipse/buildroot-2016.08/output)" osList="linux" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.platform.base"/>
-							<builder buildPath="${workspace_loc:/OfxMain}/debug" id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.builder.820607367" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Buildroot ARM builder (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.builder"/>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.assembler.1132458908" name="Buildroot ARM Assembler (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.assembler">
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.230048370" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.2047983589" name="debug" parent="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug">
+					<folderInfo id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.2047983589." name="/" resourcePath="">
+						<toolChain id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.754435747" name="Buildroot ARM (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug">
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.platform.base.1938227185" isAbstract="false" name="Buildroot ARM Platform (/home/buildrooteclipse/buildroot-2017.08CM1/output)" osList="linux" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.platform.base"/>
+							<builder buildPath="${workspace_loc:/FlxMain}/debug" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.builder.1578149516" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Buildroot ARM builder (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.builder"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.assembler.2101563331" name="Buildroot ARM Assembler (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.assembler">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1793727700" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.compiler.258475352" name="Buildroot ARM C Compiler (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.compiler">
-								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.option.optimization.level.1979535487" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" value="gnu.c.optimization.level.optimize" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.debugging.level.1763832370" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.dialect.std.2109342728" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.c11" valueType="enumerated"/>
-								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.input.1299882557" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.input"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.compiler.1438095443" name="Buildroot ARM C Compiler (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.compiler">
+								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.option.optimization.level.1237530121" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" value="gnu.c.optimization.level.optimize" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.debugging.level.163524928" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.dialect.std.968748752" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.c11" valueType="enumerated"/>
+								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.input.1572764023" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.input"/>
 							</tool>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.archiver.686902976" name="Buildroot ARM Archiver (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.archiver"/>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.linker.32591781" name="Buildroot ARM C Linker (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.linker"/>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cc.compiler.1281686147" name="Buildroot ARM C++ Compiler (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cc.compiler">
-								<option id="gnu.cpp.compiler.option.optimization.level.1801453335" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.optimize" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.debugging.level.1483441875" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.dialect.std.425022235" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" value="gnu.cpp.compiler.dialect.c++11" valueType="enumerated"/>
-								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cpp.input.817393057" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cpp.input"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.archiver.2030260391" name="Buildroot ARM Archiver (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.archiver"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.linker.1960213925" name="Buildroot ARM C Linker (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.linker"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler.937099318" name="Buildroot ARM C++ Compiler (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler">
+								<option id="gnu.cpp.compiler.option.optimization.level.654244466" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.optimize" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.debugging.level.1042490751" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.dialect.std.489312661" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" value="gnu.cpp.compiler.dialect.c++11" valueType="enumerated"/>
+								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input.228214480" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input"/>
 							</tool>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cc.linker.155935946" name="Buildroot ARM CC Linker (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cc.linker">
-								<option id="gnu.cpp.link.option.paths.105088222" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="/home/buildrooteclipse/buildroot-2016.08/output/host/usr/arm-buildroot-linux-uclibcgnueabihf/sysroot/usr/lib"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.linker.1549600026" name="Buildroot ARM CC Linker (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.linker">
+								<option id="gnu.cpp.link.option.paths.537976555" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
+									<listOptionValue builtIn="false" value="/home/buildrooteclipse/buildroot-2017.08CM1/output/host/arm-buildroot-linux-gnueabihf/sysroot/usr/lib"/>
 								</option>
-								<option id="gnu.cpp.link.option.libs.988491805" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="m"/>
+								<option id="gnu.cpp.link.option.libs.666760750" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jsoncpp"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="m"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jack"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jackserver"/>
 								</option>
-								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.559795063" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.536340623" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
 								</inputType>
 							</tool>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.pkgconfig.388031528" name="Buildroot ARM Pkg config (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.pkgconfig"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.pkgconfig.751352265" name="Buildroot ARM Pkg config (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.pkgconfig"/>
 						</toolChain>
 					</folderInfo>
-					<fileInfo id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.505851156.1030530805" name="Combo2.h" rcbsApplicability="disable" resourcePath="Combo2.h" toolsToInvoke=""/>
-					<fileInfo id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.505851156.1493651897" name="Combo.h" rcbsApplicability="disable" resourcePath="Combo.h" toolsToInvoke=""/>
 					<sourceEntries>
-						<entry excluding="Combo2.h|Combo2.cpp|Combo.h|Combo.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="SharedMemoryInt.h|SharedMemoryInt.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 			<storageModule moduleId="packages"/>
 		</cconfiguration>
-		<cconfiguration id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release.683084921">
-			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release.683084921" moduleId="org.eclipse.cdt.core.settings" name="release">
+		<cconfiguration id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release.1272792764">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release.1272792764" moduleId="org.eclipse.cdt.core.settings" name="release">
 				<externalSettings/>
 				<extensions>
+					<extension id="org.eclipse.cdt.core.GNU_ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GNU_ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release.683084921" name="release" parent="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release">
-					<folderInfo id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release.683084921." name="/" resourcePath="">
-						<toolChain id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release.436248504" name="Buildroot ARM (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release">
-							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.platform.base.1860658758" isAbstract="false" name="Buildroot ARM Platform (/home/buildrooteclipse/buildroot-2016.08/output)" osList="linux" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.platform.base"/>
-							<builder buildPath="${workspace_loc:/OfxMain}/release" id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.builder.2123968235" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Buildroot ARM builder (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.builder"/>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.assembler.634442453" name="Buildroot ARM Assembler (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.assembler">
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1505423802" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" cleanCommand="rm -rf" description="" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release.1272792764" name="release" parent="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release">
+					<folderInfo id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release.1272792764." name="/" resourcePath="">
+						<toolChain id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release.1119393773" name="Buildroot ARM (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release">
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.platform.base.1793749112" isAbstract="false" name="Buildroot ARM Platform (/home/buildrooteclipse/buildroot-2017.08CM1/output)" osList="linux" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.platform.base"/>
+							<builder buildPath="${workspace_loc:/FlxMain}/release" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.builder.630960843" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Buildroot ARM builder (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.builder"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.assembler.767690071" name="Buildroot ARM Assembler (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.assembler">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1262016008" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.compiler.1444725361" name="Buildroot ARM C Compiler (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.compiler">
-								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.option.optimization.level.1757914154" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.debugging.level.1624083423" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
-								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.input.505575334" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.input"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.compiler.889492218" name="Buildroot ARM C Compiler (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.compiler">
+								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.option.optimization.level.310930505" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.debugging.level.1744740849" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
+								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.input.335504142" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.input"/>
 							</tool>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.archiver.730831721" name="Buildroot ARM Archiver (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.archiver"/>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.linker.784760021" name="Buildroot ARM C Linker (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.linker"/>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cc.compiler.728160730" name="Buildroot ARM C++ Compiler (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cc.compiler">
-								<option id="gnu.cpp.compiler.option.optimization.level.2023842660" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.debugging.level.359681198" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
-								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cpp.input.409720739" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cpp.input"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.archiver.1756002766" name="Buildroot ARM Archiver (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.archiver"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.linker.338724803" name="Buildroot ARM C Linker (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.linker"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler.1736465257" name="Buildroot ARM C++ Compiler (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler">
+								<option id="gnu.cpp.compiler.option.optimization.level.579849020" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.debugging.level.242113659" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
+								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input.620836617" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input"/>
 							</tool>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cc.linker.1021986791" name="Buildroot ARM CC Linker (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cc.linker">
-								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1881004347" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.linker.1112873048" name="Buildroot ARM CC Linker (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.linker">
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1607945530" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
 								</inputType>
 							</tool>
-							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.pkgconfig.272537845" name="Buildroot ARM Pkg config (/home/buildrooteclipse/buildroot-2016.08/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.pkgconfig"/>
+							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.pkgconfig.526258846" name="Buildroot ARM Pkg config (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.pkgconfig"/>
 						</toolChain>
 					</folderInfo>
 				</configuration>
@@ -112,22 +110,30 @@
 		</cconfiguration>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-		<project id="OfxMain.org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.1949965857" name="Executable" projectType="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe"/>
+		<project id="FlxMain.org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.643446966" name="Executable" projectType="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe"/>
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.505851156;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.505851156.;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.compiler.258475352;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.input.1299882557">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.ARM_ManagedMakePerProjectProfileC"/>
+		<scannerConfigBuildInfo instanceId="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.2047983589;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.2047983589.;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.compiler.1438095443;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.input.1572764023">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.ARM_ManagedMakePerProjectProfileC"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release.683084921;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release.683084921.;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.compiler.1444725361;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.c.input.505575334">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.ARM_ManagedMakePerProjectProfileC"/>
+		<scannerConfigBuildInfo instanceId="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release.1272792764;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release.1272792764.;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler.1736465257;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input.620836617">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.ARM_ManagedMakePerProjectProfileCPP"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.505851156;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.debug.505851156.;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cc.compiler.1281686147;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cpp.input.817393057">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.ARM_ManagedMakePerProjectProfileCPP"/>
+		<scannerConfigBuildInfo instanceId="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.2047983589;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.2047983589.;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler.937099318;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input.228214480">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.ARM_ManagedMakePerProjectProfileCPP"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release.683084921;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.exe.release.683084921.;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cc.compiler.728160730;org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.cpp.input.409720739">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.buildroot.home.buildrooteclipse.buildroot-2016.08.output.ARM_ManagedMakePerProjectProfileCPP"/>
+		<scannerConfigBuildInfo instanceId="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release.1272792764;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.release.1272792764.;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.compiler.889492218;org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.input.335504142">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.ARM_ManagedMakePerProjectProfileC"/>
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="debug">
+			<resource resourceType="PROJECT" workspacePath="/FlxMain"/>
+		</configuration>
+		<configuration configurationName="release">
+			<resource resourceType="PROJECT" workspacePath="/FlxMain"/>
+		</configuration>
+	</storageModule>
 </cproject>

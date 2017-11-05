@@ -4,8 +4,9 @@
  *  Created on: Jun 29, 2016
  *      Author: mike
  */
-#include "config.h"
 #include "Effects2.h"
+
+#include "config.h"
 #include "valueArrays.h"
 
 //#include "Controls.h"
@@ -42,7 +43,7 @@
 
 // set
 
-
+extern bool debugOutput;
 extern vector<string> componentVector;
 extern vector<string> controlTypeVector;
 
@@ -67,11 +68,11 @@ int blankbCount = 0;
 
 /*************************************
 #if(dbg >= 1)
-	cout << "***** ENTERING: Effects2::" << endl;
-	cout << ": " <<  << endl;
+	if(debugOutput) cout << "***** ENTERING: Effects::" << endl;
+	if(debugOutput) cout << ": " <<  << endl;
 #endif
 #if(dbg >= 1)
-	cout << "***** EXITING: Effects2::: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: Effects::: " << status << endl;
 #endif
 ******************************************/
 
@@ -108,25 +109,25 @@ int blankbCount = 0;
 	return status;
 }*/
 
-#define dbg 1
+#define dbg 0
 int clearProcBuffer(struct ProcessBuffer *procBuffer)
 {
 	int status = 0;
 #if(dbg >= 1)
-	cout << "ENTERING: clearProcBuffer" << endl;
-	cout << "procBuffer name: " << procBuffer->processName << endl;
+	if(debugOutput) cout << "ENTERING: clearProcBuffer" << endl;
+	if(debugOutput) cout << "procBuffer name: " << procBuffer->processName << endl;
 #endif
 
 #if(dbg >= 2)
 #endif
 
 #if(dbg >= 2)
-	cout << "clearing: " << procBuffer->processName << ":" << procBuffer->portName;
+	if(debugOutput) cout << "clearing: " << procBuffer->processName << ":" << procBuffer->portName;
 	for(unsigned int i = 0; i < 20; i++)
 	{
-		cout << procBuffer->buffer[i] << ",";
+		if(debugOutput) cout << procBuffer->buffer[i] << ",";
 	}
-	cout << endl;
+	if(debugOutput) cout << endl;
 #endif
 
 	for(unsigned int i = 0; i < BUFFER_SIZE; i++)
@@ -135,16 +136,16 @@ int clearProcBuffer(struct ProcessBuffer *procBuffer)
 	}
 
 #if(dbg >= 2)
-	cout << "cleared: " << procBuffer->processName << ":" << procBuffer->portName;
+	if(debugOutput) cout << "cleared: " << procBuffer->processName << ":" << procBuffer->portName;
 	for(unsigned int i = 0; i < 20; i++)
 	{
-		cout << procBuffer->buffer[i] << ",";
+		if(debugOutput) cout << procBuffer->buffer[i] << ",";
 	}
-	cout << endl;
+	if(debugOutput) cout << endl;
 #endif
 
 #if(dbg >= 1)
-	cout << "EXITING: clearProcBuffer" << endl;
+	if(debugOutput) cout << "EXITING: clearProcBuffer" << endl;
 #endif
 
 	return status;
@@ -152,21 +153,21 @@ int clearProcBuffer(struct ProcessBuffer *procBuffer)
 }
 
 
-#define dbg 1
+#define dbg 0
 int clearProcBuffer(struct ProcessBuffer procBuffer)
 {
 	int status = 0;
 #if(dbg >= 1)
-	cout << "ENTERING: clearProcBuffer" << endl;
+	if(debugOutput) cout << "ENTERING: clearProcBuffer" << endl;
 #endif
 
 #if(dbg >= 2)
-	cout << "clearing: " << procBuffer.processName << ":" << procBuffer.portName;
+	if(debugOutput) cout << "clearing: " << procBuffer.processName << ":" << procBuffer.portName;
 	for(unsigned int i = 0; i < 20; i++)
 	{
-		cout << procBuffer.buffer[i] << ",";
+		if(debugOutput) cout << procBuffer.buffer[i] << ",";
 	}
-	cout << endl;
+	if(debugOutput) cout << endl;
 #endif
 
 	for(unsigned int i = 0; i < BUFFER_SIZE; i++)
@@ -175,16 +176,16 @@ int clearProcBuffer(struct ProcessBuffer procBuffer)
 	}
 
 #if(dbg >= 2)
-	cout << "cleared: " << procBuffer.processName << ":" << procBuffer.portName;
+	if(debugOutput) cout << "cleared: " << procBuffer.processName << ":" << procBuffer.portName;
 	for(unsigned int i = 0; i < 20; i++)
 	{
-		cout << procBuffer.buffer[i] << ",";
+		if(debugOutput) cout << procBuffer.buffer[i] << ",";
 	}
-	cout << endl;
+	if(debugOutput) cout << endl;
 #endif
 
 #if(dbg >= 1)
-	cout << "EXITING: clearProcBuffer" << endl;
+	if(debugOutput) cout << "EXITING: clearProcBuffer" << endl;
 #endif
 
 	return status;
@@ -241,12 +242,12 @@ void updateBufferOffset(struct ProcessBuffer *bufferArray)
 
 #define dbg 0
 
-int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 	static DelayContext context[20];
 #if(dbg >= 1)
-	cout << "***** ENTERING: Effects2::delayb" << endl;
-	cout << "action: " << action << endl;
+	/*if(debugOutput) cout << "***** ENTERING: Effects::delayb" << endl;
+	if(debugOutput) cout << "action: " << action << endl;*/
 #endif
 	int status = 0;
 
@@ -256,6 +257,9 @@ int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 	}
 	else if(action == 'l')
 	{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading delayb" << endl;
+#endif
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		procEvent->processTypeIndex = delaybCount;//processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
 		delaybCount++;
@@ -271,6 +275,16 @@ int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 		{
 			procEvent->internalData[i] = 0.0;
 		}
+		context[procEvent->processTypeIndex].delaySignalAveragingBuffer[0] = 0.000;
+		context[procEvent->processTypeIndex].delaySignalAveragingBuffer[1] = 0.000;
+		context[procEvent->processTypeIndex].delaySignalAveragingBuffer[2] = 0.000;
+		context[procEvent->processTypeIndex].delaySignalAveragingBuffer[3] = 0.000;
+
+		context[procEvent->processTypeIndex].delayTimeAveragingBuffer[0] = 0.000;
+		context[procEvent->processTypeIndex].delayTimeAveragingBuffer[1] = 0.000;
+		context[procEvent->processTypeIndex].delayTimeAveragingBuffer[2] = 0.000;
+		context[procEvent->processTypeIndex].delayTimeAveragingBuffer[3] = 0.000;
+
 
 		status = 0;
 	}
@@ -278,26 +292,50 @@ int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 	{
 		double outputSum = 0.00000;
 		volatile double tempInput;
-		volatile unsigned int delayCoarse = 0 ;
-		volatile unsigned int delayFine = 0 ;
+		volatile unsigned int delayCoarse = 0;
+		volatile unsigned int delayFine = 0;
 		volatile unsigned int delay = 0;
 
 		//double gain, breakpoint, edge;
 
 		/*if(procEvent->processContext == NULL)
 		{
-			cout << "audioCallback delayb context not allocated" << endl;
+			if(debugOutput) cout << "audioCallback delayb context not allocated" << endl;
 			return -1;
 		}*/
 
-		volatile unsigned int i;
-		volatile unsigned int inputPtr = context[procEvent->processTypeIndex].inputPtr;
-		volatile unsigned int outputPtr = context[procEvent->processTypeIndex].outputPtr;
+		/*volatile*/ unsigned int i;
+		/*volatile*/ unsigned int inputPtr = context[procEvent->processTypeIndex].inputPtr;
+		/*volatile*/ unsigned int outputPtr = context[procEvent->processTypeIndex].outputPtr;
 
 
 		delayCoarse = delayTime[procEvent->parameters[0]];
-		delayFine = delayTime[procEvent->parameters[1]]/100;
-		delay = delayCoarse + delayFine;
+		delayFine = delayTime[procEvent->parameters[1]]/400;
+
+		unsigned int delayDifference;
+		unsigned int extraSkipTriggerValue;
+		if(delayFine > context[procEvent->processTypeIndex].previousDelay)
+		{
+			delayDifference = delayFine - context[procEvent->processTypeIndex].previousDelay;
+			extraSkipTriggerValue = bufferSize/(delayDifference);
+		}
+		else extraSkipTriggerValue = bufferSize+10;
+
+
+		//if(debugOutput) cout << "delayDifference: " << delayDifference << "\textraSkipTriggerValue: " << extraSkipTriggerValue << endl;
+
+		context[procEvent->processTypeIndex].delayTimeAveragingBuffer[3] = context[procEvent->processTypeIndex].delayTimeAveragingBuffer[2];
+		context[procEvent->processTypeIndex].delayTimeAveragingBuffer[2] = context[procEvent->processTypeIndex].delayTimeAveragingBuffer[1];
+		context[procEvent->processTypeIndex].delayTimeAveragingBuffer[1] = context[procEvent->processTypeIndex].delayTimeAveragingBuffer[0];
+		context[procEvent->processTypeIndex].delayTimeAveragingBuffer[0] = delayFine;
+
+		unsigned int delayFineAveraged =
+				(context[procEvent->processTypeIndex].delayTimeAveragingBuffer[0] +
+				context[procEvent->processTypeIndex].delayTimeAveragingBuffer[1] +
+				context[procEvent->processTypeIndex].delayTimeAveragingBuffer[2] +
+				context[procEvent->processTypeIndex].delayTimeAveragingBuffer[3])/4;
+
+		delay = delayCoarse + delayFineAveraged;
 
 		if(inputPtr >= delay) outputPtr = inputPtr - delay;
 		else outputPtr = DELAY_BUFFER_LENGTH - (delay - inputPtr);
@@ -306,20 +344,22 @@ int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 		if(outputPtr >= DELAY_BUFFER_LENGTH) outputPtr = 0;
 
 #if(dbg >= 2)
-		cout << "procEvent->parameters[0]: " << procEvent->parameters[0];
-		cout << "procEvent->parameters[1]: " << procEvent->parameters[1];
-		cout << "delayCoarse: " << delayCoarse;
-		cout << "delayFine: " << delayFine;
-		cout << "delay: " << delay;
-		cout << "inputPtr: " << inputPtr;
-		cout << "outputPtr: " << outputPtr << endl;
+		if(debugOutput) cout << "procEvent->parameters[0]: " << procEvent->parameters[0];
+		if(debugOutput) cout << "procEvent->parameters[1]: " << procEvent->parameters[1];
+		if(debugOutput) cout << "delayCoarse: " << delayCoarse;
+		if(debugOutput) cout << "delayFine: " << delayFine;
+		if(debugOutput) cout << "delay: " << delay;
+		if(debugOutput) cout << "inputPtr: " << inputPtr;
+		if(debugOutput) cout << "outputPtr: " << outputPtr << endl;
 #endif
 
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[0]]);
+
+		unsigned int extraSkipCount = 0;
 		for(i = 0; i < bufferSize; i++)
 		{
 #if(FOOTSWITCH_ALWAYS_ON == 0)
-			if(footswitchStatus[procEvent->footswitchNumber] == 0)
+			if(footswitchStatus[procEvent->footswitchNumber] == false)
 			{
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 				if(inputPtr >= DELAY_BUFFER_LENGTH) inputPtr = 0;
@@ -332,13 +372,52 @@ int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 
 				context[procEvent->processTypeIndex].delayBuffer[inputPtr] = tempInput;
 
-				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = context[procEvent->processTypeIndex].delayBuffer[outputPtr];
+				context[procEvent->processTypeIndex].delaySignalAveragingBuffer[7] = context[procEvent->processTypeIndex].delaySignalAveragingBuffer[6];
+				context[procEvent->processTypeIndex].delaySignalAveragingBuffer[6] = context[procEvent->processTypeIndex].delaySignalAveragingBuffer[5];
+				context[procEvent->processTypeIndex].delaySignalAveragingBuffer[5] = context[procEvent->processTypeIndex].delaySignalAveragingBuffer[4];
+				context[procEvent->processTypeIndex].delaySignalAveragingBuffer[4] = context[procEvent->processTypeIndex].delaySignalAveragingBuffer[3];
+				context[procEvent->processTypeIndex].delaySignalAveragingBuffer[3] = context[procEvent->processTypeIndex].delaySignalAveragingBuffer[2];
+				context[procEvent->processTypeIndex].delaySignalAveragingBuffer[2] = context[procEvent->processTypeIndex].delaySignalAveragingBuffer[1];
+				context[procEvent->processTypeIndex].delaySignalAveragingBuffer[1] = context[procEvent->processTypeIndex].delaySignalAveragingBuffer[0];
+				context[procEvent->processTypeIndex].delaySignalAveragingBuffer[0] = context[procEvent->processTypeIndex].delayBuffer[outputPtr];
 
-				if(inputPtr >= unsigned(DELAY_BUFFER_LENGTH)) inputPtr = 0;
+				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = //context[procEvent->processTypeIndex].delayBuffer[outputPtr];//context[procEvent->processTypeIndex].delaySignalAveragingBuffer[0];
+						(context[procEvent->processTypeIndex].delaySignalAveragingBuffer[0] +
+						context[procEvent->processTypeIndex].delaySignalAveragingBuffer[1] +
+						context[procEvent->processTypeIndex].delaySignalAveragingBuffer[2] +
+						context[procEvent->processTypeIndex].delaySignalAveragingBuffer[3] +
+						context[procEvent->processTypeIndex].delaySignalAveragingBuffer[4] +
+						context[procEvent->processTypeIndex].delaySignalAveragingBuffer[5] +
+						context[procEvent->processTypeIndex].delaySignalAveragingBuffer[6] +
+						context[procEvent->processTypeIndex].delaySignalAveragingBuffer[7])/8;
+
+				if(inputPtr >= (DELAY_BUFFER_LENGTH)) inputPtr = 0;
 				else inputPtr++;
 
-				if(outputPtr >= unsigned(DELAY_BUFFER_LENGTH)) outputPtr = 0;
-				else outputPtr++;
+				if(outputPtr >= (DELAY_BUFFER_LENGTH)) outputPtr = 0;
+				else
+				{
+					outputPtr++;
+					/*if(extraSkipCount >= extraSkipTriggerValue)
+					{
+						//if(debugOutput) cout << "skipping: " << extraSkipCount << endl;
+						outputPtr++;
+						procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] =
+								context[procEvent->processTypeIndex].delayBuffer[outputPtr];
+
+						extraSkipCount = 0;
+					}
+					else
+					{
+						double interpolMult1 = ((double)(extraSkipTriggerValue - extraSkipCount)/(double)extraSkipTriggerValue);
+						double interpolMult2 = ((double)extraSkipCount/(double)extraSkipTriggerValue);
+						procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] =
+								interpolMult1*context[procEvent->processTypeIndex].delayBuffer[outputPtr] +
+								interpolMult2*context[procEvent->processTypeIndex].delayBuffer[outputPtr+1];
+
+						extraSkipCount++;
+					}*/
+				}
 				//outputSum += procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i];
 			}
 			processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
@@ -348,7 +427,7 @@ int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 
 		context[procEvent->processTypeIndex].inputPtr = inputPtr;
 		context[procEvent->processTypeIndex].outputPtr = outputPtr;
-
+		context[procEvent->processTypeIndex].previousDelay = delayFineAveraged;
 		procBufferArray[procEvent->outputBufferIndexes[0]].ready = 1;
 		status = 0;
 	}
@@ -362,11 +441,11 @@ int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 		delaybCount--;
 		/*if(procEvent->processContext == NULL || procEvent == NULL)
 		{
-			std::cout << "delayb processContext missing." << std::endl;
+			if(debugOutput) std::cout << "delayb processContext missing." << std::endl;
 		}
 		else
 		{
-			std::cout << "freeing allocated delayb." << std::endl;
+			if(debugOutput) std::cout << "freeing allocated delayb." << std::endl;
 			//delete[] procEvent->processContext; //free(procEvent->processContext);
 		}*/
 
@@ -374,24 +453,24 @@ int delayb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 	}
 	else
 	{
-		std::cout << "delayb: invalid actiond: " << action << std::endl;
+		if(debugOutput) std::cout << "delayb: invalid actiond: " << action << std::endl;
 		status = 0;
 	}
 
 #if(dbg >= 1)
-	cout << "***** EXITING: Effects2::delayb: " << status << endl;
+	//if(debugOutput) cout << "***** EXITING: Effects::delayb: " << status << endl;
 #endif
 	return status;
 }
 
 #define dbg 0
-int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 	static Filter3bbContext context[20];
 	int status = 0;
 #if(dbg >= 1)
-	cout << "***** ENTERING: Effects2::filter3bb" << endl;
-	cout << "action: " << action << endl;
+	if(debugOutput) cout << "***** ENTERING: Effects::filter3bb" << endl;
+	if(debugOutput) cout << "action: " << action << endl;
 #endif
 
 
@@ -401,6 +480,9 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 	}
 	else if(action == 'l')
 	{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading filter3bb" << endl;
+#endif
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[1]]);
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[2]]);
@@ -408,11 +490,11 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 		/*procEvent->processContext = (double *)calloc(50, sizeof(double));
 		if(procEvent->processContext == NULL)
 		{
-			std::cout << "filter3bb calloc failed." << std::endl;
+			if(debugOutput) std::cout << "filter3bb calloc failed." << std::endl;
 		}
 		else
 		{
-			std::cout << "filter3bb calloc succeeded." << std::endl;
+			if(debugOutput) std::cout << "filter3bb calloc succeeded." << std::endl;
 			for(unsigned int i = 0; i < 50; i++)
 			{
 				((double *)procEvent->processContext)[i] = 0.00;
@@ -478,7 +560,7 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 		int hpOutputPhaseInversion = 0;
 		/*if(procEvent->processContext == NULL)
 		{
-			cout << "audioCallback filter3bb context not allocated" << endl;
+			if(debugOutput) cout << "audioCallback filter3bb context not allocated" << endl;
 			status = -1;
 		}*/
 
@@ -506,7 +588,7 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 
 
 #if(dbg >= 1)
-		cout << "filter3bb procEvent->parameters: ";
+		if(debugOutput) cout << "filter3bb procEvent->parameters: ";
 #endif
 
 		//int tempIndex = valueIndex;
@@ -515,7 +597,7 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 			//if(i == 0)
 			{
 #if(dbg >= 1)
-				cout << procEvent->parameters[i] << ", ";
+				if(debugOutput) cout << procEvent->parameters[i] << ", ";
 #endif
 
 				for(j = 0; j < 3; j++)
@@ -614,7 +696,7 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 			}
 		}
 #if(dbg >= 1)
-		cout << endl;
+		if(debugOutput) cout << endl;
 #endif
 		//footswitchStatus = 1;
 
@@ -623,7 +705,7 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[2]]);
 
 #if(FOOTSWITCH_ALWAYS_ON == 0)
-		if(footswitchStatus[procEvent->footswitchNumber] == 0)
+		if(footswitchStatus[procEvent->footswitchNumber] == false)
 		{
 			for(i = 0; i < bufferSize; i++)
 			{
@@ -810,13 +892,13 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 //			for(j = 0; j < 4; j++)
 //			{
 //				((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++] = lp_x[i][j];
-//				//std::cout << "end: lp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(15) << procEvent->processContext[i*8+j*4] << std::endl;
+//				//if(debugOutput) std::cout << "end: lp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(15) << procEvent->processContext[i*8+j*4] << std::endl;
 //				((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++] = lp_y[i][j];
-//				//std::cout << "end: lp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << lp_y[i][j] << std::endl;
+//				//if(debugOutput) std::cout << "end: lp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << lp_y[i][j] << std::endl;
 //				((double *)procEvent->processContext)[/*i*8+j*4+2*/contextIndex++] = hp_x[i][j];
-//				//std::cout << "end: hp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_x[i][j] << std::endl;
+//				//if(debugOutput) std::cout << "end: hp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_x[i][j] << std::endl;
 //				((double *)procEvent->processContext)[/*i*8+j*4+3*/contextIndex++] = hp_y[i][j];
-//				//std::cout << "end: hp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_y[i][j] << std::endl;
+//				//if(debugOutput) std::cout << "end: hp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_y[i][j] << std::endl;
 //			}
 //		}
 //		for(j = 0; j < 3; j++)
@@ -859,11 +941,11 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 	{
 		/*if(procEvent->processContext == NULL || procEvent == NULL)
 		{
-			std::cout << "filter3bb processContext missing." << std::endl;
+			if(debugOutput) std::cout << "filter3bb processContext missing." << std::endl;
 		}
 		else
 		{
-			std::cout << "freeing allocated filter3bb." << std::endl;
+			if(debugOutput) std::cout << "freeing allocated filter3bb." << std::endl;
 			free(procEvent->processContext);
 		}*/
 		filter3bbCount--;
@@ -871,25 +953,25 @@ int filter3bb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proces
 	}
 	else
 	{
-		std::cout << "filter3bb: invalid actiond: " << action << std::endl;
+		if(debugOutput) std::cout << "filter3bb: invalid actiond: " << action << std::endl;
 		status = 0;
 	}
 
 #if(dbg >= 1)
-	cout << "***** EXITING: Effects2::filter3bb: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: Effects::filter3bb: " << status << endl;
 #endif
 	return status;
 }
 
 
 #define dbg 0
-int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 	static Filter3bb2Context context[20];
 	int status = 0;
 #if(dbg >= 1)
-	cout << "***** ENTERING: Effects2::filter3bb2" << endl;
-	cout << "action: " << action << endl;
+	if(debugOutput) cout << "***** ENTERING: Effects::filter3bb2" << endl;
+	if(debugOutput) cout << "action: " << action << endl;
 #endif
 
 	if(action == 'c')
@@ -898,6 +980,9 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 	}
 	else if(action == 'l')
 	{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading filter3bb2" << endl;
+#endif
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[1]]);
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[2]]);
@@ -905,11 +990,11 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 		/*procEvent->processContext = (double *)calloc(50, sizeof(double));
 		if(procEvent->processContext == NULL)
 		{
-			std::cout << "filter3bb2 calloc failed." << std::endl;
+			if(debugOutput) std::cout << "filter3bb2 calloc failed." << std::endl;
 		}
 		else
 		{
-			std::cout << "filter3bb2 calloc succeeded." << std::endl;
+			if(debugOutput) std::cout << "filter3bb2 calloc succeeded." << std::endl;
 			for(unsigned int i = 0; i < 50; i++)
 			{
 				((double *)procEvent->processContext)[i] = 0.00;
@@ -985,7 +1070,7 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 
 		/*if(procEvent->processContext == NULL)
 		{
-			cout << "audioCallback filter3bb2 context not allocated" << endl;
+			if(debugOutput) cout << "audioCallback filter3bb2 context not allocated" << endl;
 			status = -1;
 		}*/
 
@@ -1019,11 +1104,11 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 
 
 #if(dbg >= 1)
-		cout << "filter3bb2 procEvent->parameters: ";
+		if(debugOutput) cout << "filter3bb2 procEvent->parameters: ";
 #endif
 
 #if(dbg >= 1)
-				cout << procEvent->parameters[i] << ", ";
+				if(debugOutput) cout << procEvent->parameters[i] << ", ";
 #endif
 
 		for(j = 0; j < 3; j++)
@@ -1112,7 +1197,7 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 
 
 #if(dbg >= 1)
-		cout << endl;
+		if(debugOutput) cout << endl;
 #endif
 		//footswitchStatus = 1;
 
@@ -1121,7 +1206,7 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[2]]);
 
 #if(FOOTSWITCH_ALWAYS_ON == 0)
-		if(footswitchStatus[procEvent->footswitchNumber] == 0)
+		if(footswitchStatus[procEvent->footswitchNumber] == false)
 		{
 			for(i = 0; i < bufferSize; i++)
 			{
@@ -1321,11 +1406,11 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 	{
 		/*if(procEvent->processContext == NULL || procEvent == NULL)
 		{
-			std::cout << "filter3bb2 processContext missing." << std::endl;
+			if(debugOutput) std::cout << "filter3bb2 processContext missing." << std::endl;
 		}
 		else
 		{
-			std::cout << "freeing allocated filter3bb2." << std::endl;
+			if(debugOutput) std::cout << "freeing allocated filter3bb2." << std::endl;
 			free(procEvent->processContext);
 		}*/
 		filter3bb2Count--;
@@ -1333,11 +1418,11 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 	}
 	else
 	{
-		std::cout << "filter3bb2: invalid actiond: " << action << std::endl;
+		if(debugOutput) std::cout << "filter3bb2: invalid actiond: " << action << std::endl;
 		status = 0;
 	}
 #if(dbg >= 1)
-	cout << "***** EXITING: Effects2::filter3bb2: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: Effects::filter3bb2: " << status << endl;
 #endif
 	return status;
 
@@ -1345,14 +1430,14 @@ int filter3bb2(/*int*/ char action, struct ProcessEvent *procEvent, struct Proce
 
 
 #define dbg 0
-int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 	unsigned int i,j;
 	static LohifilterbContext context[20];
 	int status = 0;
 #if(dbg >= 1)
-	cout << "***** ENTERING: Effects2::lohifilterb" << endl;
-	cout << "action: " << action << endl;
+	if(debugOutput) cout << "***** ENTERING: Effects::lohifilterb" << endl;
+	if(debugOutput) cout << "action: " << action << endl;
 #endif
 
 	if(action == 'c')
@@ -1361,17 +1446,20 @@ int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 	}
 	else if(action == 'l')
 	{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading lohifilterb" << endl;
+#endif
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[1]]);
 
 		/*procEvent->processContext = (double *)calloc(50, sizeof(double));
 		if(procEvent->processContext == NULL)
 		{
-			std::cout << "lohifilterb calloc failed." << std::endl;
+			if(debugOutput) std::cout << "lohifilterb calloc failed." << std::endl;
 		}
 		else
 		{
-			std::cout << "lohifilterb calloc succeeded." << std::endl;
+			if(debugOutput) std::cout << "lohifilterb calloc succeeded." << std::endl;
 			for(i = 0; i < 50; i++)
 			{
 				((double *)procEvent->processContext)[i] = 0.00;
@@ -1425,7 +1513,7 @@ int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 
 		/*if(procEvent->processContext == NULL)
 		{
-			cout << "audioCallback lohifilterb context not allocated" << endl;
+			if(debugOutput) cout << "audioCallback lohifilterb context not allocated" << endl;
 			status = -1;
 		}*/
 		//for(int i = 0; i < 1; i++)
@@ -1439,13 +1527,13 @@ int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 //			for(j = 0; j < 4; j++)
 //			{
 //				lp_x[i][j] = ((double *)procEvent->processContext)[/*i*8+j*4*/contextIndex++];
-//				//std::cout << "start: lp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(15) << procEvent->processContext[i*8+j*4] << std::endl;
+//				//if(debugOutput) std::cout << "start: lp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(15) << procEvent->processContext[i*8+j*4] << std::endl;
 //				lp_y[i][j] = ((double *)procEvent->processContext)[/*i*8+j*4+1*/contextIndex++];
-//				//std::cout << "start: lp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << lp_y[i][j] << std::endl;
+//				//if(debugOutput) std::cout << "start: lp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << lp_y[i][j] << std::endl;
 //				hp_x[i][j] = ((double *)procEvent->processContext)[/*i*8+j*4+2*/contextIndex++];
-//				//std::cout << "start: hp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_x[i][j] << std::endl;
+//				//if(debugOutput) std::cout << "start: hp_x[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_x[i][j] << std::endl;
 //				hp_y[i][j] = ((double *)procEvent->processContext)[/*i*8+j*4+3*/contextIndex++];
-//				//std::cout << "start: hp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_y[i][j] << std::endl;
+//				//if(debugOutput) std::cout << "start: hp_y[" << i << "][" << j << "]: " << std::fixed << std::setprecision(3) << hp_y[i][j] << std::endl;
 //			}
 //		}
 		for(j = 0; j < 3; j++)
@@ -1486,13 +1574,13 @@ int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 
 		//for(i = 0; i < NUMBER_OF_BANDS; i++)
 #if(dbg >= 1)
-		cout << "lohifilterb procEvent->parameters: ";
+		if(debugOutput) cout << "lohifilterb procEvent->parameters: ";
 #endif
 
 		i = 0;
 		{
 #if(dbg >= 1)
-				cout << procEvent->parameters[i] << ", ";
+				if(debugOutput) cout << procEvent->parameters[i] << ", ";
 #endif
 				/*lp_b[i][0] = lp3[tempIndex][0];
 				lp_b[i][1] = lp3[tempIndex][1];
@@ -1523,7 +1611,7 @@ int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 				hp_a[i][2] = hp[tempIndex][5];
 		}
 #if(dbg >= 1)
-		cout << endl;
+		if(debugOutput) cout << endl;
 #endif
 
 		//for(j = 0; j < NUMBER_OF_BANDS; j++)
@@ -1535,7 +1623,7 @@ int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 			for(i = 0; i < bufferSize; i++)
 			{
 #if(FOOTSWITCH_ALWAYS_ON == 0)
-				if(footswitchStatus[procEvent->footswitchNumber] == 0)//(input[i] > 0.00000)
+				if(footswitchStatus[procEvent->footswitchNumber] == false)//(input[i] > 0.00000)
 				{
 					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 					processBufferAveSample(procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i], &procBufferArray[procEvent->outputBufferIndexes[0]]);
@@ -1693,11 +1781,11 @@ int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 	{
 		/*if(procEvent->processContext == NULL || procEvent == NULL)
 		{
-			std::cout << "lohifilterb processContext missing." << std::endl;
+			if(debugOutput) std::cout << "lohifilterb processContext missing." << std::endl;
 		}
 		else
 		{
-			std::cout << "freeing allocated lohifilterb." << std::endl;
+			if(debugOutput) std::cout << "freeing allocated lohifilterb." << std::endl;
 			free(procEvent->processContext);
 		}*/
 		lohifilterbCount--;
@@ -1705,23 +1793,23 @@ int lohifilterb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 	}
 	else
 	{
-		std::cout << "lohifilterb: invalid actiond: " << action << std::endl;
+		if(debugOutput) std::cout << "lohifilterb: invalid actiond: " << action << std::endl;
 		status = 0;
 	}
 #if(dbg >= 1)
-	cout << "***** EXITING: Effects2::lohifilterb: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: Effects::lohifilterb: " << status << endl;
 #endif
 	return status;
 }
 
-int mixerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int mixerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 	unsigned int i,j;
 	int status = 0;
 
 #if(dbg >= 1)
-	cout << "***** ENTERING: Effects2::mixerb" << endl;
-	cout << "action: " << action << endl;
+	if(debugOutput) cout << "***** ENTERING: Effects::mixerb" << endl;
+	if(debugOutput) cout << "action: " << action << endl;
 #endif
 
 	if(action == 'c')
@@ -1730,6 +1818,9 @@ int mixerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 	}
 	else if(action == 'l')
 	{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading mixerb" << endl;
+#endif
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		for(i = 0; i < 256; i++)
 		{
@@ -1750,7 +1841,7 @@ int mixerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 		for(i = 0; i < bufferSize; i++)
 		{
 #if(FOOTSWITCH_ALWAYS_ON == 0)
-			if(footswitchStatus[procEvent->footswitchNumber] == 0)
+			if(footswitchStatus[procEvent->footswitchNumber] == false)
 			{
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 			}
@@ -1788,23 +1879,23 @@ int mixerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 	}
 	else
 	{
-		std::cout << "mixerb: invalid actiond: " << action << std::endl;
+		if(debugOutput) std::cout << "mixerb: invalid actiond: " << action << std::endl;
 		status = 0;
 	}
 
 #if(dbg >= 1)
-	cout << "***** EXITING: Effects2::mixerb: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: Effects::mixerb: " << status << endl;
 #endif
 	return status;
 }
 
-int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 	unsigned int i,j;
 	int status = 0;
 #if(dbg >= 1)
-	cout << "***** ENTERING: Effects2::volumeb" << endl;
-	cout << "action: " << action << endl;
+	if(debugOutput) cout << "***** ENTERING: Effects::volumeb" << endl;
+	if(debugOutput) cout << "action: " << action << endl;
 #endif
 
 	if(action == 'c')
@@ -1813,6 +1904,9 @@ int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessB
 	}
 	else if(action == 'l')
 	{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading volumeb" << endl;
+#endif
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		for(i = 0; i < 256; i++)
 		{
@@ -1829,7 +1923,7 @@ int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessB
 		for(i = 0; i < bufferSize; i++)
 		{
 #if(FOOTSWITCH_ALWAYS_ON == 0)
-			if(footswitchStatus[procEvent->footswitchNumber] == 0)
+			if(footswitchStatus[procEvent->footswitchNumber] == false)
 			{
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 			}
@@ -1859,12 +1953,12 @@ int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessB
 	}
 	else
 	{
-		std::cout << "volumeb: invalid actiond: " << action << std::endl;
+		if(debugOutput) std::cout << "volumeb: invalid actiond: " << action << std::endl;
 		status = 0;
 	}
 
 #if(dbg >= 1)
-	cout << "***** EXITING: Effects2::volumeb: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: Effects::volumeb: " << status << endl;
 #endif
 	return status;
 }
@@ -1872,15 +1966,15 @@ int volumeb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessB
 const float tapLvlTest[20] = {0.2000,0.1900,0.1800,0.1700,0.1600,0.1500,0.1400,0.1300,0.1200,0.1100,
 		0.1000,0.0900,0.0800,0.0700,0.0600,0.0500,0.0400,0.0300,0.0200,0.0100};
 
-int reverbb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int reverbb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 	unsigned int i,j;
 	int status = 0;
 	static ReverbbContext context[20];
 
 #if(dbg >= 1)
-	cout << "***** ENTERING: Effects2::reverbb" << endl;
-	cout << "action: " << action << endl;
+	if(debugOutput) cout << "***** ENTERING: Effects::reverbb" << endl;
+	if(debugOutput) cout << "action: " << action << endl;
 #endif
 
 	if(action == 'c')
@@ -1889,6 +1983,9 @@ int reverbb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessB
 	}
 	else if(action == 'l')
 	{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading reverbb" << endl;
+#endif
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 		procEvent->processTypeIndex = reverbbCount;//processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
 		reverbbCount++;
@@ -1960,13 +2057,13 @@ int reverbb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessB
 
 
 #if(dbg >= 2)
-		cout << "procEvent->parameters[0]: " << procEvent->parameters[0];
-		cout << "procEvent->parameters[1]: " << procEvent->parameters[1];
-		cout << "delayCoarse: " << delayCoarse;
-		cout << "delayFine: " << delayFine;
-		cout << "delay: " << delay;
-		cout << "inputPtr: " << inputPtr;
-		cout << "outputPtr: " << outputPtr << endl;
+		if(debugOutput) cout << "procEvent->parameters[0]: " << procEvent->parameters[0];
+		if(debugOutput) cout << "procEvent->parameters[1]: " << procEvent->parameters[1];
+		if(debugOutput) cout << "delayCoarse: " << delayCoarse;
+		if(debugOutput) cout << "delayFine: " << delayFine;
+		if(debugOutput) cout << "delay: " << delay;
+		if(debugOutput) cout << "inputPtr: " << inputPtr;
+		if(debugOutput) cout << "outputPtr: " << outputPtr << endl;
 #endif
 
 		resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[0]]);
@@ -1975,7 +2072,7 @@ int reverbb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessB
 		for(i = 0; i < bufferSize; i++)
 		{
 #if(FOOTSWITCH_ALWAYS_ON == 0)
-			if(footswitchStatus[procEvent->footswitchNumber] == 0)
+			if(footswitchStatus[procEvent->footswitchNumber] == false)
 			{
 				procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 				if(inputPtr >= DELAY_BUFFER_LENGTH) inputPtr = 0;
@@ -2033,25 +2130,25 @@ int reverbb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessB
 	}
 	else
 	{
-		std::cout << "reverbb: invalid actiond: " << action << std::endl;
+		if(debugOutput) std::cout << "reverbb: invalid actiond: " << action << std::endl;
 		status = 0;
 	}
 
 #if(dbg >= 1)
-	cout << "***** EXITING: Effects2::reverbb: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: Effects::reverbb: " << status << endl;
 #endif
 	return status;
 }
 
-int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 	unsigned int i,j;
 
 	int status = 0;
 
 #if(dbg >= 1)
-	cout << "***** ENTERING: Effects2::waveshaperb" << endl;
-	cout << "action: " << action << endl;
+	if(debugOutput) cout << "***** ENTERING: Effects::waveshaperb" << endl;
+	if(debugOutput) cout << "action: " << action << endl;
 #endif
 
 	const double divider = 5.5;//7.5;
@@ -2074,6 +2171,9 @@ int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 	}
 	else if(action == 'l')
 	{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading waveshaperb" << endl;
+#endif
 		initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 
 
@@ -2230,7 +2330,7 @@ int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 			    m[j] = (y[j+1]-y[j])/(x[j+1]-x[j]);
 			    b[j] = y[j]-m[j]*x[j];
 #if(dbg >= 2)
-			    cout << "m[" << j << "] = " << m[j] << "\tb[" << j << "] = " << b[j] << endl;
+			    if(debugOutput) cout << "m[" << j << "] = " << m[j] << "\tb[" << j << "] = " << b[j] << endl;
 #endif
 				/*m[j] = context[procEvent->processTypeIndex].m[j];
 				b[j] = context[procEvent->processTypeIndex].b[j];*/
@@ -2286,7 +2386,7 @@ int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 		if(antiAliasingNumber > 1)
 		{
 			resetBufferAve(&procBufferArray[procEvent->outputBufferIndexes[0]]);
-			if(footswitchStatus[procEvent->footswitchNumber] == 0)//(input[i] > 0.00000)
+			if(footswitchStatus[procEvent->footswitchNumber] == false)//(input[i] > 0.00000)
 			{
 				for(i = 0; i < bufferSize; i++)
 				{
@@ -2503,7 +2603,7 @@ int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 			for(i = 0; i < bufferSize; i++)
 			{
 	#if(FOOTSWITCH_ALWAYS_ON == 0)
-				if(footswitchStatus[procEvent->footswitchNumber] == 0)//(input[i] > 0.00000)
+				if(footswitchStatus[procEvent->footswitchNumber] == false)//(input[i] > 0.00000)
 				{
 					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 				}
@@ -2729,23 +2829,23 @@ int waveshaperb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 	}
 	else
 	{
-		std::cout << "waveshaperb: invalid actiond: " << action << std::endl;
+		if(debugOutput) std::cout << "waveshaperb: invalid actiond: " << action << std::endl;
 		status = 0;
 	}
 #if(dbg >= 1)
-	cout << "***** EXITING: Effects2::waveshaperb: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: Effects::waveshaperb: " << status << endl;
 #endif
 	return status;
 }
 
 
-int samplerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int samplerb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 		unsigned int i,j;
 		int status = 0;
 	#if(dbg >= 1)
-		cout << "***** ENTERING: Effects2::samplerb" << endl;
-		cout << "action: " << action << endl;
+		if(debugOutput) cout << "***** ENTERING: Effects::samplerb" << endl;
+		if(debugOutput) cout << "action: " << action << endl;
 	#endif
 
 		static SamplerbContext context[20];
@@ -2756,6 +2856,9 @@ int samplerb(/*int*/ char action, struct ProcessEvent *procEvent, struct Process
 		}
 		else if(action == 'l')
 		{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading samplerb" << endl;
+#endif
 			initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 			procEvent->processTypeIndex = samplerbCount;//processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
 			samplerbCount++;
@@ -2773,7 +2876,7 @@ int samplerb(/*int*/ char action, struct ProcessEvent *procEvent, struct Process
 			for(i = 0; i < bufferSize; i++)
 			{
 	#if(FOOTSWITCH_ALWAYS_ON == 0)
-				if(footswitchStatus[procEvent->footswitchNumber] == 0)
+				if(footswitchStatus[procEvent->footswitchNumber] == false)
 				{
 					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 				}
@@ -2802,23 +2905,23 @@ int samplerb(/*int*/ char action, struct ProcessEvent *procEvent, struct Process
 		}
 		else
 		{
-			std::cout << "samplerb: invalid action: " << action << std::endl;
+			if(debugOutput) std::cout << "samplerb: invalid action: " << action << std::endl;
 			status = 0;
 		}
 
 	#if(dbg >= 1)
-		cout << "***** EXITING: Effects2::samplerb: " << status << endl;
+		if(debugOutput) cout << "***** EXITING: Effects::samplerb: " << status << endl;
 	#endif
 		return status;
 }
 
-int oscillatorb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int oscillatorb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 		unsigned int i,j;
 		int status = 0;
 	#if(dbg >= 1)
-		cout << "***** ENTERING: Effects2::oscillatorb" << endl;
-		cout << "action: " << action << endl;
+		if(debugOutput) cout << "***** ENTERING: Effects::oscillatorb" << endl;
+		if(debugOutput) cout << "action: " << action << endl;
 	#endif
 
 		static OscillatorbContext context[20];
@@ -2829,6 +2932,9 @@ int oscillatorb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 		}
 		else if(action == 'l')
 		{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading oscillatorb" << endl;
+#endif
 			initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 			procEvent->processTypeIndex = oscillatorbCount;//processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
 			oscillatorbCount++;
@@ -2846,7 +2952,7 @@ int oscillatorb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 			for(i = 0; i < bufferSize; i++)
 			{
 	#if(FOOTSWITCH_ALWAYS_ON == 0)
-				if(footswitchStatus[procEvent->footswitchNumber] == 0)
+				if(footswitchStatus[procEvent->footswitchNumber] == false)
 				{
 					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 				}
@@ -2875,23 +2981,23 @@ int oscillatorb(/*int*/ char action, struct ProcessEvent *procEvent, struct Proc
 		}
 		else
 		{
-			std::cout << "oscillatorb: invalid actiond: " << action << std::endl;
+			if(debugOutput) std::cout << "oscillatorb: invalid actiond: " << action << std::endl;
 			status = 0;
 		}
 
 	#if(dbg >= 1)
-		cout << "***** EXITING: Effects2::oscillatorb: " << status << endl;
+		if(debugOutput) cout << "***** EXITING: Effects::oscillatorb: " << status << endl;
 	#endif
 		return status;
 }
 
-int blankb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, int *footswitchStatus)
+int blankb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBuffer *procBufferArray, bool *footswitchStatus)
 {
 		unsigned int i,j;
 		int status = 0;
 	#if(dbg >= 1)
-		cout << "***** ENTERING: Effects2::blankb" << endl;
-		cout << "action: " << action << endl;
+		if(debugOutput) cout << "***** ENTERING: Effects::blankb" << endl;
+		if(debugOutput) cout << "action: " << action << endl;
 	#endif
 
 		static BlankbContext context[20];
@@ -2902,6 +3008,9 @@ int blankb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 		}
 		else if(action == 'l')
 		{
+#if(dbg >= 0)
+		if(debugOutput) cout << "***** loading blankb" << endl;
+#endif
 			initBufferAveParameters(&procBufferArray[procEvent->outputBufferIndexes[0]]);
 			procEvent->processTypeIndex = delaybCount;//processContext = (DelayContext *)calloc(1, sizeof(DelayContext));
 			blankbCount++;
@@ -2919,7 +3028,7 @@ int blankb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 			for(i = 0; i < bufferSize; i++)
 			{
 	#if(FOOTSWITCH_ALWAYS_ON == 0)
-				if(footswitchStatus[procEvent->footswitchNumber] == 0)
+				if(footswitchStatus[procEvent->footswitchNumber] == false)
 				{
 					procBufferArray[procEvent->outputBufferIndexes[0]].buffer[i] = procBufferArray[procEvent->inputBufferIndexes[0]].buffer[i];
 				}
@@ -2948,12 +3057,12 @@ int blankb(/*int*/ char action, struct ProcessEvent *procEvent, struct ProcessBu
 		}
 		else
 		{
-			std::cout << "blankb: invalid actiond: " << action << std::endl;
+			if(debugOutput) std::cout << "blankb: invalid actiond: " << action << std::endl;
 			status = 0;
 		}
 
 	#if(dbg >= 1)
-		cout << "***** EXITING: Effects2::blankb: " << status << endl;
+		if(debugOutput) cout << "***** EXITING: Effects::blankb: " << status << endl;
 	#endif
 		return status;
 }

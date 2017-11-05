@@ -5,8 +5,8 @@
  *      Author: mike
  */
 
-#ifndef BASEUIINT_H_
-#define BASEUIINT_H_
+#ifndef BASEUIINT2_H_
+#define BASEUIINT2_H_
 
 #include <stdint.h>
 
@@ -16,56 +16,51 @@
 #include <string>
 #include <cstring>
 #include <linux/types.h>
+#include <errno.h>
 
 #include <iostream>
 #include <fcntl.h>
 #include <json/json.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
-#include "SharedMemoryInt.h"
+//#include "SharedMemoryInt.h"
 #include "ComboDataInt.h"
-#define TX_BUFFER_SIZE 1500
-#define RX_BUFFER_SIZE 1500
+/*#define TX_BUFFER_SIZE 1500
+#define RX_BUFFER_SIZE 1500*/
 #define SEND_BUFFER_SIZE 250
 
+#define RX_DATA_SIZE 100
+#define TX_DATA_SIZE 1000
 
-//static void pabort(const char *s);
 
-/*struct Request {
-	int requestCommand;
-	char requestData[200];
-};*/
 using namespace std;
 
-class BaseUiInt : public SharedMemoryInt
+class BaseUiInt //: public SharedMemoryInt
 {
 
 private:
 
-	unsigned int cmSectionStartAddress;
-	unsigned int cmSectionSize;
-	unsigned int uiSectionStartAddress;
-	unsigned int uiSectionSize;
-	char gpioStr[5];
 
+	char gpioStr[5];
 protected:
-	char uiData[TX_BUFFER_SIZE];
-	char request[RX_BUFFER_SIZE];
+	char uiData[TX_DATA_SIZE];
+	char request[RX_DATA_SIZE];
 	char sendBuffer[SEND_BUFFER_SIZE];
-	//uint8_t status;
+	uint8_t status;
 
 public:
 	BaseUiInt();
-	BaseUiInt(unsigned int cmSectionStartAddress, unsigned int cmSectionSize,
-			unsigned int uiSectionStartAddress, unsigned int uiSectionSize);
 
-	/*virtual*/ ~BaseUiInt()/*{cout << "~BaseUiInt" << endl;}*/;
+	~BaseUiInt();
+
+
 	GPIOClass newData;// = GPIOClass(SHARED_MEMORY_READY);//, "in");
 	GPIOClass dataSource;// = GPIOClass(SHARED_MEMORY_READY);//, "in");
 
+	int pedalUiTxFd;
+	int pedalUiRxFd;
 
 	int checkForNewData(void);
-	int checkForNewData(int sectionIndex);
 	string getUserRequest(void);
 	int processUserRequest(char *request);
 	virtual int sendComboUiData(Json::Value uiData){return 0;}

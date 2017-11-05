@@ -86,6 +86,7 @@ jack_client_t * JackCpp::AudioIO::client(){
 JackCpp::AudioIO::AudioIO(std::string name, unsigned int inPorts, unsigned int outPorts, bool startServer) 
 	throw(std::runtime_error) : mCmdBuffer(256,true)
 {
+	std::cout << "AudioIO name: " << name << std::endl;
   createClient(name, inPorts, outPorts, startServer);
 }
 
@@ -109,7 +110,7 @@ void JackCpp::AudioIO::createClient(std::string name, unsigned int inPorts, unsi
 
 	//set the error callback
 	jack_set_error_function (error_callback);
-
+	std::cout << "AudioIO name2: " << name << std::endl;
 	/* try to become a client of the JACK server */
 	if ((mJackClient = jack_client_open (name.c_str(), jack_open_options, NULL)) == 0) {
 		throw std::runtime_error("cannot create client jack server not running?");

@@ -10,15 +10,18 @@
 #define FILE_SIZE 32000
 /*
 #if(dbg >= 1)
-	cout << "***** ENTERING: UsbInt::" << endl;
+	if(debugOutput) cout << "***** ENTERING: UsbInt::" << endl;
 #endif
 
 #if(dbg >= 1)
-	cout << "***** EXITING: UsbInt::" << endl;
+	if(debugOutput) cout << "***** EXITING: UsbInt::" << endl;
 #endif
 */
 
 using namespace std;
+
+extern bool debugOutput;
+
 UsbInt::UsbInt() {
 	// TODO Auto-generated constructor stub
 	this->hostUiFD = 0;
@@ -40,12 +43,12 @@ int UsbInt::connect()
 		}
 		else
 		{
-			cout << "failed to close USB:"  << errno << endl;
+			if(debugOutput) cout << "failed to close USB:"  << errno << endl;
 		}
 	}
 	else
 	{
-		cout << "USB already connected." << endl;
+		if(debugOutput) cout << "USB already connected." << endl;
 	}
 
 }
@@ -58,7 +61,7 @@ int UsbInt::disconnect()
 	}
 	else
 	{
-		cout << "failed to close USB: " << errno << endl;
+		if(debugOutput) cout << "failed to close USB: " << errno << endl;
 	}
 }
 
@@ -72,34 +75,33 @@ int UsbInt::isConnected()
 int UsbInt::newData(void)
 {
 #if(dbg >= 1)
-	cout << "***** ENTERING: UsbInt::newData" << endl;
+	if(debugOutput) cout << "***** ENTERING: UsbInt::newData" << endl;
 #endif
 	clearBuffer(this->usbInputBuffer,FILE_SIZE);
-
+	int status = 0;
 	ssize_t size_read = read(this->hostUiFD, this->usbInputBuffer, FILE_SIZE);
 	if(size_read > 1)
 	{
 #if(dbg >= 1)
-		cout << "USB received size: " << strlen(this->usbInputBuffer) << endl;
+		if(debugOutput) cout << "USB received size: " << strlen(this->usbInputBuffer) << endl;
 #endif
-		return 1;
+		status = 1;
 	}
 	else
-		return size_read;
+		status = size_read;
 
 #if(dbg >= 1)
-	cout << "***** EXITING: UsbInt::newData" << endl;
+	if(debugOutput) cout << "***** EXITING: UsbInt::newData" << endl;
 #endif
-
+	return status;
 }
 
 char *UsbInt::readData(void)
 {
-	if(strlen(usbInputBuffer) >= 0)
-		return usbInputBuffer;
+	if(strlen(this->usbInputBuffer) >= 0)
+		return this->usbInputBuffer;
 	else
 		return 0;
-
 }
 
 #define dbg 0
@@ -111,11 +113,11 @@ int UsbInt::writeData(char *input)
 	sprintf(this->usbOutputBuffer,"%s\r\n", input);
 
 #if(dbg >= 1)
-	cout << "***** ENTERING: UsbInt::writeData" << endl;
+	if(debugOutput) cout << "***** ENTERING: UsbInt::writeData" << endl;
 #endif
 #if(dbg >= 1)
 
-	cout << "dataString: " << this->usbOutputBuffer << endl;
+	if(debugOutput) cout << "dataString: " << this->usbOutputBuffer << endl;
 #endif
 
 	ssize_t size_write = write(this->hostUiFD, this->usbOutputBuffer, strlen(this->usbOutputBuffer));
@@ -124,7 +126,7 @@ int UsbInt::writeData(char *input)
 	else status = -1;
 
 #if(dbg >= 1)
-	cout << "***** EXITING: UsbInt::writeData" << endl;
+	if(debugOutput) cout << "***** EXITING: UsbInt::writeData" << endl;
 #endif
 
 	return status;

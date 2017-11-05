@@ -6,9 +6,9 @@
  */
 
 //#include "BaseUiInt.h"
-#include "config.h"
 #include "PedalUiInt.h"
-//#include "ComboDataInt.h"
+
+#include "config.h"
 #include "utilityFunctions.h"
 
 
@@ -43,11 +43,9 @@ using namespace std;
 //extern bool hostGuiActive;
 //extern int comboIndex;
 
-PedalUiInt::PedalUiInt(unsigned int cmSectionStartAddress, unsigned int cmSectionSize,
-		unsigned int uiSectionStartAddress, unsigned int uiSectionSize):BaseUiInt(
-				cmSectionStartAddress,cmSectionSize,uiSectionStartAddress,uiSectionSize)
+PedalUiInt::PedalUiInt()//:BaseUiInt()
 {
-	//this->status = 0;
+	this->status = 0;
 
 	//newData(SHARED_MEMORY_READY);
 
@@ -68,14 +66,7 @@ int PedalUiInt::checkForNewPedalData(void)
 
 	volatile int status = 0;
 
-	/*if(this->checkForNewData(1) == 1)
-	{
-		status = 1;
-#if(dbg >= 2)
-		cout << "new data from pedal" << endl;
-#endif
-	}*/
-	status = BaseUiInt::checkForNewData(1);
+	status = BaseUiInt::checkForNewData();
 #if(dbg >= 1)
 	cout << "***** EXITING: PedalUiInt::checkForNewPedalData: " << status << endl;
 #endif
@@ -91,23 +82,15 @@ int PedalUiInt::sendComboUiData(Json::Value uiJson)
 #if(dbg >= 1)
 	cout << "***** ENTERING: PedalUiInt::sendComboUiData" << endl;
 #endif
-	//if(this->status == 1) return 1;
 	uint8_t status = 0;
 	uint8_t effectIndex = 0;
 	uint8_t effectCount = 0;
 	uint8_t guiParamIndex = 0;
 	uint8_t guiParamCount = 0;
 
-	//const int length = 10;
-	//struct spi_ioc_transfer spi;
-
-	//int retVal;
-
 	for(int i = 0; i < TX_BUFFER_SIZE; i++) this->uiData[i] = 0;
-	//this->uiData[0] = 3;
 
-
-	strcpy((char *)this->uiData, "{title:");
+	/*strcpy((char *)this->uiData, "{title:");
 	strncat((char *)this->uiData, uiJson["title"].asCString(), strlen(uiJson["title"].asString().c_str()));
 
 	{
@@ -193,14 +176,36 @@ int PedalUiInt::sendComboUiData(Json::Value uiJson)
 			}
 		}
 		strcat((char *)this->uiData, "]}");
-	}
+	}*/
+
+	//cout << "creating uiJson string." << endl;
+	string uiJsonString = uiJson.toStyledString();
+	uiJsonString.erase(remove(uiJsonString.begin(), uiJsonString.end(), '\n'), uiJsonString.end());
+	uiJsonString.erase(remove(uiJsonString.begin(), uiJsonString.end(), '\r'), uiJsonString.end());
+	uiJsonString.erase(remove(uiJsonString.begin(), uiJsonString.end(), '\t'), uiJsonString.end());
+	uiJsonString.erase(remove(uiJsonString.begin(), uiJsonString.end(), ' '), uiJsonString.end());
+	/*cout << uiJsonString << endl;
+	cout << "creating uiJson Cstring." << endl;
+	char uiJsonCstring[1000];
+	strncpy(uiJsonCstring, uiJsonString.c_str(), 1000);
+	cout << uiJsonCstring << endl;
+	cout << "copying Cstring to uiData." << endl;*/
+	strncpy(this->uiData, uiJsonString.c_str(), 1000);
+
+
+	errno = 0;
+	//this->sendData(MCU_SHARED_MEMORY_SECTION_ADDRESS, this->uiData, strlen(this->uiData));
+	int txSentCount = write(this->pedalUiTxFd, this->uiData, strlen(this->uiData));
 #if(dbg>=2)
-	//printf("this->uiData: %s\n", this->uiData);
 	cout << "this->uiData:" << this->uiData << endl;
-	//printf("this->uiData length: %d\n", strlen(this->uiData));
 	cout << "this->uiData length:" << strlen(this->uiData) << endl;
+	cout << "txSentCount: " << txSentCount << endl;
+	if(txSentCount < 0)
+		cout << "FIFO write error: " << strerror(errno) << endl;
 #endif
-	this->sendData(MCU_SHARED_MEMORY_SECTION_ADDRESS, this->uiData, strlen(this->uiData));
+
+	if(txSentCount == strlen(this->uiData)) status = 0;
+	else status = -1;
 
 	for(int i = 0; i < TX_BUFFER_SIZE; i++) this->uiData[i] = 0;
 
@@ -209,4 +214,5 @@ int PedalUiInt::sendComboUiData(Json::Value uiJson)
 #endif
 	return status;
 }
+
 

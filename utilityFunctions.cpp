@@ -12,6 +12,7 @@
 long startStamp;
 long stopStamp;
 struct timeval tv;
+extern bool debugOutput;
 
 
 void startTimer(void)
@@ -26,7 +27,7 @@ int stopTimer(const char *description)
 	stopStamp = 1000000*tv.tv_sec+tv.tv_usec;
 	if(description != NULL)
 	{
-		cout << "******" << description << "time: " << stopStamp - startStamp << endl;
+		if(debugOutput) if(debugOutput) cout << "******" << description << "time: " << stopStamp - startStamp << endl;
 	}
 
 	return (int)(stopStamp - startStamp);
@@ -84,22 +85,22 @@ void printAsciiNumbers(char *charArrayData)
 {
 	int charArrayLength = strlen(charArrayData);
 
-	cout << endl;
+	if(debugOutput) if(debugOutput) cout << endl;
 	for(int i = 0; i < charArrayLength; i++)
 	{
-		cout << charArrayData[i] << ',';
+		if(debugOutput) if(debugOutput) cout << charArrayData[i] << ',';
 	}
-	cout << endl;
+	if(debugOutput) if(debugOutput) cout << endl;
 }
 
 void printAsciiNumbers(string stringData)
 {
-	cout << endl;
+	if(debugOutput) if(debugOutput) cout << endl;
 	for(int i = 0; i < stringData.length(); i++)
 	{
-		cout << (int)(stringData[i]) << ',';
+		if(debugOutput) if(debugOutput) cout << (int)(stringData[i]) << ',';
 	}
-	cout << endl;
+	if(debugOutput) if(debugOutput) cout << endl;
 
 }
 

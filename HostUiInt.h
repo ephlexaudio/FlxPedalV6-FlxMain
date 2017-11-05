@@ -9,9 +9,11 @@
 #define HOSTUIINT_H_
 
 #include "UsbInt.h"
+#include <vector>
 #include "utilityFunctions.h"
 #include "FileSystemFuncts.h"
 #include "GPIOClass.h"
+#include "structs.h"
 //using namespace std;
 #define FILE_SIZE 32000
 class HostUiInt

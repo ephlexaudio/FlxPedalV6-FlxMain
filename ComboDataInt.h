@@ -17,6 +17,7 @@
 #include <vector>
 #include <map>
 #include <json/json.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -73,27 +74,38 @@ private:
 	std::vector<Connector> dataReadyList;
 	string currentTargetProcess;
 	/**** Tasks for sequencing processes *******/
+
+	void readUnsequencedConnectionListJsonIntoUnsequencedConnectionListStruct();
 	int getTargetProcessIndex(string processName);
 	std::vector<string> getProcessInputs(string processName);
 	std::vector<string> getProcessOutputs(string processName);
 	int getConnectionDestinationIndex(string destinationProcessName);
 	int fillUnsequencedProcessList();
 	string getFirstProcess();
+	std::vector<string> getFirstProcesses();
 	string getNextProcess();
+	std::vector<string> getNextProcesses();
 	std::vector<IndexedParameter> tempParameterArray;
 
 	//int addFirstConnectionToConnectionList();
 	//int addNextConnectionToConnectionList(string srcProcess, string srcPort);
 	//bool checkConnectionListDestinationsAgainstUnsequencedProcessInputs(string processName);
-	bool areDataBuffersReadyForProcessInputs(string processName);
+	int areDataBuffersReadyForProcessInputs(string processName);
+	int areAllProcessInputsSatisfied(string processName);
 	int transferProcessToSequencedProcessList(string processName);
 	//void deleteConnectionsFromConnectionListContainingProcessInputs(string processName);
 	int addOutputConnectionsToDataReadyList(string processName);
+	int addOutputConnectionsToDataReadyList(vector<string> processNames);
+	int transferProcessesToSequencedProcessList(vector<string> processNames);
 	bool isUnsequencedProcessListEmpty();
 	bool isOutputInDataReadyList(Connector output);
+	Json::Value getJsonValueFromUnorderedJsonValueList(int index, string arrayName, Json::Value arrayContainer);
+	Json::Value getJsonValueFromUnorderedJsonValueList(int index, Json::Value array);
 	//int getParameterArray();
 	Json::Value mergeConnections(Json::Value srcConn, Json::Value destConn);
+	ProcessConnection mergeConnections(ProcessConnection srcConn, ProcessConnection destConn);
 	bool compareConnectionsSrc2Dest(Json::Value conn1, Json::Value conn2);
+	bool compareConnectionsSrc2Dest(ProcessConnection srcConn, ProcessConnection destConn);
 	int transferConnection(Json::Value conn, vector<Json::Value> *srcConnArray, vector<Json::Value> *destConnArray);
 	int getProcessSequenceIndex(string processName);
 	int getControlSequenceIndex(string controlName);
@@ -107,15 +119,20 @@ public:
 	std::vector<Json::Value> unsequencedProcessListJson;
 	std::vector<Process> unsequencedProcessListStruct;
 	std::vector<Json::Value> unsequencedConnectionListJson;
+	std::vector<ProcessConnection> unsequencedConnectionListStruct;
 
 	std::vector<Json::Value> connectionsJson;
 	std::vector<Json::Value> processesJson;
+
 	std::vector<Process> processesStruct;
+	//std::vector<ProcessConnection> connectionsStruct;
+	std::vector<ProcessConnection> connectionsStruct;
+	std::vector<Control> controlsStruct;
+	std::vector<ControlConnection> controlConnectionsStruct;
+
 	std::vector<IndexedParameter> unsortedParameterArray;
 	std::vector<IndexedParameter> sortedParameterArray;
 	std::vector<IndexedControlParameter> controlParameterArray;
-	std::vector<Control> controlsStruct;
-	std::vector<ControlConnection> controlConnectionsStruct;
 	//std::vector<Parameter> parameterArray;
 
 	ProcessEvent processSequence[20]; // do these 5 variables/structs need to be public ??
@@ -128,10 +145,12 @@ public:
 	int controlCount;
 	int bufferCount;
 
-	void printSequencedConnectionList();
+	void printSequencedConnectionJsonList();
+	void printSequencedConnectionStructList();
 	void printUnsequencedProcessList();
 	void printSequencedProcessList();
-	void printUnsequencedConnectionList();
+	void printUnsequencedConnectionJsonList();
+	void printUnsequencedConnectionStructList();
 	void printUnsortedParameters();
 	void printProcessParameter(int controlParameterIndex);
 	void printSortedParameters();
@@ -167,9 +186,10 @@ public:
 	//int setProcInputBufferIndex(struct ProcessEvent *procEvent, int processInputIndex, int inputBufferIndex, struct ProcessBuffer *procBufferArray);
 	//int setProcOutputBufferIndex(struct ProcessEvent *procEvent, int processOutputIndex, int outputBufferIndex, struct ProcessBuffer *procBufferArray);
 
-	int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::Value> connectionsJson);
+	int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<ProcessConnection/*Json::Value*/> connectionsStruct);
 	int connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray();
-	int connectProcessInputsToProcessOutputBuffersUsingConnectionsJson();
+	int connectProcessInputsToProcessOutputBuffersUsingConnectionsStruct/*Json*/();
+	//int connectProcessInputsToProcessOutputBuffersUsingConnectionsStruct();
 	int initializeControlDataIntoControlEventElement();
 	int loadComboStructFromName(char *comboName);
 	int loadComboStructFromJsonString(string comboJson);

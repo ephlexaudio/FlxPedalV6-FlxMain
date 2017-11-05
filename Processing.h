@@ -21,10 +21,9 @@
 #include <json/json.h>
 #include <jack/jack.h>
 #include "Controls.h"
-#include "Effects2.h"
-//#include "Combo.h"
 #include "structs.h"
 #include "ComboDataInt.h"
+#include "Effects2.h"
 #include "utilityFunctions.h"
 #include "jackaudioio.h"
 
@@ -60,8 +59,8 @@ private:
 
 	//ProcessBuffer outProcBuffer;
 	int switchedStatus = 0;
-	double gateOnThreshold = 0.01;
-	double gateOffThreshold = 0.30;
+	double gateCloseThreshold = 0.01;
+	double gateOpenThreshold = 0.30;
 	double inPosPeak[2];
 	double inNegPeak[2];
 	double inMaxAmp[2];
@@ -73,7 +72,7 @@ private:
 	//double comboInputBuffer[2][BUFFER_SIZE];
 	//double comboOutputBuffer[2][BUFFER_SIZE];
 	double inputLevel = 0.01;
-	bool gateStatus;
+	bool gateOpen;
 	double envGenTriggerMultiple = 5.0;
 	double triggerHighThreshold;
 	double triggerLowThreshold;
@@ -98,7 +97,7 @@ private:
 	double outNegPeak[2];
 	double outMaxAmp[2][2];
 	double outGain;
-	bool audioCallbackRunning;
+	//bool audioCallbackRunning;
 	bool processingEnabled;
 
 public:
@@ -106,7 +105,7 @@ public:
 	~Processing();
 	int comboIndex;
 	string comboName;
-	int footswitchStatus[10];
+	bool footswitchStatus[10];
 	bool processingUpdated;
 	bool updateProcessing;
 	bool processingContextAllocationError;
@@ -131,7 +130,7 @@ public:
 	int getProcessData(int index, double *data);
 	int getPitch(bool activate, double *signal);
 	int clearProcessData(int index, double *data);
-	int updateFootswitch(int footswitchStatus[]);
+	int updateFootswitch(bool footswitchStatus[]);
 	int enableProcessing();
 	int disableProcessing();
 	int bypassAll();

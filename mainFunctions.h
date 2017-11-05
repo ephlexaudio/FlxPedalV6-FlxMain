@@ -55,8 +55,10 @@ int closeJack(void);
 int openIPCFiles(void);
 int closeIPCFiles(void);*/
 
-int getRunningProcesses(void);
-int initializePedal(char *fileName);
+//int getRunningProcesses(void);
+int loadComponentSymbols(void);
+int loadControlTypeSymbols(void);
+
 int loadCombo(void);
 int runCombo(void);
 //int updateCombo(int paramIndex, int paramValueIndex);
@@ -86,6 +88,5 @@ int deleteComboStructFromMapAndList(string comboName);
 int deleteComboNameFromList(string comboName);
 
 
-int readFootswitches(void);
-int bypassAll(void);
+
 #endif /* MAINFUNCTIONS_H_ */

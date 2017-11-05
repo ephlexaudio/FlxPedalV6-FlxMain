@@ -22,8 +22,8 @@
 #include <json/json.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
+
 #include "BaseUiInt.h"
-//#include "SharedMemoryInt.h"
 #include "ComboDataInt.h"
 #define TX_BUFFER_SIZE 1500
 #define RX_BUFFER_SIZE 1500
@@ -42,8 +42,7 @@ class PedalUiInt : public BaseUiInt {
 
 
 public:
-	PedalUiInt(unsigned int cmSectionStartAddress, unsigned int cmSectionSize,
-			unsigned int uiSectionStartAddress, unsigned int uiSectionSize);
+	PedalUiInt();
 	~PedalUiInt();
 
 	int checkForNewPedalData(void);

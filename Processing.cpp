@@ -9,8 +9,10 @@
 #include "valueArrays.h"
 
 //#include "Filter3bb.h"
-using std::cout;
-using std::endl;
+extern bool debugOutput;
+
+//using std::if(debugOutput) cout;
+//using std::endl;
 
 #define COMBO_DATA_VECTOR 0
 #define COMBO_DATA_ARRAY 0
@@ -18,12 +20,12 @@ using std::endl;
 #define COMBO_STRUCT 1
 /**************************************
 #if(dbg >= 1)
-	cout << "***** ENTERING: Processing::" << endl;
-	cout << ": " <<  << endl;
+	if(debugOutput) cout << "***** ENTERING: Processing::" << endl;
+	if(debugOutput) cout << ": " <<  << endl;
 #endif
 
 #if(dbg >= 1)
-	cout << "***** EXITING: Processing::: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: Processing::: " << status << endl;
 #endif
 
 #if(dbg >=2)
@@ -55,17 +57,17 @@ extern unsigned int bufferSize;
 //extern int globalComboIndex;
 int comboTime;
 
-Processing::Processing():JackCpp::AudioIO("processing", 2,2)
+Processing::Processing():JackCpp::AudioIO(string("processing"), 2,2)
 {
 	// TODO Auto-generated constructor stub
 	reserveInPorts(8);
 	reserveOutPorts(8);
-	this->gateOffThreshold = processingParams.noiseGate.highThres;
-	this->gateOnThreshold = processingParams.noiseGate.lowThres;
+	this->gateOpenThreshold = processingParams.noiseGate.highThres;
+	this->gateCloseThreshold = processingParams.noiseGate.lowThres;
 	this->triggerHighThreshold = processingParams.trigger.highThres;
 	this->triggerLowThreshold = processingParams.trigger.lowThres;
 	//this->checkInputs = false;
-	this->gateStatus = true;
+	this->gateOpen = false;
 	//this->inputsSwitched = false;
 	this->envTrigger = false;
 	this->envTriggerPeriods = 0;
@@ -88,6 +90,7 @@ Processing::Processing():JackCpp::AudioIO("processing", 2,2)
 	this->processingContextAllocationError = false;
 	this->updateProcessing = false;
 	this->outGain = 1.000;
+
 }
 
 Processing::~Processing()
@@ -116,17 +119,17 @@ int Combo::clearCheckInputs()
 	return status;
 }*/
 
-
+#define dbg 0
 bool Processing::areInputsSwitched(void) // see if JACK has connected input jacks backwards
 {
 	bool intInputsSwitched = false;
 #if(dbg >= 1)
-	cout << "***** ENTERING: Processing::" << endl;
-	cout << ": " <<  << endl;
+	if(debugOutput) cout << "***** ENTERING: Processing::" << endl;
+	if(debugOutput) cout << ": " <<  << endl;
 #endif
 
 #if(dbg >= 1)
-	cout << "***** EXITING: Processing::: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: Processing::: " << status << endl;
 #endif
 
 	usleep(300000);
@@ -139,28 +142,32 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 	inNegPeakArray[0][0] = inNegPeak[0];
 	inPosPeakArray[0][1] = inPosPeak[1];
 	inNegPeakArray[0][1] = inNegPeak[1];
-	fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
+	//fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
+	if(debugOutput) cout << "inPosPeak[0]: " << inPosPeak[0] << "\tinNegPeak[0]: " << inNegPeak[0] << "\tinPosPeak[1]: " << inPosPeak[1] << "\tinNegPeak[1]: " << inNegPeak[1] << endl;
 	usleep(50000);
 
 	inPosPeakArray[1][0] = inPosPeak[0];
 	inNegPeakArray[1][0] = inNegPeak[0];
 	inPosPeakArray[1][1] = inPosPeak[1];
 	inNegPeakArray[1][1] = inNegPeak[1];
-	fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
+	//fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
+	if(debugOutput) cout << "inPosPeak[0]: " << inPosPeak[0] << "\tinNegPeak[0]: " << inNegPeak[0] << "\tinPosPeak[1]: " << inPosPeak[1] << "\tinNegPeak[1]: " << inNegPeak[1] << endl;
 	usleep(50000);
 
 	inPosPeakArray[2][0] = inPosPeak[0];
 	inNegPeakArray[2][0] = inNegPeak[0];
 	inPosPeakArray[2][1] = inPosPeak[1];
 	inNegPeakArray[2][1] = inNegPeak[1];
-	fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
+	//fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
+	if(debugOutput) cout << "inPosPeak[0]: " << inPosPeak[0] << "\tinNegPeak[0]: " << inNegPeak[0] << "\tinPosPeak[1]: " << inPosPeak[1] << "\tinNegPeak[1]: " << inNegPeak[1] << endl;
 	usleep(50000);
 
 	inPosPeakArray[3][0] = inPosPeak[0];
 	inNegPeakArray[3][0] = inNegPeak[0];
 	inPosPeakArray[3][1] = inPosPeak[1];
 	inNegPeakArray[3][1] = inNegPeak[1];
-	fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
+	//fprintf(stderr,"inPosPeak[0]:%f\tnegPeak[0]:%f\t\tposPeak[1]:%f\tnegPeak[1]:%f\n", inPosPeak[0], inNegPeak[0], inPosPeak[1], inNegPeak[1]);
+	if(debugOutput) cout << "inPosPeak[0]: " << inPosPeak[0] << "\tinNegPeak[0]: " << inNegPeak[0] << "\tinPosPeak[1]: " << inPosPeak[1] << "\tinNegPeak[1]: " << inNegPeak[1] << endl;
 
 	system("echo \"1\" > /sys/class/gpio/gpio41/value");
 	system("echo \"0\" > /sys/class/gpio/gpio43/value");
@@ -174,21 +181,23 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 		if((0.098 < inPosPeakArray[i][1] && inPosPeakArray[i][1] < 0.1)) chan2GndCount++;
 	}
 
-	cout << "chan1GndCount: " << chan1GndCount << "\tchan2GndCount: " << chan2GndCount << endl;
+	if(debugOutput) cout << "chan1GndCount: " << chan1GndCount << "\tchan2GndCount: " << chan2GndCount << endl;
 	if(chan1GndCount > chan2GndCount)
 	{
 		intInputsSwitched = true;//switchedStatus = 1;
-		fprintf(stderr,"*******************inputs switched\n");
+		if(debugOutput) cout << "*******************inputs switched"  << endl;
+		//fprintf(stderr,"*******************inputs switched\n");
 	}
 	else
 	{
 		intInputsSwitched = false;//switchedStatus = 0;
-		fprintf(stderr,"*******************inputs not switched\n");
+		if(debugOutput) cout << "*******************inputs not switched"  << endl;
+		//fprintf(stderr,"*******************inputs not switched\n");
 	}
 	return intInputsSwitched;
 }
 
-
+#define dbg 0
 #if(COMBO_DATA_VECTOR == 1)
 #define dbg 1
 	int Processing::loadCombo(int loadComboIndex)
@@ -198,15 +207,15 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 		int outputBufferIndex = 1;
 		int connectBufferIndex = 0;*/
 	#if(dbg >= 1)
-		cout << "ENTERING: Processing::loadCombo" << endl;
+		if(debugOutput) cout << "ENTERING: Processing::loadCombo" << endl;
 	#endif
 
 		this->aveArrayIndex = 0;
 		comboDataVector[loadComboIndex].initProcBuffers(comboDataVector[loadComboIndex].procBufferArray); // reset all data ready flags to 0.
 
-		cout << "Control Count: " << comboDataVector[loadComboIndex].controlCount << endl;
-		cout << "Process Count: " << comboDataVector[loadComboIndex].processCount << endl;
-		cout << "Buffer Count: " << comboDataVector[loadComboIndex].bufferCount << endl;
+		if(debugOutput) cout << "Control Count: " << comboDataVector[loadComboIndex].controlCount << endl;
+		if(debugOutput) cout << "Process Count: " << comboDataVector[loadComboIndex].processCount << endl;
+		if(debugOutput) cout << "Buffer Count: " << comboDataVector[loadComboIndex].bufferCount << endl;
 
 		for(int i = 0; i < comboDataVector[loadComboIndex].controlCount; i++)
 		{
@@ -253,7 +262,7 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 		}
 
 	#if(dbg >= 1)
-		cout << "EXITING: Processing::loadCombo" << endl;
+		if(debugOutput) cout << "EXITING: Processing::loadCombo" << endl;
 	#endif
 
 		return status;
@@ -267,15 +276,15 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 		int outputBufferIndex = 1;
 		int connectBufferIndex = 0;*/
 	#if(dbg >= 1)
-		cout << "ENTERING: Processing::loadCombo" << endl;
+		if(debugOutput) cout << "ENTERING: Processing::loadCombo" << endl;
 	#endif
 
 		this->aveArrayIndex = 0;
 		comboDataArray[loadComboIndex].initProcBuffers(comboDataArray[loadComboIndex].procBufferArray); // reset all data ready flags to 0.
 
-		cout << "Control Count: " << comboDataArray[loadComboIndex].controlCount << endl;
-		cout << "Process Count: " << comboDataArray[loadComboIndex].processCount << endl;
-		cout << "Buffer Count: " << comboDataArray[loadComboIndex].bufferCount << endl;
+		if(debugOutput) cout << "Control Count: " << comboDataArray[loadComboIndex].controlCount << endl;
+		if(debugOutput) cout << "Process Count: " << comboDataArray[loadComboIndex].processCount << endl;
+		if(debugOutput) cout << "Buffer Count: " << comboDataArray[loadComboIndex].bufferCount << endl;
 
 		for(int i = 0; i < comboDataArray[loadComboIndex].controlCount; i++)
 		{
@@ -322,7 +331,7 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 		}
 
 	#if(dbg >= 1)
-		cout << "EXITING: Processing::loadCombo" << endl;
+		if(debugOutput) cout << "EXITING: Processing::loadCombo" << endl;
 	#endif
 
 		return status;
@@ -332,7 +341,7 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 #endif
 
 #if(COMBO_STRUCT == 1)
-#define dbg 1
+
 	int Processing::loadCombo(void)
 	{
 		int status = 0;
@@ -340,16 +349,16 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 		int outputBufferIndex = 1;
 		int connectBufferIndex = 0;*/
 	#if(dbg >= 1)
-		cout << "ENTERING: Processing::loadCombo" << endl;
-		cout << "currentComboStructIndex: " << currentComboStructIndex << endl;
+		if(debugOutput) cout << "ENTERING: Processing::loadCombo" << endl;
+		if(debugOutput) cout << "currentComboStructIndex: " << currentComboStructIndex << endl;
 	#endif
 
 		this->aveArrayIndex = 0;
 		//initProcBuffers(combo.procBufferArray); // reset all data ready flags to 0.
 
-		cout << "Control Count: " << combo.controlCount << endl;
-		cout << "Process Count: " << combo.processCount << endl;
-		cout << "Buffer Count: " << combo.bufferCount << endl;
+		if(debugOutput) cout << "Control Count: " << combo.controlCount << endl;
+		if(debugOutput) cout << "Process Count: " << combo.processCount << endl;
+		if(debugOutput) cout << "Buffer Count: " << combo.bufferCount << endl;
 
 		for(int i = 0; i < combo.controlCount; i++)
 		{
@@ -401,7 +410,7 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 		{
 			//initBufferAveParameters(&combo.procBufferArray[bufferIndex]);
 #if(dbg >= 2)
-			cout << "clearing procBufferArray[" << bufferIndex << "]:" << endl;
+			if(debugOutput) cout << "clearing procBufferArray[" << bufferIndex << "]:" << endl;
 #endif
 #if(PROC_BUFFER_REF == 1)
 			clearProcBuffer(&combo.procBufferArray[bufferIndex]);
@@ -410,7 +419,7 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 #endif
 		}
 #if(dbg >= 2)
-			cout << "clearing procBufferArray[58]:" << endl;
+			if(debugOutput) cout << "clearing procBufferArray[58]:" << endl;
 #endif
 #if(PROC_BUFFER_REF == 1)
 			clearProcBuffer(&combo.procBufferArray[58]);
@@ -419,7 +428,7 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 #endif
 
 	#if(dbg >= 1)
-		cout << "EXITING: Processing::loadCombo: " << status << endl;
+		if(debugOutput) cout << "EXITING: Processing::loadCombo: " << status << endl;
 	#endif
 
 		return status;
@@ -428,8 +437,8 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 
 
 
-double testBuffer[10][BUFFER_SIZE];
-#define dbg 0
+//double testBuffer[10][BUFFER_SIZE];
+#define dbg 1
 
 #if(COMBO_STRUCT == 1)
 	int Processing::audioCallback(jack_nframes_t nframes,
@@ -439,10 +448,10 @@ double testBuffer[10][BUFFER_SIZE];
 					audioBufVector outBufs)
 	{
 		int status = 0;
-		//cout << "ENTERING audioCallback:  " << endl;
+		//if(debugOutput) cout << "ENTERING audioCallback:  " << endl;
 		//bool envTrigger = false;
 
-		this->audioCallbackRunning = true;
+		//this->audioCallbackRunning = true;
 		bool processDone = false;
 		double inPosPeak[2];
 		double inNegPeak[2];
@@ -458,7 +467,7 @@ double testBuffer[10][BUFFER_SIZE];
 		outPosPeak[1] = 0.00;
 		outNegPeak[1] = 0.00;
 	#if(dbg >= 1)
-		//cout << "ENTERING audioCallback:  " << endl;
+		//if(debugOutput) cout << "ENTERING audioCallback:  " << endl;
 	#endif
 
 	//#if(TIMING_DBG == 1)
@@ -469,7 +478,7 @@ double testBuffer[10][BUFFER_SIZE];
 		//if(audioCallbackComboIndex == this->comboIndex && this->processingEnabled == true && this->updateProcessing == false)
 		if(this->processingEnabled == true && this->processingUpdated == true)
 		{
-			//cout << "PROCESSING ACTIVE." << endl;
+			//if(debugOutput) cout << "PROCESSING ACTIVE." << endl;
 			for(unsigned int i = 0; i < bufferSize; i++)
 			{
 				if(inputsSwitched)
@@ -489,7 +498,7 @@ double testBuffer[10][BUFFER_SIZE];
 				if(inNegPeak[1] > inBufs[1][i]) inNegPeak[1] = inBufs[1][i];
 
 			}
-			//cout << "testBuffer[0]: " << testBuffer[0][0] << "\ttestBuffer[1]: " << testBuffer[1][0] << endl;
+			//if(debugOutput) cout << "testBuffer[0]: " << testBuffer[0][0] << "\ttestBuffer[1]: " << testBuffer[1][0] << endl;
 			this->inPosPeak[0] = inPosPeak[0];
 			this->inNegPeak[0] = inNegPeak[0];
 			this->inPosPeak[1] = inPosPeak[1];
@@ -499,16 +508,16 @@ double testBuffer[10][BUFFER_SIZE];
 			this->inMaxAmp[1] = this->inPosPeak[1] - this->inNegPeak[1];
 
 			//********************** Noise gate function *********************
-//			if(this->gateStatus == false && ((inputsSwitched == false && this->gateOnThreshold > this->inMaxAmp[0]) || // noise gate
-//					(inputsSwitched == true && this->gateOnThreshold > this->inMaxAmp[1])))
+//			if(this->gateOpen == true && ((inputsSwitched == false && this->gateCloseThreshold > this->inMaxAmp[0]) || // noise gate
+//					(inputsSwitched == true && this->gateCloseThreshold > this->inMaxAmp[1])))
 //			{
-//				this->gateStatus = true;
+//				this->gateOpen = false;
 //				this->inputLevel = processingParams.noiseGate.gain;
 //			}
-//			if(this->gateStatus == true && ((inputsSwitched == false && this->gateOffThreshold < this->inMaxAmp[0]) || // noise gate
-//					(inputsSwitched == true && this->gateOffThreshold < this->inMaxAmp[1])))
+//			if(this->gateOpen == false && ((inputsSwitched == false && this->gateOpenThreshold < this->inMaxAmp[0]) || // noise gate
+//					(inputsSwitched == true && this->gateOpenThreshold < this->inMaxAmp[1])))
 //			{
-//				this->gateStatus = false;
+//				this->gateOpen = true;
 //				this->inputLevel = 1.0;
 //			}
 
@@ -551,96 +560,114 @@ double testBuffer[10][BUFFER_SIZE];
 
 
 		#if(dbg >= 2)
-			cout << "signal: " << this->inSignalLevel << ",signal delta: " << this->inSignalDeltaFilterOut << endl;
+			if(debugOutput) cout << "signal: " << this->inSignalLevel << ",signal delta: " << this->inSignalDeltaFilterOut << endl;
 		#endif
 			//***************************** Envelope trigger function *********************************
 
 			switch(this->gateEnvStatus)
 			{
-			case 0:	// noise gate on
-				this->gateStatus = true;
+			case 0:	// *************** NOISE GATE CLOSED *****************
+#if(dbg >= 1)
+		//if(debugOutput) cout << "case 0: noise gate closed" << endl;
+#endif
+				this->gateOpen = false;
 				this->inputLevel = processingParams.noiseGate.gain;
 				this->envTriggerPeriods = 0;
 				this->envTrigger = false;
-				if((inputsSwitched == false && this->gateOffThreshold < this->inMaxAmp[0]) || // noise gate
-						(inputsSwitched == true && this->gateOffThreshold < this->inMaxAmp[1]))
+				if((inputsSwitched == false && this->gateOpenThreshold < this->inMaxAmp[0]) || // noise gate
+						(inputsSwitched == true && this->gateOpenThreshold < this->inMaxAmp[1]))
 				{
 		#if(dbg >= 1)
-					cout << "level above noise gate high threshold: going to case 1." << endl;
+					if(debugOutput) cout << "PROCESSING: level above noise gate high threshold: going to case 1." << endl;
 		#endif
 		#if(dbg >= 2)
-					cout << "inSignalLevel: " << this->inSignalLevel << "\tsignalLevelLowPeak: " << this->inSignalLevelLowPeak << "\tsignalLevelHighPeak: " << this->inSignalLevelHighPeak << endl;
+					if(debugOutput) cout << "inSignalLevel: " << this->inSignalLevel << "\tsignalLevelLowPeak: " << this->inSignalLevelLowPeak << "\tsignalLevelHighPeak: " << this->inSignalLevelHighPeak << endl;
 		#endif
 					this->gateEnvStatus = 1;
+					this->inputLevel = 1.0;
 				}
 
 				break;
-			case 1:
+			case 1: // **************** NOISE GATE OPEN ********************
 		#if(dbg >= 1)
-				cout << "case 1" << endl;
+		//		if(debugOutput) cout << "case 1: noise gate open" << endl;
 		#endif
-				this->gateStatus = false;
-				this->inputLevel = 1.0;
+				this->gateOpen = true;
+				//this->inputLevel = 1.0;
 				this->envTrigger = false;
 
 
-				if((inputsSwitched == false && this->gateOnThreshold > this->inMaxAmp[0]) ||  // going below noise gate threshold
-						(inputsSwitched == true && this->gateOnThreshold > this->inMaxAmp[1]))
+				if((inputsSwitched == false && this->gateCloseThreshold > this->inMaxAmp[0]) ||  // going below noise gate threshold
+						(inputsSwitched == true && this->gateCloseThreshold > this->inMaxAmp[1]))
 				{
 		#if(dbg >= 1)
-					cout << "level below noise gate low threshold: going to case 0." << endl;
+					if(debugOutput) cout << "PROCESSING: level below noise gate low threshold: going to case 0." << this->inputLevel  << endl;
 		#endif
-					this->gateEnvStatus = 0;
+					if((this->inputLevel - 0.2) < processingParams.noiseGate.gain)
+					{
+						this->gateEnvStatus = 0;
+					}
+					else
+					{
+						this->inputLevel -= 0.2;
+					}
 				}
 				else if(this->inSignalDeltaFilterOut > this->triggerHighThreshold)
 				{
-					// pick applied to string, causing damping
+
 					this->envTriggerPeriods = 0;
-					//this->inSignalLevelLowPeak = this->inSignalLevel;
 					this->gateEnvStatus = 2;
 		#if(dbg >= 2)
-					cout << "inSignalLevel: " << this->inSignalLevel << "\tsignalLevelLowPeak: " << this->inSignalLevelLowPeak << "\tsignalLevelHighPeak: " << this->inSignalLevelHighPeak << endl;
+					if(debugOutput) cout << "inSignalLevel: " << this->inSignalLevel << "\tsignalLevelLowPeak: " << this->inSignalLevelLowPeak << "\tsignalLevelHighPeak: " << this->inSignalLevelHighPeak << endl;
 		#endif
 				}
 
 				break;
-			case 2:	// trigger on
+			case 2:	// **************** TRIGGER ON ********************
 		#if(dbg >= 1)
-				cout << "case 2" << endl;
+				if(debugOutput) cout << "PROCESSING: case 2: trigger on" << endl;
 		#endif
-				this->gateStatus = false;
+				this->gateOpen = true;//this->gateStatus = false;
 				//this->inputLevel = 1.0;
 				this->envTrigger = true;
 				this->gateEnvStatus = 3;
-				//cout << "pick detected: going to case 3." << endl;
+				//if(debugOutput) cout << "pick detected: going to case 3." << endl;
+
 				break;
-			case 3: // trigger off
-				this->gateStatus = false;
+			case 3: // **************** TRIGGER OFF ********************
+				this->gateOpen = true;//this->gateStatus = false;
 				//this->inputLevel = 1.0;
 				this->envTrigger = false;
 		#if(dbg >= 1)
-				cout << "case 3" << endl;
+		//		if(debugOutput) cout << "case 3: trigger off" << endl;
 		#endif
 
-				if((inputsSwitched == false && this->gateOnThreshold > this->inMaxAmp[0]) ||  // going below noise gate threshold
-						(inputsSwitched == true && this->gateOnThreshold > this->inMaxAmp[1]))
+				if((inputsSwitched == false && this->gateCloseThreshold > this->inMaxAmp[0]) ||  // going below noise gate threshold
+						(inputsSwitched == true && this->gateCloseThreshold > this->inMaxAmp[1]))
 				{
 		#if(dbg >= 1)
-					cout << "level below noise gate low threshold: going to case 0." << endl;
+					if(debugOutput) cout << "PROCESSING: level below noise gate low threshold: going to case 0. " << this->inputLevel << endl;
 		#endif
-					this->gateEnvStatus = 0;
+					if((this->inputLevel - 0.2) < processingParams.noiseGate.gain)
+					{
+						this->gateEnvStatus = 0;
+					}
+					else
+					{
+						this->inputLevel -= 0.2;
+					}
 				}
 				else if(this->inSignalDeltaFilterOut < this->triggerLowThreshold)
 				{
-					// pick releasing string, causing new vibration
+
 		#if(dbg >= 1)
-					cout << "pick released: going to case 1." << endl;
+					if(debugOutput) cout << "PROCESSING: pick released: going to case 1." << endl;
 		#endif
 					this->envTriggerPeriods = 0;
-					this->inSignalLevelHighPeak = this->inSignalLevel;
+					//this->inSignalLevelHighPeak = this->inSignalLevel;
 					this->gateEnvStatus = 1;
 		#if(dbg >= 2)
-					cout << "inSignalLevel: " << this->inSignalLevel << "\tsignalLevelLowPeak: " << this->inSignalLevelLowPeak << "\tsignalLevelHighPeak: " << this->inSignalLevelHighPeak << endl;
+					if(debugOutput) cout << "inSignalLevel: " << this->inSignalLevel << "\tsignalLevelLowPeak: " << this->inSignalLevelLowPeak << "\tsignalLevelHighPeak: " << this->inSignalLevelHighPeak << endl;
 		#endif
 				}
 
@@ -655,7 +682,7 @@ double testBuffer[10][BUFFER_SIZE];
 
 			this->processingContextAllocationError = false;
 
-			//this->getPitch(!this->gateStatus, combo.procBufferArray[combo.inputProcBufferIndex[0]].buffer);
+			//this->getPitch(this->gateOpen, combo.procBufferArray[combo.inputProcBufferIndex[0]].buffer);
 
 
 			//***************************** Run Controls for manipulating process parameters *************
@@ -675,7 +702,7 @@ double testBuffer[10][BUFFER_SIZE];
 			for(int i = 0; i < combo.processCount; i++)
 			{
 		#if(dbg >= 1)
-				//cout << "process number: " << i << endl;
+				//if(debugOutput) cout << "process number: " << i << endl;
 		#endif
 				switch(combo.processSequence[i].processType)
 				{
@@ -728,7 +755,7 @@ double testBuffer[10][BUFFER_SIZE];
 				if(this->processingContextAllocationError == true)
 				{
 					this->processingEnabled = false;
-					cout << "process or control context allocation failed: disabling processing." <<  endl;
+					if(debugOutput) cout << "process or control context allocation failed: disabling processing." <<  endl;
 					break;
 				}
 			}
@@ -780,7 +807,7 @@ double testBuffer[10][BUFFER_SIZE];
 				this->outMaxAmp[0][1] = this->outMaxAmp[0][0];
 				this->outMaxAmp[1][1] = this->outMaxAmp[1][0];
 #if(dbg >= 1)
-				cout << "out gain: " << this->outGain << "\toutput levels: " << this->outMaxAmp[0][0] << '\t' << this->outMaxAmp[1][0] << endl;
+				//if(debugOutput) cout << "out gain: " << this->outGain << "\toutput levels: " << this->outMaxAmp[0][0] << '\t' << this->outMaxAmp[1][0] << endl;
 #endif
 
 				if(this->outMaxAmp[0][1] > this->outMaxAmp[0][0]) this->outMaxAmp[0][0] = this->outMaxAmp[0][1];
@@ -812,24 +839,20 @@ double testBuffer[10][BUFFER_SIZE];
 				}
 			}
 
-
-
-
-
 		#if(SIGPROC_DBG)
 			int bufferIndex;
-			cout << "BUFFER AVERAGES: " << endl;
+			if(debugOutput) cout << "BUFFER AVERAGES: " << endl;
 			for(bufferIndex = 0; bufferIndex < this->bufferCount; bufferIndex++)
 			{
-				cout << this->procBufferArray[bufferIndex].average << ", ";
+				if(debugOutput) cout << this->procBufferArray[bufferIndex].average << ", ";
 			}
-			cout << endl;
+			if(debugOutput) cout << endl;
 		#endif
 		}
 		else
 		{
-			//cout << "straight thru signal." << endl;
-			//cout << "PROCESSING BYPASSED." << endl;
+			//if(debugOutput) cout << "straight thru signal." << endl;
+			//if(debugOutput) cout << "PROCESSING BYPASSED." << endl;
 			for(unsigned int i = 0; i < bufferSize; i++)
 			{
 				outBufs[0][i] = inBufs[0][i];
@@ -841,7 +864,7 @@ double testBuffer[10][BUFFER_SIZE];
 				if(inNegPeak[1] > inBufs[1][i]) inNegPeak[1] = inBufs[1][i];
 			}
 
-			//cout << "testBuffer[0]: " << testBuffer[0][0] << "\ttestBuffer[1]: " << testBuffer[1][0] << endl;
+			//if(debugOutput) cout << "testBuffer[0]: " << testBuffer[0][0] << "\ttestBuffer[1]: " << testBuffer[1][0] << endl;
 			this->inPosPeak[0] = inPosPeak[0];
 			this->inNegPeak[0] = inNegPeak[0];
 			this->inPosPeak[1] = inPosPeak[1];
@@ -849,18 +872,18 @@ double testBuffer[10][BUFFER_SIZE];
 
 			/*if(this->updateProcessing == true)
 			{
-				cout << "stopping combo." << endl;
+				if(debugOutput) cout << "stopping combo." << endl;
 				this->stopCombo();
-				cout << "loading combo." << endl;
+				if(debugOutput) cout << "loading combo." << endl;
 				this->loadCombo();
 				this->processingUpdated = true;
 				this->updateProcessing = false;
 				this->processingContextAllocationError = false;
-				cout << "combo loaded." << endl;
+				if(debugOutput) cout << "combo loaded." << endl;
 			}*/
 
 		}
-		this->audioCallbackRunning = false;
+		//this->audioCallbackRunning = false;
 	#if(TIMING_DBG == 1)
 		comboTime = stopTimer("audio processing");
 	#else
@@ -868,7 +891,7 @@ double testBuffer[10][BUFFER_SIZE];
 	#endif
 
 	#if(dbg >= 1)
-		//cout << "EXITING audioCallback: " << status << endl;
+		//if(debugOutput) cout << "EXITING audioCallback: " << status << endl;
 	#endif
 
 		return status;
@@ -952,7 +975,7 @@ int Processing::getPitch(bool activate, double *signal)
 	//lp_b[i][4] = lp[tempIndex][9];
 
 #if(dbg >= 1)
-	cout << "ENTERING: ProcessingControl::getPitch" << endl;
+	if(debugOutput) cout << "ENTERING: ProcessingControl::getPitch" << endl;
 #endif
 
 	//filter signal and get peak amplitudes. Get buffer positions using zero-crossing detection
@@ -1005,7 +1028,7 @@ int Processing::getPitch(bool activate, double *signal)
 				zeroCrossingCountArray[0] = zeroCrossingCount;
 				tempPitch = zeroCrossingCountArray[0] - zeroCrossingCountArray[1];
 			}
-			//cout << "posSlope: " << filterOutSample[0] << ":" << filterOutSample[1] << endl;
+			//if(debugOutput) cout << "posSlope: " << filterOutSample[0] << ":" << filterOutSample[1] << endl;
 		}
 
 		if(filterOutSample[1] > 0.0000  &&  filterOutSample[0] < 0.0000) // negative-slope zero-crossing
@@ -1014,7 +1037,7 @@ int Processing::getPitch(bool activate, double *signal)
 			tempPreFilterLow.amplitude = 0.0000; // reset to get new negative peak
 			postFilterHigh.amplitude = tempPostFilterHigh.amplitude; //reset to get new positive peak
 			preFilterHigh.amplitude = tempPreFilterHigh.amplitude; //reset to get new positive peak
-			//cout << "negSlope: " << filterOutSample[0] << ":" << filterOutSample[1] << endl;
+			//if(debugOutput) cout << "negSlope: " << filterOutSample[0] << ":" << filterOutSample[1] << endl;
 		}
 
 		if(zeroCrossingCount > 10000)
@@ -1042,7 +1065,7 @@ int Processing::getPitch(bool activate, double *signal)
 				//if(0 < tempPitch && tempPitch < 1000)
 					pitch = tempPitch;
 			}
-			//cout << "preFilterAmp: " << preFilterPeakToPeakAmplitude << "\tAmpRatio: " << postPreAmplitudeRatio  << "\tzCrossings: " << zeroCrossingCountArray[0] << ":" << zeroCrossingCountArray[1] << "\tpitch: " << pitch << "\tgetPitchFilterIndex: " << getPitchFilterIndex << endl;
+			//if(debugOutput) cout << "preFilterAmp: " << preFilterPeakToPeakAmplitude << "\tAmpRatio: " << postPreAmplitudeRatio  << "\tzCrossings: " << zeroCrossingCountArray[0] << ":" << zeroCrossingCountArray[1] << "\tpitch: " << pitch << "\tgetPitchFilterIndex: " << getPitchFilterIndex << endl;
 		}
 		else
 		{
@@ -1074,9 +1097,9 @@ int Processing::getPitch(bool activate, double *signal)
 				getPitchFilterIndex++;
 			}
 
-			cout << "getPitchFilterIndex: " << getPitchFilterIndex << "\tgetPitchFilterIndexAddendIndex: " << getPitchFilterIndexAddendIndex << endl;
+			if(debugOutput) cout << "getPitchFilterIndex: " << getPitchFilterIndex << "\tgetPitchFilterIndexAddendIndex: " << getPitchFilterIndexAddendIndex << endl;
 		}
-		cout << "preFilterAmp: " << preFilterPeakToPeakAmplitude << "\tAmpRatio: " << postPreAmplitudeRatio  << "\tzCrossings: " << zeroCrossingCountArray[0] << ":" << zeroCrossingCountArray[1] << "\tpitch: " << pitch << "\tgetPitchFilterIndex: " << getPitchFilterIndex << endl;
+		if(debugOutput) cout << "preFilterAmp: " << preFilterPeakToPeakAmplitude << "\tAmpRatio: " << postPreAmplitudeRatio  << "\tzCrossings: " << zeroCrossingCountArray[0] << ":" << zeroCrossingCountArray[1] << "\tpitch: " << pitch << "\tgetPitchFilterIndex: " << getPitchFilterIndex << endl;
 
 	}
 	else
@@ -1088,11 +1111,11 @@ int Processing::getPitch(bool activate, double *signal)
 	}
 
 #if(dbg >= 1)
-	cout << "EXITING ProcessingControl::getPitch: ";
+	if(debugOutput) cout << "EXITING ProcessingControl::getPitch: ";
 #if(dbg >= 2)
-	cout << "preFilterAmp: " << preFilterPeakToPeakAmplitude << "\tAmpRatio: " << postPreAmplitudeRatio  << "\tzCrossings: " << zeroCrossingCountArray[0] << ":" << zeroCrossingCountArray[1] << "\\tpitch: " << pitch << "\tgetPitchFilterIndex: " << getPitchFilterIndex << endl;
+	if(debugOutput) cout << "preFilterAmp: " << preFilterPeakToPeakAmplitude << "\tAmpRatio: " << postPreAmplitudeRatio  << "\tzCrossings: " << zeroCrossingCountArray[0] << ":" << zeroCrossingCountArray[1] << "\\tpitch: " << pitch << "\tgetPitchFilterIndex: " << getPitchFilterIndex << endl;
 #else
-	cout << endl;
+	if(debugOutput) cout << endl;
 	#endif
 #endif
 
@@ -1116,7 +1139,7 @@ int Processing::getPitch(bool activate, double *signal)
 int loadComponentSymbols(void)
 {
 #if(dbg >= 1)
-	cout << "ENTERING: ProcessingControl::loadComponentSymbols" << endl;
+	if(debugOutput) cout << "ENTERING: ProcessingControl::loadComponentSymbols" << endl;
 #endif
 
 	delayb('c', NULL, NULL, NULL);
@@ -1131,7 +1154,7 @@ int loadComponentSymbols(void)
 	//oscillatorb('c', NULL, NULL, NULL);
 	//blankb('c', NULL, NULL, NULL);
 #if(dbg >= 1)
-	cout << "EXITING ProcessingControl::loadComponentSymbols" << endl;
+	if(debugOutput) cout << "EXITING ProcessingControl::loadComponentSymbols" << endl;
 #endif
 
 	return 0;
@@ -1141,7 +1164,7 @@ int loadComponentSymbols(void)
 int loadControlTypeSymbols(void)
 {
 #if(dbg >= 1)
-	cout << "ENTERING: ProcessingControl::loadControlTypeSymbols" << endl;
+	if(debugOutput) cout << "ENTERING: ProcessingControl::loadControlTypeSymbols" << endl;
 #endif
 
 	struct ControlEvent loadControlType;
@@ -1154,13 +1177,13 @@ int loadControlTypeSymbols(void)
 	loadControlType.type = 3; // load test control type symbol data;
 	control('c', NULL, &loadControlType, NULL);
 #if(dbg >= 1)
-	cout << "EXITING ProcessingControl::loadControlTypeSymbols" << endl;
+	if(debugOutput) cout << "EXITING ProcessingControl::loadControlTypeSymbols" << endl;
 #endif
 
 	return 0;
 }
 
-
+#define dbg 0
 #if(COMBO_DATA_VECTOR == 1)
 	int Processing::stopCombo(int stopComboIndex)
 	{
@@ -1269,13 +1292,13 @@ int loadControlTypeSymbols(void)
 #endif
 
 #if(COMBO_STRUCT == 1)
-#define dbg 1
+
 	int Processing::stopCombo(void)
 	{
 		int status = 0;
 #if(dbg >= 1)
-	cout << "ENTERING: Processing::stopCombo" << endl;
-	cout << "oldComboStructIndex: " << oldComboStructIndex << endl;
+	if(debugOutput) cout << "ENTERING: Processing::stopCombo" << endl;
+	if(debugOutput) cout << "oldComboStructIndex: " << oldComboStructIndex << endl;
 #endif
 
 		int index = 0;
@@ -1334,7 +1357,7 @@ int loadControlTypeSymbols(void)
 		{
 			//initBufferAveParameters(combo.procBufferArray[bufferIndex]);
 #if(dbg >= 2)
-			cout << "clearing procBufferArray[" << bufferIndex << "]:" << endl;
+			if(debugOutput) cout << "clearing procBufferArray[" << bufferIndex << "]:" << endl;
 #endif
 #if(PROC_BUFFER_REF == 1)
 			clearProcBuffer(&combo.procBufferArray[bufferIndex]);
@@ -1343,7 +1366,7 @@ int loadControlTypeSymbols(void)
 #endif
 		}
 #if(dbg >= 2)
-			cout << "clearing procBufferArray[58]:" << endl;
+			if(debugOutput) cout << "clearing procBufferArray[58]:" << endl;
 #endif
 #if(PROC_BUFFER_REF == 1)
 			clearProcBuffer(&combo.procBufferArray[58]);
@@ -1356,7 +1379,7 @@ int loadControlTypeSymbols(void)
 		/*else
 			status = -1;*/
 #if(dbg >= 1)
-	cout << "EXITING: Processing::stopCombo: " << status << endl;
+	if(debugOutput) cout << "EXITING: Processing::stopCombo: " << status << endl;
 #endif
 
 		return status;
@@ -1365,30 +1388,30 @@ int loadControlTypeSymbols(void)
 
 
 #define dbg 0
-int Processing::updateFootswitch(int *footswitchStatus)
+int Processing::updateFootswitch(bool *footswitchStatus)
 {
 	int status = 0;
 
 #if(dbg >= 1)
-	cout << "ENTERING: Combo::updateFootswitch" << endl;
+	if(debugOutput) cout << "ENTERING: Combo::updateFootswitch" << endl;
 #endif
 
 #if(dbg >= 1)
-	cout << "footswitchStatus: ";
+	if(debugOutput) cout << "footswitchStatus: ";
 #endif
-	for(int i = 0; i < 10; i++)
+	for(int i = 0; i < FOOTSWITCH_COUNT; i++)
 	{
 		this->footswitchStatus[i] = footswitchStatus[i];
 #if(dbg >= 1)
-		cout << this->footswitchStatus[i] << ",";
+		if(debugOutput) cout << this->footswitchStatus[i] << ",";
 #endif
 	}
 #if(dbg >= 1)
-	cout << endl;
+	if(debugOutput) cout << endl;
 #endif
 
 #if(dbg >= 1)
-	cout << "EXITING: Combo::updateFootswitch: " << status << endl;
+	if(debugOutput) cout << "EXITING: Combo::updateFootswitch: " << status << endl;
 #endif
 	return status;
 }
@@ -1398,7 +1421,7 @@ int Processing::bypassAll()
 {
 	int status = 0;
 #if(dbg >= 2)
-	cout << "ENTERING: Combo::bypassAll" << endl;
+	if(debugOutput) cout << "ENTERING: Combo::bypassAll" << endl;
 #endif
 	for(int i = 0; i < 10; i++)
 	{
@@ -1406,19 +1429,19 @@ int Processing::bypassAll()
 	}
 
 #if(dbg >= 2)
-	cout << "EXITING: Combo::bypassAll: " << status << endl;
+	if(debugOutput) cout << "EXITING: Combo::bypassAll: " << status << endl;
 #endif
 	return status;
 }
 
-
+#define dbg 2
 #if(COMBO_DATA_VECTOR == 1)
 	int Processing::updateProcessParameter(string processName, int parameterIndex, int parameterValue)
 	{
 		int status = 0;
 #if(dbg >= 1)
-	cout << "ENTERING: Processing::updateProcessParameter" << endl;
-	cout << "processName: " << processName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
+	if(debugOutput) cout << "ENTERING: Processing::updateProcessParameter" << endl;
+	if(debugOutput) cout << "processName: " << processName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
 #endif
 		int procSequenceIndex = 0;
 		// processIndex for processSequence doesn't correspond to process indexing in
@@ -1435,10 +1458,10 @@ int Processing::bypassAll()
 			}
 		}
 	#if(dbg==1)
-		std::cout << "\t\tprocessName: " << processName << "\t\procSequenceIndex: " << procSequenceIndex << "parameterIndex: " << parameterIndex  << "\t\parameterValue: " << parameterValue << std::endl;
+		if(debugOutput) cout << "\t\tprocessName: " << processName << "\t\procSequenceIndex: " << procSequenceIndex << "parameterIndex: " << parameterIndex  << "\t\parameterValue: " << parameterValue << endl;
 	#endif
 #if(dbg >= 1)
-	cout << "EXITING: Processing::updateProcessParameter" << endl;
+	if(debugOutput) cout << "EXITING: Processing::updateProcessParameter" << endl;
 #endif
 		return status;
 	}
@@ -1448,8 +1471,8 @@ int Processing::bypassAll()
 	{
 		int status = 0;
 #if(dbg >= 1)
-	cout << "ENTERING: Processing::updateProcessParameter" << endl;
-	cout << "processName: " << processName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
+	if(debugOutput) cout << "ENTERING: Processing::updateProcessParameter" << endl;
+	if(debugOutput) cout << "processName: " << processName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
 #endif
 		int procSequenceIndex = 0;
 		// processIndex for processSequence doesn't correspond to process indexing in
@@ -1466,10 +1489,10 @@ int Processing::bypassAll()
 			}
 		}
 	#if(dbg==1)
-		std::cout << "\t\tprocessName: " << processName << "\t\procSequenceIndex: " << procSequenceIndex << "parameterIndex: " << parameterIndex  << "\t\parameterValue: " << parameterValue << std::endl;
+		if(debugOutput) cout << "\t\tprocessName: " << processName << "\t\procSequenceIndex: " << procSequenceIndex << "parameterIndex: " << parameterIndex  << "\t\parameterValue: " << parameterValue << endl;
 	#endif
 #if(dbg >= 1)
-	cout << "EXITING: Processing::updateProcessParameter" << endl;
+	if(debugOutput) cout << "EXITING: Processing::updateProcessParameter" << endl;
 #endif
 		return status;
 	}
@@ -1477,13 +1500,13 @@ int Processing::bypassAll()
 
 #endif
 #if(COMBO_STRUCT == 1)
-#define dbg 0
+
 	int Processing::updateProcessParameter(string processName, int parameterIndex, int parameterValue)
 	{
 		int status = 0;
 #if(dbg >= 1)
-	cout << "ENTERING: Processing::updateProcessParameter" << endl;
-	cout << "processName: " << processName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
+	if(debugOutput) cout << "ENTERING: Processing::updateProcessParameter" << endl;
+	if(debugOutput) cout << "processName: " << processName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
 #endif
 		int procSequenceIndex = 0;
 		// processIndex for processSequence doesn't correspond to process indexing in
@@ -1500,25 +1523,25 @@ int Processing::bypassAll()
 			}
 		}
 	#if(dbg>=2)
-		std::cout << "\t\tprocessName: " << processName << "\t\procSequenceIndex: " << procSequenceIndex << "parameterIndex: " << parameterIndex  << "\t\parameterValue: " << parameterValue << std::endl;
+		if(debugOutput) cout << "\t\tprocessName: " << processName << "\t\procSequenceIndex: " << procSequenceIndex << "parameterIndex: " << parameterIndex  << "\t\parameterValue: " << parameterValue << endl;
 	#endif
 
 #if(dbg >= 1)
-	cout << "EXITING: Processing::updateProcessParameter: " << status << endl;
+	if(debugOutput) cout << "EXITING: Processing::updateProcessParameter: " << status << endl;
 #endif
 		return status;
 	}
 #endif
 
 
-
+#define dbg 2
 #if(COMBO_DATA_VECTOR == 1)
 	#define dbg 0
 	int Processing::updateControlParameter(string controlName, int parameterIndex, int parameterValue)
 	{
 	#if(dbg>=1)
-		cout << "ENTERING: Processing::updateControlParameter" << endl;
-		cout << "controlName: " << controlName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
+		if(debugOutput) cout << "ENTERING: Processing::updateControlParameter" << endl;
+		if(debugOutput) cout << "controlName: " << controlName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
 	#endif
 		int status = 0;
 		int controlSequenceIndex = 0;
@@ -1533,19 +1556,19 @@ int Processing::bypassAll()
 			if(comboDataVector[this->comboIndex].controlSequence[controlIndex].name.compare(controlName) == 0)
 			{
 				comboDataVector[this->comboIndex].controlSequence[controlIndex].parameter[parameterIndex] = parameterValue;
-				cout << "UPDATING: control index: " << controlIndex << "\t parameter index: " << parameterIndex << "\t parameter value: " << parameterValue << endl;
+				if(debugOutput) cout << "UPDATING: control index: " << controlIndex << "\t parameter index: " << parameterIndex << "\t parameter value: " << parameterValue << endl;
 				controlSequenceIndex = controlIndex;
 				break;
 			}
 		}
 	#if(dbg>=2)
-		std::cout << "\t\tcontrolName: " << controlName  << "parameterIndex: " << parameterIndex  << "\tparameterValue: " << this->controlSequence[controlIndex].parameter[parameterIndex] << std::endl;
-		std::cout << "\t\ttargetProcessIndex: " << this->controlSequence[controlIndex].paramContConnection[0].processIndex;
-		std::cout << "\t\ttargetProcessName: " << this->processSequence[this->controlSequence[controlIndex].paramContConnection[0].processIndex].processName;
-		std::cout << "\t\ttargetProcessParameterIndex: " << this->controlSequence[controlIndex].paramContConnection[0].processParamIndex << endl;
+		if(debugOutput) cout << "\t\tcontrolName: " << controlName  << "parameterIndex: " << parameterIndex  << "\tparameterValue: " << this->controlSequence[controlIndex].parameter[parameterIndex] << endl;
+		if(debugOutput) cout << "\t\ttargetProcessIndex: " << this->controlSequence[controlIndex].paramContConnection[0].processIndex;
+		if(debugOutput) cout << "\t\ttargetProcessName: " << this->processSequence[this->controlSequence[controlIndex].paramContConnection[0].processIndex].processName;
+		if(debugOutput) cout << "\t\ttargetProcessParameterIndex: " << this->controlSequence[controlIndex].paramContConnection[0].processParamIndex << endl;
 	#endif
 	#if(dbg>=1)
-		cout << "EXITING: Processing::updateControlParameter" << endl;
+		if(debugOutput) cout << "EXITING: Processing::updateControlParameter" << endl;
 	#endif
 		return status;
 	}
@@ -1554,8 +1577,8 @@ int Processing::bypassAll()
 	int Processing::updateControlParameter(string controlName, int parameterIndex, int parameterValue)
 	{
 	#if(dbg>=1)
-		cout << "ENTERING: Processing::updateControlParameter" << endl;
-		cout << "controlName: " << controlName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
+		if(debugOutput) cout << "ENTERING: Processing::updateControlParameter" << endl;
+		if(debugOutput) cout << "controlName: " << controlName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
 	#endif
 		int status = 0;
 		int controlSequenceIndex = 0;
@@ -1570,19 +1593,19 @@ int Processing::bypassAll()
 			if(comboDataArray[this->comboIndex].controlSequence[controlIndex].name.compare(controlName) == 0)
 			{
 				comboDataArray[this->comboIndex].controlSequence[controlIndex].parameter[parameterIndex] = parameterValue;
-				cout << "UPDATING: control index: " << controlIndex << "\t parameter index: " << parameterIndex << "\t parameter value: " << parameterValue << endl;
+				if(debugOutput) cout << "UPDATING: control index: " << controlIndex << "\t parameter index: " << parameterIndex << "\t parameter value: " << parameterValue << endl;
 				controlSequenceIndex = controlIndex;
 				break;
 			}
 		}
 	#if(dbg>=2)
-		std::cout << "\t\tcontrolName: " << controlName  << "parameterIndex: " << parameterIndex  << "\tparameterValue: " << this->controlSequence[controlIndex].parameter[parameterIndex] << std::endl;
-		std::cout << "\t\ttargetProcessIndex: " << this->controlSequence[controlIndex].paramContConnection[0].processIndex;
-		std::cout << "\t\ttargetProcessName: " << this->processSequence[this->controlSequence[controlIndex].paramContConnection[0].processIndex].processName;
-		std::cout << "\t\ttargetProcessParameterIndex: " << this->controlSequence[controlIndex].paramContConnection[0].processParamIndex << endl;
+		if(debugOutput) cout << "\t\tcontrolName: " << controlName  << "parameterIndex: " << parameterIndex  << "\tparameterValue: " << this->controlSequence[controlIndex].parameter[parameterIndex] << endl;
+		if(debugOutput) cout << "\t\ttargetProcessIndex: " << this->controlSequence[controlIndex].paramContConnection[0].processIndex;
+		if(debugOutput) cout << "\t\ttargetProcessName: " << this->processSequence[this->controlSequence[controlIndex].paramContConnection[0].processIndex].processName;
+		if(debugOutput) cout << "\t\ttargetProcessParameterIndex: " << this->controlSequence[controlIndex].paramContConnection[0].processParamIndex << endl;
 	#endif
 	#if(dbg>=1)
-		cout << "EXITING: Processing::updateControlParameter" << endl;
+		if(debugOutput) cout << "EXITING: Processing::updateControlParameter" << endl;
 	#endif
 		return status;
 	}
@@ -1590,12 +1613,11 @@ int Processing::bypassAll()
 
 #endif
 #if(COMBO_STRUCT == 1)
-	#define dbg 1
 	int Processing::updateControlParameter(string controlName, int parameterIndex, int parameterValue)
 	{
 	#if(dbg >= 1)
-		cout << "ENTERING: Processing::updateControlParameter" << endl;
-		cout << "controlName: " << controlName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
+		if(debugOutput) cout << "ENTERING: Processing::updateControlParameter" << endl;
+		if(debugOutput) cout << "controlName: " << controlName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
 	#endif
 		int status = 0;
 		int controlSequenceIndex = 0;
@@ -1608,25 +1630,25 @@ int Processing::bypassAll()
 		for(controlIndex = 0; controlIndex < 20; controlIndex++)
 		{
 #if(dbg >= 2)
-			cout << "comparing: " << combo.controlSequence[controlIndex].name << " and " << controlName << endl;
+			if(debugOutput) cout << "comparing: " << combo.controlSequence[controlIndex].name << " and " << controlName << endl;
 #endif
 			if(combo.controlSequence[controlIndex].name.compare(controlName) == 0)
 			{
 				combo.controlSequence[controlIndex].parameter[parameterIndex] = parameterValue;
-				cout << "UPDATING: control index: " << controlIndex << "\t parameter index: " << parameterIndex << "\t parameter value: " << parameterValue << endl;
+				if(debugOutput) cout << "UPDATING: control index: " << controlIndex << "\t parameter index: " << parameterIndex << "\t parameter value: " << parameterValue << endl;
 				controlSequenceIndex = controlIndex;
 				break;
 			}
 		}
 
 	#if(dbg >= 2)
-		std::cout << "\t\tcontrolName: " << controlName  << "parameterIndex: " << parameterIndex  << "\tparameterValue: " << combo.controlSequence[controlIndex].parameter[parameterIndex] << std::endl;
-		std::cout << "\t\ttargetProcessIndex: " << combo.controlSequence[controlIndex].paramContConnection[0].processIndex;
-		std::cout << "\t\ttargetProcessName: " << combo.processSequence[combo.controlSequence[controlIndex].paramContConnection[0].processIndex].processName;
-		std::cout << "\t\ttargetProcessParameterIndex: " << combo.controlSequence[controlIndex].paramContConnection[0].processParamIndex << endl;
+		if(debugOutput) cout << "\t\tcontrolName: " << controlName  << "parameterIndex: " << parameterIndex  << "\tparameterValue: " << combo.controlSequence[controlIndex].parameter[parameterIndex] << endl;
+		if(debugOutput) cout << "\t\ttargetProcessIndex: " << combo.controlSequence[controlIndex].paramContConnection[0].processIndex;
+		if(debugOutput) cout << "\t\ttargetProcessName: " << combo.processSequence[combo.controlSequence[controlIndex].paramContConnection[0].processIndex].processName;
+		if(debugOutput) cout << "\t\ttargetProcessParameterIndex: " << combo.controlSequence[controlIndex].paramContConnection[0].processParamIndex << endl;
 	#endif
 	#if(dbg >= 1)
-		cout << "EXITING: Processing::updateControlParameter: " << status << endl;
+		if(debugOutput) cout << "EXITING: Processing::updateControlParameter: " << status << endl;
 	#endif
 		return status;
 	}
@@ -1638,12 +1660,12 @@ int Processing::enableProcessing()
 {
 
 #if(dbg==1)
-	cout << "ENTERING: Processing::enableProcessing" << endl;
+	if(debugOutput) cout << "ENTERING: Processing::enableProcessing" << endl;
 #endif
 
 	this->processingEnabled = true;
 #if(dbg>=1)
-	cout << "EXITING: Processing::enableProcessing" << endl;
+	if(debugOutput) cout << "EXITING: Processing::enableProcessing" << endl;
 #endif
 
 	return 0;
@@ -1653,12 +1675,12 @@ int Processing::enableProcessing()
 int Processing::disableProcessing()
 {
 #if(dbg==1)
-	cout << "ENTERING: Processing::disableProcessing" << endl;
+	if(debugOutput) cout << "ENTERING: Processing::disableProcessing" << endl;
 #endif
 
 	this->processingEnabled = false;
 #if(dbg>=1)
-	cout << "EXITING: Processing::disableProcessing" << endl;
+	if(debugOutput) cout << "EXITING: Processing::disableProcessing" << endl;
 #endif
 
 	return 0;
@@ -1670,17 +1692,17 @@ double Processing::getOutputAmplitudes(void)
 	double amplitude = 0.0000;
 
 #if(dbg >= 1)
-	cout << "ENTERING: Processing::getOutputAmplitudes" << endl;
+	if(debugOutput) cout << "ENTERING: Processing::getOutputAmplitudes" << endl;
 #endif
 	amplitude = this->inPosPeak[0] - this->inNegPeak[0];
 
 #if(dbg >= 2)
-	cout << "amplitude[0]: " <<  this->inPosPeak[0] - this->inNegPeak[0];
-	cout << "\tamplitude[1]: " <<  this->inPosPeak[1] - this->inNegPeak[1] << endl;
+	if(debugOutput) cout << "amplitude[0]: " <<  this->inPosPeak[0] - this->inNegPeak[0];
+	if(debugOutput) cout << "\tamplitude[1]: " <<  this->inPosPeak[1] - this->inNegPeak[1] << endl;
 #endif
 
 #if(dbg >= 1)
-	cout << "EXITING: Processing::getOutputAmplitudes: " << amplitude << endl;
+	if(debugOutput) cout << "EXITING: Processing::getOutputAmplitudes: " << amplitude << endl;
 #endif
 
 	return amplitude;

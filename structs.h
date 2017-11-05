@@ -33,20 +33,23 @@ struct EnvGenContext{
 
 
 struct LfoContext{
-	int  cycleTimeValueIndex; // let byte automatically recycle when it 255.
+	unsigned int  cycleTimeValueIndex;
 	double cyclePositionValue;
-	int int_cyclePositionValue;
+	unsigned int int_cyclePositionValue;
 	double waveValue;
 };
 
 
 /****************** EFFECTS CONTEXTS *********************/
 struct DelayContext{
-	double dummy[100];
+	//double dummy[100];
 	unsigned int inputPtr;
 	unsigned int outputPtr;
-	double delayBuffer[DELAY_BUFFER_LENGTH];
-	double dummy1[100];
+	double delayBuffer[DELAY_BUFFER_LENGTH+10];
+	//double dummy1[100];
+	double delayTimeAveragingBuffer[4];
+	double delaySignalAveragingBuffer[8];
+	unsigned int previousDelay;
 };
 
 #define NUMBER_OF_BANDS 2
@@ -138,11 +141,21 @@ struct Control{
 };
 
 
-struct ControlConnection{
-	string src;
-	string dest;
+
+struct Connector{
+	string object; // was "process", needed something more generic to cover "effect" and "control"
+	string port;
 };
 
+struct ControlConnection{
+	Connector src;
+	Connector dest;
+};
+
+struct ProcessConnection{
+	Connector src;
+	Connector dest;
+};
 
 
 
@@ -159,6 +172,8 @@ struct IndexedParameter{
 	int absParamIndex;
 	int paramValue;
 };
+
+
 struct IndexedControlParameter{
 	string effectName;
 	int effectIndex;
@@ -183,10 +198,10 @@ struct PedalUI{
 
 
 
-struct Connector{
+/*struct Connector{
 	string process;
 	string port;
-};
+};*/
 
 struct ParameterControlConnection{
 	int processIndex;
@@ -259,7 +274,7 @@ struct ControlEvent{
 	int paramContConnectionCountInv; // number of process parameters being written to by this control
 	//void *controlContext;
 	int controlTypeIndex;
-	bool gateStatus;
+	bool gateOpen;
 	bool envTriggerStatus;
 	double output;
 	double outputInv;
