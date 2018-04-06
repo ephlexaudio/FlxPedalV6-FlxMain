@@ -11,8 +11,8 @@
 #define testingServer 0
 #define testingPedalUi 0
 #define usbOnly 0
-#define hostUiDbg 1
-#define pedalUiDbg 1
+#define hostUiDbg 0
+#define pedalUiDbg 0
 #define processingDbg 0
 
 #include "config.h"
@@ -42,6 +42,7 @@
 #include <errno.h>
 //#include <hid.h>
 #include <time.h>
+#include <dirent.h>
 #include "utilityFunctions.h"
 //#include "BaseUiInt2.h"
 #include "ComboDataInt.h"
@@ -51,6 +52,7 @@
 #include "FileSystemFuncts.h"
 #include "GPIOClass.h"
 #include "ProcessingControl.h"
+#include "PedalUtilityData.h"
 /*extern "C" {
 #include "CFuncts.h"
 };*/
@@ -106,7 +108,8 @@ struct _segFaultInfo {
 
 int comboDataCount;  // this includes erased ComboDataInts
 ComboDataInt currentCombo;
-bool debugOutput = false;
+bool debugOutput = true;
+
 int globalComboIndex = 0;
 string globalComboName;
 std::vector<linuxProcess> linuxProcessList;
@@ -121,7 +124,8 @@ std::vector<string> componentNameList;
 #elif(COMBO_DATA_MAP == 1)
 	std::vector<string> comboList;
 #endif
-
+int delayFineDivisor;
+HostUiInt hostUi;
 
 
 
@@ -130,6 +134,7 @@ static void signal_handler(int sig)
 	//system("echo \"0\" > /sys/class/gpio/gpio13/value");
 	if(debugOutput) cout << "signal received: " << sig <<", OfxMain exiting ..." << endl;
 	//procCont.stop();
+	hostUi.close();
 	system("killall -9 jackd");
 	signal(sig, SIG_DFL);
 	kill(getpid(),sig);
@@ -154,10 +159,9 @@ extern GPIOClass footswitch[2];
 int footswitchStatusArray[10] = {0,0,0,0,0,0,0,0,0,0};
 int wrapperParamData[10] = {1,0,0,0,0,0,0,0,0,0};
 bool inputsSwitched;
-//int opLogFD = open("/home/opLog.txt",O_WRONLY);
 struct _jackParams jackParams;
 struct _processingParams processingParams;
-extern ProcessingControl procCont;
+ProcessingControl procCont;
 extern int comboTime;
 
 int inputCouplingMode;
@@ -165,6 +169,7 @@ int waveshaperMode;
 int antiAliasingNumber;
 
 ComboStruct combo;
+PedalUtilityData pedalUtilityData;
 int comboStructIndex = 0;
 int currentComboStructIndex = 0;
 int oldComboStructIndex = 0;
@@ -209,7 +214,6 @@ int main(int argc, char *argv[])
 	string pedalUiRequestData;
 	bool pedalUiRequestIsValid = false;
 
-	HostUiInt hostUi;
 
 	string hostUiRequest;
 	string hostUiRequestCommand;
@@ -235,8 +239,11 @@ int main(int argc, char *argv[])
 	bool serverRequestIsValid = false;
 	Json::Value serverRequestDataJson;
 	Json::Reader serverRequestReader;
+	bool loadSuccess = false;
 
-
+	//DIR *devDir = opendir("/dev");
+	struct dirent *dev;
+	struct stat devStat;
 	/*****************START: Start up and init of pedal *******************/
 	int connCount = 0;
 
@@ -264,6 +271,7 @@ int main(int argc, char *argv[])
 	//signal(SIGPIPE, SIG_IGN);
 	loadComponentSymbols();
 	loadControlTypeSymbols();
+	errno = 0;
 	//printf("OfxMain PID: %d.\n", ofxPid);
 
 	//usbMain();
@@ -286,85 +294,15 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/******* Get JACK initialization data ***************/
-	cout << "getting ofxParams.txt." << endl;
-	int ofxParamsFD = open("/home/ofxParams.txt",O_RDONLY);
-	/* read file into temp string */
-	read(ofxParamsFD, ofxParamString, 500);
-
-	ofxParamJsonData.clear();
-
-	if(ofxParamJsonReader.parse(ofxParamString, ofxParamJsonData) == false)
-	{
-		if(debugOutput) cout << "failed to read JACK initialization data file.\n" << endl;
-		/************ Should use default initialization data here ****************/
-		return -1;
-	}
-	antiAliasingNumber = atoi(ofxParamJsonData["antiAliasingNumber"].asString().c_str());
-	if(antiAliasingNumber > 1)
-	{
-		if(debugOutput) cout << "anti-aliasing: on." << endl;
-	}
-	else
-	{
-		if(debugOutput) cout << "anti-aliasing: off." << endl;
-	}
-
-	/*if(ofxParamJsonData["antiAliasingNumber"].asString().compare("on") == 0)
-	{
-		antiAliasing = true;
-		if(debugOutput) cout << "anti-aliasing: on." << endl;
-	}
-	else
-	{
-		antiAliasing = false;
-		if(debugOutput) cout << "anti-aliasing: off." << endl;
-	}*/
-
-	if(ofxParamJsonData["inputCoupling"].asString().compare("offset") == 0)
-	{
-		inputCouplingMode = 0;
-		if(debugOutput) cout << "input coupling mode: averaging offset." << endl;
-	}
-	else if(ofxParamJsonData["inputCoupling"].asString().compare("filter") == 0)
-	{
-		inputCouplingMode = 1;
-		if(debugOutput) cout << "input coupling mode: highpass filter." << endl;
-	}
-	else
-	{
-		inputCouplingMode = 2;
-		if(debugOutput) cout << "input coupling mode: none." << endl;
-	}
 
 
-	if(ofxParamJsonData["waveshaperMode"].asString().compare("circuitModel") == 0)
-	{
-		waveshaperMode = 0;
-		if(debugOutput) cout << "waveshaper mode: circuit model." << endl;
-	}
-	else
-	{
-		waveshaperMode = 1;
-		if(debugOutput) cout << "waveshaper mode: slope/intercept." << endl;
-	}
-
-	jackParams.period = atoi(ofxParamJsonData["jack"]["period"].asString().c_str());
-	bufferSize = jackParams.period;
-	jackParams.buffer = atoi(ofxParamJsonData["jack"]["buffer"].asString().c_str());
-	if(debugOutput) cout << "JACK period: " << jackParams.period << "\tJACK buffer: " << jackParams.buffer << endl;
-
-	processingParams.noiseGate.highThres = atof(ofxParamJsonData["noiseGate"]["highThres"].asString().c_str());
-	processingParams.noiseGate.lowThres = atof(ofxParamJsonData["noiseGate"]["lowThres"].asString().c_str());
-	processingParams.noiseGate.gain = atof(ofxParamJsonData["noiseGate"]["gain"].asString().c_str());
-	if(debugOutput) cout << "Noise gate low threshold: " << processingParams.noiseGate.lowThres << "\tNoise gate high threshold: " << processingParams.noiseGate.highThres << endl;
-	processingParams.trigger.highThres = atof(ofxParamJsonData["trigger"]["highThres"].asString().c_str());
-	processingParams.trigger.lowThres = atof(ofxParamJsonData["trigger"]["lowThres"].asString().c_str());
-	if(debugOutput) cout << "Trigger low threshold: " << processingParams.trigger.lowThres << "\tTrigger high threshold: " << processingParams.trigger.highThres << endl;
 	for(int i = 0; i < argc; i++)
 	{
 		printf("argument[%d]: %s\n", i, argv[i]);
 	}
+
+	pedalUtilityData.readUtilityDataFromFile();
+	delayFineDivisor = pedalUtilityData.getDelayFineDivisor();
 
 	if(argc > 1)
 	{
@@ -413,6 +351,7 @@ int main(int argc, char *argv[])
 
 
 	startJack();
+	procCont.disableAudioOutput();
 	procCont.start();
 
 
@@ -432,7 +371,7 @@ int main(int argc, char *argv[])
 
 
 	FILE *pedalUiProc;
-	if(ofxParamJsonData["usbEnable"].asBool())
+	if(pedalUtilityData.getUsbEnableMode())
 	{
 		pedalUiProc = popen("/home/FlxPedalUi", "w");
 		if(debugOutput) cout << "launching FlxPedalUi with USB enabled." << endl;
@@ -451,7 +390,43 @@ int main(int argc, char *argv[])
 	while(exit == 0)
 	{
 		//************* Process requests from Host UI Interface  *************
+		//hostGuiActive = false;
+		/*cout << "Device list: " << endl;
 
+		DIR *devDir = opendir("/dev");
+		while((dev = readdir(devDir)) != NULL)
+		{
+			cout << dev->d_name << endl;
+			if(strcmp(dev->d_name,"ttyGS0") == 0)
+			{
+				hostGuiActive = true;
+				break;
+			}
+			else hostGuiActive = false;
+		}
+		closedir(devDir);*/
+
+
+		/*if(hostUi.isConnected() == true)
+		{
+
+			if(hostUi.isPortOpen() == false)
+			{
+				hostUi.open();
+				hostGuiActive = true;
+			}
+		}
+		else
+		{
+
+			if(hostUi.isPortOpen() == true)
+			{
+				hostUi.close();
+				hostGuiActive = false;
+			}
+		}*/
+
+		hostUi.clearAllInternalCharArrays();
 		if(hostGuiActive == true)
 		{
 	        if(hostUi.checkForNewHostData() == 1)
@@ -523,7 +498,7 @@ int main(int argc, char *argv[])
 						hostUi.sendComboList(comboNameArray);
 						//strcpy(hostUiResponseCharArray, comboNameArray.c_str());
 
-	#if(hostUiDbg == 1)
+	#if(hostUiDbg >= 2)
 						if(debugOutput) cout << comboNameArray << endl;
 						if(debugOutput) cout << "sent listCombos" << endl;
 	#endif
@@ -540,7 +515,7 @@ int main(int argc, char *argv[])
 #endif
 						{
 							globalComboName = hostUiRequestData;
-							procCont.disableEffects();
+							procCont.disableAudioOutput();
 #if(COMBO_DATA_VECTOR == 1)
 							int tempComboIndex = getComboVectorIndex(hostUiRequestData);
 							if(tempComboIndex >= 0)
@@ -553,21 +528,26 @@ int main(int argc, char *argv[])
 #endif
 							{
 								//procCont.disableEffects();
-								//comboDataMap[globalComboName].loadComboStructFromName((char *)globalComboName.c_str());
 
 #if(COMBO_DATA_VECTOR == 1 || COMBO_DATA_ARRAY == 1)
 								globalComboIndex = tempComboIndex;
 								if(debugOutput) cout << globalComboName << ":" << globalComboIndex << endl;
 								if(procCont.load(globalComboIndex) >= 0)
 #elif(COMBO_DATA_MAP == 1)
-								if(debugOutput) cout << hostUiRequestData << endl;
-								hostUi.sendComboToHost(hostUiRequestData);
+								if(debugOutput) cout << "hostUiRequestData: " << hostUiRequestData << endl;
+								//hostUi.sendComboToHost(hostUiRequestData);
 
+								procCont.disableEffects();
 
-								if(procCont.load(globalComboName) >= 0)
+								if(procCont.load(globalComboName) >= 0) loadSuccess = true;
+								else loadSuccess = false;
 #endif
+
+								procCont.enableEffects();
+
+								if(loadSuccess == true)
 								{
-//									hostUi.sendComboToHost(hostUiRequestData);
+									hostUi.sendComboToHost(hostUiRequestData);
 									strcpy(ofxMainStatus,"combo running");
 								}
 								else
@@ -576,7 +556,6 @@ int main(int argc, char *argv[])
 									strcpy(ofxMainStatus,"load failed");
 									status = -1;
 								}
-								//procCont.enableEffects();
 							}
 							else
 							{
@@ -584,8 +563,8 @@ int main(int argc, char *argv[])
 								strcpy(ofxMainStatus,"load failed");
 								status = -1;
 							}
-							procCont.enableEffects();
-
+							//procCont.enableEffects();
+							procCont.enableAudioOutput();
 						}
 						else
 						{
@@ -599,8 +578,8 @@ int main(int argc, char *argv[])
 						if(hostUiRequestData.empty() == false)
 						{
 							string procContString, paramString, valueString, procParamString;
-							volatile int absParamIndex;
-							volatile int valueIndex;
+							int absParamIndex;
+							int valueIndex;
 							//int size = hostUiRequestData.size();
 
 							//colon = requestData.find(":");
@@ -614,11 +593,12 @@ int main(int argc, char *argv[])
 									procContString = hostUiJsonData["control"].asString();
 									paramString = hostUiJsonData["parameter"].asString();
 									valueString = hostUiJsonData["value"].asString();
-
+#if(hostUiDbg >= 1)
 									if(debugOutput) cout << "control: " << procContString;
 									if(debugOutput) cout << "\tparameter: " << paramString;
 									if(debugOutput) cout << "\tvalue: " << valueString << endl;
-#if(COMBO_DATA_VECTOR == 1)
+#endif
+									#if(COMBO_DATA_VECTOR == 1)
 									absParamIndex = comboDataVector[globalComboIndex].getControlParameterIndex(procContString, paramString);
 #elif(COMBO_DATA_ARRAY == 1)
 									absParamIndex = comboDataArray[globalComboIndex].getControlParameterIndex(procContString, paramString);
@@ -650,14 +630,16 @@ int main(int argc, char *argv[])
 										//procCont.updateProcessParameter(absParamIndex, valueIndex);
 										if(debugOutput) cout << "paramString: " << paramString << '\t' << "valueString: " << valueString << endl;
 										//sprintf(procParamString, "%s:%d", paramName.c_str(), valueIndex);
-			#if(hostUiDbg == 1)
+			#if(hostUiDbg >= 1)
 										if(debugOutput) cout << "controlParamString: " << paramString.c_str() << ":" << valueIndex << endl;
 			#endif
 										//updateCombo(paramIndex,valueIndex);
 									}
 									else
 									{
+#if(hostUiDbg >= 1)
 										if(debugOutput) cout << "absParamIndex and/or valueIndex are out of range." << endl;
+#endif
 									}
 
 
@@ -700,19 +682,23 @@ int main(int argc, char *argv[])
 										//procCont.updateProcessParameter(absParamIndex, valueIndex);
 										if(debugOutput) cout << "paramString: " << paramString << '\t' << "valueString: " << valueString << endl;
 										//sprintf(procParamString, "%s:%d", paramName.c_str(), valueIndex);
-			#if(hostUiDbg == 1)
+			#if(hostUiDbg >= 1)
 										if(debugOutput) cout << "controlParamString: " << paramString.c_str() << ":" << valueIndex << endl;
 			#endif
 										//updateCombo(paramIndex,valueIndex);
 									}
 									else
 									{
+#if(hostUiDbg >= 1)
 										if(debugOutput) cout << "absParamIndex and/or valueIndex are out of range." << endl;
+#endif
 									}
 								}
 								else
 								{
+#if(hostUiDbg >= 1)
 									if(debugOutput) cout << "invalid value change request." << endl;
+#endif
 								}
 
 							}
@@ -732,7 +718,7 @@ int main(int argc, char *argv[])
 							bool validComboIndexName;
 
 							string tempComboName = hostUi.getComboFromHost(hostUiRequestData); // new combo data is saved here.
-							procCont.disableEffects();
+							//procCont.disableEffects();
 
 							vector<string> newComboList = getComboListFromFileSystem();
 
@@ -804,7 +790,7 @@ int main(int argc, char *argv[])
 								validComboIndexName = true;
 #endif
 							}
-							else
+							else // existing combo: update by erasing map element and adding newer struct to map.
 							{
 
 								globalComboName = tempComboName;
@@ -893,6 +879,7 @@ int main(int argc, char *argv[])
 
 
 #elif(COMBO_DATA_MAP == 1)
+								procCont.disableEffects();
 								if(procCont.load(globalComboName) >= 0)
 								{
 									if(debugOutput) cout << "combo loaded: " << globalComboName << ":" << comboDataMap[globalComboName].comboName << endl;
@@ -905,8 +892,9 @@ int main(int argc, char *argv[])
 									strcpy(ofxMainStatus,"load failed");
 									status = -1;
 								}
+								procCont.enableEffects();
 							}
-							procCont.enableEffects();
+							//procCont.enableEffects();
 
 						}
 						else
@@ -1049,31 +1037,16 @@ int main(int argc, char *argv[])
 		}
 
 		//************* Process requests from PCB UI Interface  *************
+		// this needs to be running even when USB is connected to be able to
+		// detect, via FlxPedalUi process, when the USB is disconnected
 
-        //if(((smSectionIndex = pedalUi.checkForNewData()) > 0))
-        //else if(((smSectionIndex = pedalUi->checkForNewPedalData()) > 0))
 		{
         	//enteringLoop = false;
 
         	{
 				if(pedalUi.checkForNewPedalData() == 1)
 				{
-
-
-
-//					pedalUi.dataProcessingStatus(0);
-////					pedalUi->dataProcessingStatus(0);
-////					if(enteringLoop)
-////					{
-////						pedalUiRequest = "getCombo:";
-////						pedalUiRequest.append(initComboName);
-////						enteringLoop = false;
-////					}
-////					else
-					{
-						pedalUiRequest = pedalUi.getUserRequest();
-
-					}
+					pedalUiRequest = pedalUi.getUserRequest();
 
 #if(pedalUiDbg >= 1)
 					if(debugOutput) cout << "PEDAL UI REQUEST: " << pedalUiRequest << endl;
@@ -1147,7 +1120,8 @@ int main(int argc, char *argv[])
 							if((pedalUiRequestData.size() > 1) && (comboDataMap.find(pedalUiRequestData) != comboDataMap.end()))
 #endif
 							{
-								//globalComboName = pedalUiRequestData;
+								globalComboName = pedalUiRequestData;
+								procCont.disableAudioOutput();
 #if(COMBO_DATA_VECTOR == 1)
 								int tempComboIndex = getComboVectorIndex(globalComboName);
 								//if(tempComboIndex >= 0)
@@ -1157,7 +1131,7 @@ int main(int argc, char *argv[])
 								//if(tempComboIndex >= 0)
 								if(0 <= tempComboIndex && tempComboIndex < comboList.size())
 #elif(COMBO_DATA_MAP == 1)
-								if(comboDataMap.find(pedalUiRequestData) != comboDataMap.end())
+								if(comboDataMap.find(globalComboName/*pedalUiRequestData*/) != comboDataMap.end())
 #endif
 								{
 									procCont.disableEffects();
@@ -1178,8 +1152,14 @@ int main(int argc, char *argv[])
 #elif(COMBO_DATA_MAP == 1)
 									if(debugOutput) cout << globalComboName << endl;
 									//comboDataMap[globalComboName].loadComboStructFromName((char *)globalComboName.c_str());
-									if(procCont.load(globalComboName) >= 0)
+
+									usleep(1000);
+									if(procCont.load(globalComboName) >= 0) loadSuccess = true;
+									else loadSuccess = false;
 #endif
+									usleep(1000);
+									procCont.enableEffects();
+									if(loadSuccess == true)
 									{
 										//comboDataArray[globalComboIndex].getPedalUi();
 										comboDataMap[globalComboName].getPedalUi();
@@ -1199,7 +1179,9 @@ int main(int argc, char *argv[])
 										strcpy(ofxMainStatus,"load failed");
 										status = -1;
 									}
-									procCont.enableEffects();
+									//procCont.enableEffects();
+									procCont.enableAudioOutput();
+
 								}
 								else
 								{
@@ -1221,8 +1203,8 @@ int main(int argc, char *argv[])
 							uint8_t equals = 0;
 
 							string effectString, paramString, valueString, procParamString;
-							volatile int absParamIndex;
-							volatile int valueIndex;
+							int absParamIndex;
+							int valueIndex;
 							int size = pedalUiRequestData.size();
 							//colon = requestData.find(":");
 							equals = pedalUiRequestData.find("=");
@@ -1342,6 +1324,33 @@ int main(int argc, char *argv[])
 #endif
 							//if(debugOutput) cout << "sent current data" << endl;
 						}
+						else if(pedalUiRequestCommand.compare("getUtilities") == 0)
+						{
+							pedalUtilityData.readUtilityDataFromFile();
+							pedalUi.sendFlxUtilUiData(pedalUtilityData.getUtilityDataForPedalUi());
+						}
+						else if(pedalUiRequestCommand.compare("changeUtilValue") == 0)
+						{
+							string utilityParameterName;
+							string utilityParameterValue;
+							int equalIndex;
+
+							if((equalIndex = pedalUiRequestData.find("=")) > 0)
+							{
+								utilityParameterName = pedalUiRequestData.substr(0,equalIndex);
+								utilityParameterValue = pedalUiRequestData.substr(equalIndex+1);
+
+								pedalUtilityData.updateUtilityValue(utilityParameterName, utilityParameterValue);
+							}
+							else
+							{
+								cout << "invalid changeUtilValue request." << endl;
+							}
+						}
+						else if(pedalUiRequestCommand.compare("saveUtilities") == 0)
+						{
+							pedalUtilityData.writeUtilityDataToFile();
+						}
 						else if(pedalUiRequestCommand.compare("getCurrentStatus") == 0)
 						{
 							if(newDataFromServer)
@@ -1350,17 +1359,17 @@ int main(int argc, char *argv[])
 							}
 							if(pedalUiRequestData.compare("host") == 0)
 							{
-								hostGuiActive = true;
 								if(hostUi.isConnected() == 0)
 								{
-									hostUi.connect();
+									hostUi.connect();//.open();
 								}
+								hostGuiActive = true;
 							}
 							else
 							{
 								if(hostUi.isConnected() == 1)
 								{
-									hostUi.disconnect();
+									hostUi.disconnect();//.close();
 								}
 
 								hostGuiActive = false;

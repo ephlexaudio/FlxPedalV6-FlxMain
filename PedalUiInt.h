@@ -46,15 +46,9 @@ public:
 	~PedalUiInt();
 
 	int checkForNewPedalData(void);
-	//string getUserRequest(void);
-	//int processUserRequest(char *request);
 	int sendComboUiData(Json::Value uiJson);
-	//int sendComboList(string comboLists);
-	//int sendCurrentStatus(char *currentStatus);
-	//int sendCurrentData(vector<IndexedParameter> currentParams);
-	/*int checkMemory(void);
-	int sendData(char *data, uint16_t length);
-	int getData(char *data, uint16_t length);*/
+	int sendFlxUtilUiData(Json::Value uiJson);
+	Json::Value recieveFlxUtilUiData();
 };
 
 

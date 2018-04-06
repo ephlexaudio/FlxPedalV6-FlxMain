@@ -37,7 +37,7 @@ private:
 	bool footswitchStatus[FOOTSWITCH_COUNT] = {false, false};
 
 public:
-	GPIOClass portConSwitch[3];
+	//GPIOClass portConSwitch[3];
 	GPIOClass footswitchLed[2];
 	GPIOClass footswitchPin[2];
 	ProcessingControl();
@@ -55,11 +55,19 @@ public:
 	//int clearProcessData(int index, double *data);
 	int enableEffects();
 	int disableEffects();
+	int enableAudioOutput();
+	int disableAudioOutput();
 	int updateProcessParameter(int parameterIndex, int parameterValue);
 	int updateControlParameter(int parameterIndex, int parameterValue);
 	double getOutputAmplitudes(void);
 
 	int readFootswitches(void);
+	int setNoiseGateCloseThreshold(float closeThres);
+	int setNoiseGateOpenThreshold(float openThres);
+	int setNoiseGateGain(float gain);
+	int setTriggerLowThreshold(float lowThres);
+	int setTriggerHighThreshold(float lowThres);
+
 	//int updateFootswitch(int *footswitchStatus);
 };
 

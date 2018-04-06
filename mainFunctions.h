@@ -55,28 +55,27 @@ int closeJack(void);
 int openIPCFiles(void);
 int closeIPCFiles(void);*/
 
-//int getRunningProcesses(void);
+
 int loadComponentSymbols(void);
 int loadControlTypeSymbols(void);
 
-int loadCombo(void);
-int runCombo(void);
+
 //int updateCombo(int paramIndex, int paramValueIndex);
 int stopCombo(void);
 ComboDataInt getComboObject(string comboName);
 int listComboMapObjects(void);
 
-int loadComboStructArray(vector<string> comboList);
+/*int loadComboStructArray(vector<string> comboList);
 std::vector<string> getComboArrayList(void);
 int getComboListIndex(string comboName);
 int addComboStructToArray(string comboName);
-int deleteComboStructFromArray(char *comboName);
+int deleteComboStructFromArray(char *comboName);*/
 
-int loadComboStructVector(void);
+/*int loadComboStructVector(void);
 std::vector<string> getComboVectorList(void);
 int getComboVectorIndex(string comboName);
 int addComboStructToVector(string comboName);
-int deleteComboStructFromVector(string comboName);
+int deleteComboStructFromVector(string comboName);*/
 
 int loadComboStructMapAndList(void);
 std::vector<string> getComboMapList(void);

@@ -70,6 +70,18 @@ private:
 	char jsonBuffer[JSON_BUFFER_LENGTH];
 	char fileNameBuffer[20];
 	char fileNamePathBuffer[40];
+	/*unsigned int delaybCount;
+	unsigned int filter3bbCount;
+	unsigned int filter3bb2Count;
+	unsigned int lohifilterbCount;
+	unsigned int mixerbCount;
+	unsigned int volumebCount;
+	unsigned int waveshaperbCount;
+	unsigned int reverbbCount;
+	unsigned int samplerbCount;
+	unsigned int oscillatorbCount;*/
+	int inputProcBufferIndex[2];
+	int outputProcBufferIndex[2];
 
 	std::vector<Connector> dataReadyList;
 	string currentTargetProcess;
@@ -85,7 +97,7 @@ private:
 	std::vector<string> getFirstProcesses();
 	string getNextProcess();
 	std::vector<string> getNextProcesses();
-	std::vector<IndexedParameter> tempParameterArray;
+	std::vector<IndexedProcessParameter> tempParameterArray;
 
 	//int addFirstConnectionToConnectionList();
 	//int addNextConnectionToConnectionList(string srcProcess, string srcPort);
@@ -109,6 +121,9 @@ private:
 	int transferConnection(Json::Value conn, vector<Json::Value> *srcConnArray, vector<Json::Value> *destConnArray);
 	int getProcessSequenceIndex(string processName);
 	int getControlSequenceIndex(string controlName);
+	//int processCount;
+	//int controlCount;
+	//int bufferCount;
 
 public:
 	ComboDataInt();
@@ -130,8 +145,8 @@ public:
 	std::vector<Control> controlsStruct;
 	std::vector<ControlConnection> controlConnectionsStruct;
 
-	std::vector<IndexedParameter> unsortedParameterArray;
-	std::vector<IndexedParameter> sortedParameterArray;
+	std::vector<IndexedProcessParameter> unsortedParameterArray;
+	std::vector<IndexedProcessParameter> sortedParameterArray;
 	std::vector<IndexedControlParameter> controlParameterArray;
 	//std::vector<Parameter> parameterArray;
 
@@ -139,11 +154,16 @@ public:
 	ControlEvent controlSequence[20];
 	ProcessBuffer procBufferArray[60];
 	int footswitchStatus[10];
-	int inputProcBufferIndex[2];
-	int outputProcBufferIndex[2];
+	/*int inputProcBufferIndex[2];
+	int outputProcBufferIndex[2];*/
 	int processCount;
 	int controlCount;
 	int bufferCount;
+
+	int getInputProcBufferIndex(int LRindex);
+	int getOutputProcBufferIndex(int LRindex);
+	void setInputProcBufferIndex(int LRindex, int bufferIndex);
+	void setOutputProcBufferIndex(int LRindex, int bufferIndex);
 
 	void printSequencedConnectionJsonList();
 	void printSequencedConnectionStructList();
@@ -188,8 +208,8 @@ public:
 
 	int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<ProcessConnection/*Json::Value*/> connectionsStruct);
 	int connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray();
-	int connectProcessInputsToProcessOutputBuffersUsingConnectionsStruct/*Json*/();
-	//int connectProcessInputsToProcessOutputBuffersUsingConnectionsStruct();
+	int connectProcessInputsToProcessOutputBuffersUsingConnectionsStruct();
+	int initializeProcessDataIntoProcessEventElement();
 	int initializeControlDataIntoControlEventElement();
 	int loadComboStructFromName(char *comboName);
 	int loadComboStructFromJsonString(string comboJson);
@@ -198,9 +218,6 @@ public:
 
 	void getProcParameters(int procIndex, int params[10]);
 	int saveCombo(void/*Json::Value combo*/);
-	int updateJson(int paramIndex, int paramValue);
-	int updateJson(char *processKey, char *paramKey, int paramValue);
-	//int readJson(char *effectKey, char *paramKey);
 	void listParameters(void);
 	int getProcessIndex(int absParameterIndex);
 	int getControlIndex(string targetProcessName, string targetParameterName);
@@ -214,12 +231,12 @@ public:
 	string getName();
 };
 
-ComboStruct getComboStructFromName(char *comboName);
-ComboStruct getComboStructFromComboIndex(int index);
+//ComboStruct getComboStructFromName(char *comboName);
+
 ComboStruct getComboStructFromComboName(string comboName);
-ComboStruct getComboStructFromJsonString(string comboJson);
-ComboStruct transferComboStruct(ComboStruct source);
-string getComboStringFromFile(string comboName);
+
+
+
 
 
 #endif /* DATABASEINT_H_ */

@@ -59,6 +59,7 @@ int HostUiInt::connect()
 	return status;
 }
 
+#define dbg 1
 int HostUiInt::disconnect()
 {
 	int status = 0;
@@ -74,6 +75,77 @@ int HostUiInt::disconnect()
 
 	return status;
 }
+
+#define dbg 0
+int HostUiInt::open()
+{
+	int status = 0;
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** ENTERING: HostUiInt::open" << endl;
+#endif
+
+	status = usb.isPortOpen();
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** EXITING: HostUiInt::open:" << status << endl;
+#endif
+
+	return status;
+
+}
+
+#define dbg 0
+bool HostUiInt::isPortOpen()
+{
+	bool status;
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** ENTERING: HostUiInt::isPortOpen" << endl;
+#endif
+
+	status = usb.isPortOpen();
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** EXITING: HostUiInt::isPortOpen: " << status << endl;
+#endif
+
+	return status;
+}
+
+#define dbg 0
+int HostUiInt::close()
+{
+	int status = 0;
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** ENTERING: HostUiInt::close" << endl;
+#endif
+
+	status = usb.closePort();
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** EXITING: HostUiInt::close:" << status << endl;
+#endif
+
+	return status;
+}
+
+#define dbg 0
+bool HostUiInt::isConnected()
+{
+	bool status = false;
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** ENTERING: HostUiInt::isConnected" << endl;
+#endif
+
+	if(usb.isConnected()) status = true;
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** EXITING: HostUiInt::isConnected:" << status << endl;
+#endif
+
+	return status;
+
+}
+
 
 #define dbg 1
 int HostUiInt::sendComponentData(void)
@@ -147,7 +219,6 @@ int HostUiInt::sendControlTypeData(void)
 #if(dbg >= 2)
 		if(debugOutput) cout << "combo data: " << this->hostUiResponseCharArray << endl;
 #endif
-
 	}
 	else
 	{
@@ -162,22 +233,6 @@ int HostUiInt::sendControlTypeData(void)
 	return status;
 }
 
-#define dbg 0
-int HostUiInt::isConnected()
-{
-	int status = 0;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::isConnected" << endl;
-#endif
-
-
-	status = usb.isConnected();
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::isConnected: " << status << endl;
-#endif
-	return status;
-}
 
 #define dbg 0
 int HostUiInt::checkForNewHostData(void)
@@ -272,7 +327,7 @@ int HostUiInt::sendCurrentStatus(char *currentStatus)
 }
 
 #define dbg 0
-int HostUiInt::sendCurrentData(vector<IndexedParameter> currentParams)
+int HostUiInt::sendCurrentData(vector<IndexedProcessParameter> currentParams)
 {
 	int status = 0;
 
@@ -300,7 +355,7 @@ int HostUiInt::sendCurrentData(vector<IndexedParameter> currentParams)
 	return status;
 }
 
-#define dbg 0
+#define dbg 1
 int HostUiInt::sendComboToHost(string comboName)
 {
 	#if(dbg >= 1)
@@ -317,8 +372,16 @@ int HostUiInt::sendComboToHost(string comboName)
 	comboString = getComboDataFromFileSystem(comboName);
 	if(comboString.empty() == false)
 	{
+		int checkSum = 0;
+		for (int comboStringIndex = 0; comboStringIndex < comboString.length(); comboStringIndex++)
+		{
+			if(comboString[comboStringIndex] > 31)
+			{
+				checkSum += comboString[comboStringIndex];
+			}
 
-		sprintf(this->hostUiResponseCharArray,"<ComboData>%s</ComboData>",comboString.c_str());
+		}
+		sprintf(this->hostUiResponseCharArray,"<ComboData>%s#%i</ComboData>",comboString.c_str(),checkSum);
 
 	#if(dbg >= 2)
 		if(debugOutput) cout << "Data retrieved, sending to host...." << this->hostUiResponseCharArray << endl;
@@ -437,7 +500,7 @@ string HostUiInt::getComboFromHost(string comboJson)
 }
 
 
-
+#define dbg 0
 int HostUiInt::sendSimpleResponse(char *response)
 {
 	int status = 0;
@@ -462,4 +525,14 @@ int HostUiInt::sendSimpleResponse(char *response)
 
 
 	return status;
+}
+
+void HostUiInt::clearAllInternalCharArrays(void)
+{
+	for(int i = 0; i < FILE_SIZE; i++)
+	{
+		this->hostUiRawRequestCharArray[i] = 0;
+		this->hostUiRequestCharArray[i] = 0;
+		this->hostUiResponseCharArray[i] = 0;
+	}
 }

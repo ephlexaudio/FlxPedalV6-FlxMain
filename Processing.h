@@ -20,16 +20,18 @@
 #include <sys/stat.h>
 #include <json/json.h>
 #include <jack/jack.h>
+#include "GPIOClass.h"
 #include "Controls.h"
 #include "structs.h"
 #include "ComboDataInt.h"
-#include "Effects2.h"
+//#include "Effects2.h"
 #include "utilityFunctions.h"
 #include "jackaudioio.h"
+#include "Processes.h"
 
 
 
-extern ComboDataInt comboData[15];
+//extern ComboDataInt comboData[10];
 /*typedef struct _processingParams{
 	double lowGateThres;
 	double highGateThres;
@@ -37,8 +39,8 @@ extern ComboDataInt comboData[15];
 };*/
 
 struct _noiseGate {
-	double lowThres;
-	double highThres;
+	double openThres;
+	double closeThres;
 	double gain;
 };
 
@@ -59,8 +61,9 @@ private:
 
 	//ProcessBuffer outProcBuffer;
 	int switchedStatus = 0;
-	double gateCloseThreshold = 0.01;
-	double gateOpenThreshold = 0.30;
+	float gateCloseThreshold = 0.01;
+	float gateOpenThreshold = 0.30;
+	float gateClosedGain = 0.002;
 	double inPosPeak[2];
 	double inNegPeak[2];
 	double inMaxAmp[2];
@@ -97,12 +100,20 @@ private:
 	double outNegPeak[2];
 	double outMaxAmp[2][2];
 	double outGain;
+	float sampleGain = 0;
 	//bool audioCallbackRunning;
 	bool processingEnabled;
+	int gatePosition = 0;
+	bool cutSignal = false;
+	int triggerInputSignalFiltering();
+	int noiseGateEnvTrigger();
 
 public:
 	Processing();
 	~Processing();
+	GPIOClass portConSwitch[3];
+	GPIOClass audioOutputEnable;
+
 	int comboIndex;
 	string comboName;
 	bool footswitchStatus[10];
@@ -133,10 +144,17 @@ public:
 	int updateFootswitch(bool footswitchStatus[]);
 	int enableProcessing();
 	int disableProcessing();
+	int enableAudioOutput();
+	int disableAudioOutput();
 	int bypassAll();
 	int updateProcessParameter(string processName, int parameterIndex, int parameterValue);
 	int updateControlParameter(string controlName, int parameterIndex, int parameterValue);
 	double getOutputAmplitudes(void);
+	int setNoiseGateCloseThreshold(float closeThres);
+	int setNoiseGateOpenThreshold(float openThres);
+	int setNoiseGateGain(float gain);
+	int setTriggerLowThreshold(float lowThres);
+	int setTriggerHighThreshold(float lowThres);
 };
 
 int loadComponentSymbols(void);

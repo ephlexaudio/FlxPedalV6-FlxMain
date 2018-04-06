@@ -21,6 +21,8 @@
 #include <iostream>
 #include <errno.h>
 #include "utilityFunctions.h"
+#include "ComputeModulePinOuts2.h"
+#include "GPIOClass.h"
 
 #define FILE_SIZE 32000
 using namespace std;
@@ -28,14 +30,21 @@ using namespace std;
 class UsbInt {
 private:
 	char usbInputBuffer[FILE_SIZE];
+	char usbCleanInputBuffer[FILE_SIZE];
 	char usbOutputBuffer[FILE_SIZE];
+
 	int hostUiFD;
 	int connectionStatus;
+	int portOpenStatus;
 public:
 	UsbInt();
 	~UsbInt();
+	GPIOClass usbDetect;// = GPIOClass(USB_CONNECTED);
 	int connect();
 	int disconnect();
+	int openPort();
+	bool isPortOpen();
+	int closePort();
 	int isConnected();
 	int newData(void);
 	char* readData(void);

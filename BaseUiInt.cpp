@@ -56,7 +56,7 @@ extern int globalComboIndex;
  *  Use this signature to ONLY detect new data (not access it), and
  *  wait for shared memory access release
  */
-#define dbg 1
+#define dbg 0
 BaseUiInt::BaseUiInt()
 {
 #if(dbg >= 1)
@@ -178,7 +178,7 @@ int BaseUiInt::checkForNewData()
 
 	int pinString;
 	int charCount = 0;
-	volatile int dataStatus = 0;
+	int dataStatus = 0;
 	int/*uint8_t*/ pinValue = 0;
 	int tempBufferIndex = 4;
 	char tempBuffer[100];
@@ -278,7 +278,7 @@ string BaseUiInt::getUserRequest(void)
 	return responseString;
 }
 
-int BaseUiInt::processUserRequest(char *request)
+/*int BaseUiInt::processUserRequest(char *request)
 {
 
 #if(dbg >= 1)
@@ -293,7 +293,7 @@ int BaseUiInt::processUserRequest(char *request)
 #endif
 
 	return status;
-}
+}*/
 
 #define dbg 0
 
@@ -354,7 +354,7 @@ int BaseUiInt::sendCurrentStatus(char *currentStatus)
 }
 
 #define dbg 0
-int BaseUiInt::sendCurrentData(vector<IndexedParameter> currentParams)
+int BaseUiInt::sendCurrentData(vector<IndexedProcessParameter> currentParams)
 {
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** ENTERING: BaseUiInt::sendCurrentData" << endl;

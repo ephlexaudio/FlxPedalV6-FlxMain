@@ -34,6 +34,9 @@
 
 int control(/*int*/ char action, bool envTrigger, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
 
+int normal(/*int*/ char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
+int envGen(/*int*/ char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
+int lfo(/*int*/ char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
 
 
 

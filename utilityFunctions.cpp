@@ -85,22 +85,22 @@ void printAsciiNumbers(char *charArrayData)
 {
 	int charArrayLength = strlen(charArrayData);
 
-	if(debugOutput) if(debugOutput) cout << endl;
+	if(debugOutput) cout << endl;
 	for(int i = 0; i < charArrayLength; i++)
 	{
-		if(debugOutput) if(debugOutput) cout << charArrayData[i] << ',';
+		if(debugOutput) cout << charArrayData[i] << ',';
 	}
-	if(debugOutput) if(debugOutput) cout << endl;
+	if(debugOutput) cout << endl;
 }
 
 void printAsciiNumbers(string stringData)
 {
-	if(debugOutput) if(debugOutput) cout << endl;
+	if(debugOutput) cout << endl;
 	for(int i = 0; i < stringData.length(); i++)
 	{
-		if(debugOutput) if(debugOutput) cout << (int)(stringData[i]) << ',';
+		if(debugOutput) cout << (int)(stringData[i]) << ',';
 	}
-	if(debugOutput) if(debugOutput) cout << endl;
+	if(debugOutput) cout << endl;
 
 }
 

@@ -70,15 +70,15 @@ int validateJsonString(std::string jsonString)
 	newlineIndex = tempBufferString.find("\n");
 	if(newlineIndex != std::string::npos)
 	{
-		if(debugOutput) cout << "newline found" << endl;
 #if(dbg >=2)
+		if(debugOutput) cout << "newline found" << endl;
 #endif
 		dirtyBufferString = tempBufferString.substr(0,newlineIndex);
 	}
 	else
 	{
-		if(debugOutput) cout << "no newline found" << endl;
 #if(dbg >=2)
+		if(debugOutput) cout << "no newline found" << endl;
 #endif
 		dirtyBufferString.assign(tempBufferString);
 	}
@@ -90,17 +90,19 @@ int validateJsonString(std::string jsonString)
 #endif
 	if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 	{
-		if(debugOutput) cout << "JSON name: " << jsonClean["name"] << endl;
 		cleanBufferString = jsonCleanWriter.write(jsonClean);
 
 #if(dbg >=2)
+		if(debugOutput) cout << "JSON name: " << jsonClean["name"] << endl;
 		if(debugOutput) cout << "Clean string: " << cleanBufferString << endl;
 		if(debugOutput) cout << "Clean string length: " << cleanBufferString.size() << endl;
 #endif
 
 		if(dirtyBufferString.size() == cleanBufferString.size())
 		{
+#if(dbg >=2)
 			if(debugOutput) cout << "jsonString is clean" << endl;
+#endif
 			status = 1;
 		}
 		else /*if(dirtyBufferString.size() > cleanBufferString.size())*/
@@ -114,12 +116,14 @@ int validateJsonString(std::string jsonString)
 			{
 				dirtyBufferString.clear();
 				dirtyBufferString.assign(cleanBufferString);
+#if(dbg >=2)
 				if(debugOutput) cout << "confirming clean..." << endl;
+#endif
 				if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 				{
-					if(debugOutput) cout << "JSON name2: " << jsonClean["name"] << endl;
 					cleanBufferString = jsonCleanWriter.write(jsonClean);
 #if(dbg >=2)
+					if(debugOutput) cout << "JSON name2: " << jsonClean["name"] << endl;
 					if(debugOutput) cout << "Clean string2: " << cleanBufferString << endl;
 					if(debugOutput) cout << "Clean string length2: " << cleanBufferString.size() << endl;
 #endif
@@ -129,12 +133,16 @@ int validateJsonString(std::string jsonString)
 					{
 						jsonString.clear();
 						jsonString.assign(cleanBufferString);
+#if(dbg >=2)
 						if(debugOutput) cout << "jsonString needed cleaning/repair" << endl;
+#endif
 						status = 0; // jsonString needed cleaning/repair
 					}
 					else
 					{
+#if(dbg >=2)
 						if(debugOutput) cout << "jsonString cleaning failed" << endl;
+#endif
 						status = -1;
 						jsonString.clear();
 					}
@@ -142,7 +150,9 @@ int validateJsonString(std::string jsonString)
 				}
 				else
 				{
+#if(dbg >=2)
 					if(debugOutput) cout << "jsonString cleaning failed" << endl;
+#endif
 					status = -1;
 					jsonString.clear();
 				}
@@ -152,7 +162,9 @@ int validateJsonString(std::string jsonString)
 	}
 	else
 	{
+#if(dbg >=2)
 		if(debugOutput) cout << "jsonString could not be parsed" << endl;
+#endif
 		status = -1;
 		jsonString.clear();
 	}
@@ -194,8 +206,8 @@ int validateJsonBuffer(char *jsonBuffer)
 #if(dbg >=2)
 	if(debugOutput) cout << "tempBufferString: " << tempBufferString << endl;
 	if(debugOutput) cout << "tempBufferString length: " << tempBufferString.size() << endl;
-#endif
 	if(debugOutput) cout << "newline found at: " << newlineIndex << endl;
+#endif
 	if(newlineIndex == (tempBufferString.length()-1)) newlineIndex = std::string::npos; // ignore newline at end of string
 	if((newlineIndex != std::string::npos))
 	{
@@ -204,7 +216,9 @@ int validateJsonBuffer(char *jsonBuffer)
 	}
 	else
 	{
+#if(dbg >=2)
 		if(debugOutput) cout << "no newline found" << endl;
+#endif
 		dirtyBufferString.assign(tempBufferString);
 	}
 	dirtyBufferString.erase(remove(dirtyBufferString.begin(),dirtyBufferString.end(),'\n'),dirtyBufferString.end());
@@ -219,7 +233,9 @@ int validateJsonBuffer(char *jsonBuffer)
 
 	if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 	{
+#if(dbg >=2)
 		if(debugOutput) cout << "JSON name: " << jsonClean["name"] << endl;
+#endif
 		cleanBufferString = jsonCleanWriter.write(jsonClean);
 		cleanBufferString.erase(remove(cleanBufferString.begin(),cleanBufferString.end(),'\n'),cleanBufferString.end());
 #if(dbg >=2)
@@ -231,7 +247,9 @@ int validateJsonBuffer(char *jsonBuffer)
 
 		if(dirtyBufferString.size() == cleanBufferString.size() && (newlineIndex == std::string::npos))
 		{
+#if(dbg >=2)
 			if(debugOutput) cout << "jsonString is clean" << endl;
+#endif
 			status = 1;
 		}
 		else /*if(dirtyBufferString.size() > cleanBufferString.size())*/
@@ -245,13 +263,15 @@ int validateJsonBuffer(char *jsonBuffer)
 			{
 				dirtyBufferString.clear();
 				dirtyBufferString.assign(cleanBufferString);
+#if(dbg >=2)
 				if(debugOutput) cout << "confirming clean..." << endl;
+#endif
 				if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 				{
-					if(debugOutput) cout << "JSON name: " << jsonClean["name"] << endl;
 					cleanBufferString = jsonCleanWriter.write(jsonClean);
 					cleanBufferString.erase(remove(cleanBufferString.begin(),cleanBufferString.end(),'\n'),cleanBufferString.end());
 #if(dbg >=2)
+					if(debugOutput) cout << "JSON name: " << jsonClean["name"] << endl;
 					if(debugOutput) cout << "Clean string: " << cleanBufferString << endl;
 					if(debugOutput) cout << "Clean string length: " << cleanBufferString.size() << endl;
 #endif
@@ -260,12 +280,16 @@ int validateJsonBuffer(char *jsonBuffer)
 					{
 						clearBuffer(jsonBuffer, JSON_BUFFER_LENGTH);
 						strncpy(jsonBuffer,cleanBufferString.c_str(),JSON_BUFFER_LENGTH);
+#if(dbg >=2)
 						if(debugOutput) cout << "jsonString needed cleaning/repair" << endl;
+#endif
 						status = 0; // jsonString needed cleaning/repair
 					}
 					else
 					{
+#if(dbg >=2)
 						if(debugOutput) cout << "jsonString cleaning failed" << endl;
+#endif
 						status = -1;
 						clearBuffer(jsonBuffer, JSON_BUFFER_LENGTH);
 					}
@@ -273,7 +297,9 @@ int validateJsonBuffer(char *jsonBuffer)
 				}
 				else
 				{
+#if(dbg >=2)
 					if(debugOutput) cout << "jsonString cleaning failed" << endl;
+#endif
 					status = -1;
 				}
 
@@ -282,7 +308,9 @@ int validateJsonBuffer(char *jsonBuffer)
 	}
 	else
 	{
+#if(dbg >=2)
 		if(debugOutput) cout << "jsonString could not be parsed" << endl;
+#endif
 		status = -1;
 	}
 #if(dbg >= 1)
@@ -293,7 +321,7 @@ int validateJsonBuffer(char *jsonBuffer)
 	return status;
 }
 
-Json::Reader dataReader;
+
 #define dbg 0
 std::vector<string> getComponentList(void)
 {
@@ -509,7 +537,7 @@ string saveComboToFileSystem(std::string comboJson)
 	Json::Value tempJsonCombo;
 	int charCount = 0;
 	char comboDataBuffer[FILE_SIZE];
-
+	Json::Reader dataReader;
 	char parsedComboDataBuffer[FILE_SIZE];
 	for(int i = 0; i < FILE_SIZE; i++)
 	{

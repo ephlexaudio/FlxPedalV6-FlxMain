@@ -17,6 +17,7 @@
 #include <cstring>
 #include <linux/types.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include <iostream>
 #include <fcntl.h>
@@ -25,6 +26,7 @@
 #include <linux/spi/spidev.h>
 //#include "SharedMemoryInt.h"
 #include "ComboDataInt.h"
+#include "GPIOClass.h"
 /*#define TX_BUFFER_SIZE 1500
 #define RX_BUFFER_SIZE 1500*/
 #define SEND_BUFFER_SIZE 250
@@ -66,7 +68,7 @@ public:
 	virtual int sendComboUiData(Json::Value uiData){return 0;}
 	int sendComboList(string comboLists);
 	int sendCurrentStatus(char *currentStatus);
-	int sendCurrentData(vector<IndexedParameter> currentParams);
+	int sendCurrentData(vector<IndexedProcessParameter> currentParams);
 	int clearSharedMemorySection(void);
 	void waitForAccessRelease(void);
 	/*int checkMemory(void);

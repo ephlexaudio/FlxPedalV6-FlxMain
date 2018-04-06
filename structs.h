@@ -107,7 +107,7 @@ struct OscillatorbContext{
 
 struct ProcessParams{
 	string name;
-	int type;   //  both ProcessParams type and ControlParameter type use the same type system.
+	int paramType;   //  both ProcessParams type and ControlParameter type use the same type system.
 	int value;
 };
 
@@ -115,13 +115,16 @@ struct ControlParameter{
 	string name;
 	string alias;
 	string abbr;
-	int type;
+	int paramType;
+	int controlledParamType;
+	bool inheritControlledParamType;
+	bool cvEnabled;
 	int value;
 };
 
 struct Process{
 	string name;
-	string type;
+	string procType;
 	int footswitchType;
 	int footswitchNumber;
 	vector<string> inputs;
@@ -132,7 +135,7 @@ struct Process{
 struct Control{
 	string name;
 	string parentEffect;
-	string type;
+	string conType;
 	vector<ControlParameter> params;
 	vector<unsigned int> absProcessParameterIndexes;  // index from sortedParameterArray
 	vector<unsigned int> absProcessParameterIndexesInv;  // index from sortedParameterArray
@@ -160,7 +163,7 @@ struct ProcessConnection{
 
 
 // use indexed parameter structures to enable faster access to parameters for updating, etc.
-struct IndexedParameter{
+struct IndexedProcessParameter{
 	string effectName;
 	int effectIndex;
 	string processName;
@@ -227,7 +230,7 @@ struct ProcessBuffer{
 };
 
 struct ProcessEvent{
-	int processType;  //used to identify process type, not position in processing sequence
+	int procType;  //used to identify process type, not position in processing sequence
 	string processName;
 	int processTypeIndex;
 	int footswitchNumber;
@@ -247,9 +250,13 @@ struct ProcessEvent{
 };
 
 struct ControlEvent{
-	int type;
+	int conType;
 	string name;
-	int parameter[10];		// Normal: 	parameter[0]=parameter value
+	struct {
+		int value;
+		bool cvEnabled;
+	}parameter[10];
+	//int parameter[10];		// Normal: 	parameter[0]=parameter value
 
 							// EnvGen: 	parameter[0]=attack time
 							//			parameter[1]=decay time
@@ -295,8 +302,21 @@ struct ComboStruct {
 	int processCount;
 	int controlCount;
 	int bufferCount;
+	bool controlVoltageEnabled;
 	Json::Value pedalUi;
 };
 
-
+struct UtilityDataStruct {
+	bool usbEnable;
+	int antiAliasingNumber;
+	string inputCoupling;
+	string waveshaperMode;
+	int jack_Period;
+	int jack_Buffer;
+	float noiseGate_LowThres;
+	float noiseGate_HighThres;
+	float noiseGate_Gain;
+	float trigger_HighThres;
+	float trigger_LowThres;
+};
 #endif /* STRUCTS_H_ */
