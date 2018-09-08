@@ -1,4 +1,10 @@
-/debug/
-/debug/
-/debug/
-/.settings
+debug/
+debug
+.settings
+.settings/
+hooks
+info
+info
+logs
+objects
+refs
