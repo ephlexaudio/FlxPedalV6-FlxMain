@@ -5,12 +5,13 @@
  *      Author: mike
  */
 
-//#include "BaseUiInt.h"
 #include "PedalUiInt.h"
 
 #include "config.h"
 #include "utilityFunctions.h"
 
+extern int pedalUiTxFd;
+extern int pedalUiRxFd;
 
 extern bool debugOutput;
 
@@ -22,7 +23,6 @@ extern bool debugOutput;
 #define CM0_SHARED_MEMORY_SECTION_SIZE 4096
 
 #define HOST_SHARED_MEMORY_SECTION_ADDRESS 32768
-//#define HOST_SHARED_MEMORY_SECTION_SIZE 32000
 
 #define TX_BUFFER_SIZE 1500
 #define RX_BUFFER_SIZE 1500
@@ -40,15 +40,10 @@ extern bool debugOutput;
 
 using namespace std;
 
-//extern int procCount;
-//extern bool hostGuiActive;
-//extern int comboIndex;
 
-PedalUiInt::PedalUiInt()//:BaseUiInt()
+PedalUiInt::PedalUiInt():BaseUiInt()
 {
 	this->status = 0;
-
-	//newData(SHARED_MEMORY_READY);
 
 }
 
@@ -56,6 +51,8 @@ PedalUiInt::~PedalUiInt()
 {
 	if(debugOutput) cout << "~PedalUiInt" << endl;
 }
+
+
 
 #define dbg 0
 
@@ -67,7 +64,7 @@ int PedalUiInt::checkForNewPedalData(void)
 
 	int status = 0;
 
-	status = BaseUiInt::checkForNewData();
+	status = this->checkForNewData();
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** EXITING: PedalUiInt::checkForNewPedalData: " << status << endl;
 #endif
@@ -76,7 +73,7 @@ int PedalUiInt::checkForNewPedalData(void)
 }
 
 
-#define dbg 2
+#define dbg 0
 
 int PedalUiInt::sendComboUiData(Json::Value uiJson)
 {
@@ -91,66 +88,6 @@ int PedalUiInt::sendComboUiData(Json::Value uiJson)
 
 	for(int i = 0; i < TX_BUFFER_SIZE; i++) this->uiData[i] = 0;
 
-	/*strcpy((char *)this->uiData, "{title:");
-	strncat((char *)this->uiData, uiJson["title"].asCString(), strlen(uiJson["title"].asString().c_str()));
-
-	{
-		strcat((char *)this->uiData, "\",\"effects\":[");
-		effectCount = uiJson["effects"].size();
-		if(debugOutput) cout << "effectCount: " << effectCount << endl;
-		for(effectIndex = 0; effectIndex < effectCount; effectIndex++)
-		{
-			guiParamCount = uiJson["effects"][effectIndex]["params"].size();
-			if(debugOutput) cout << "guiParamCount: " << guiParamCount << endl;
-			if(guiParamCount > 0)
-			{
-				strcat((char *)this->uiData, "{\"abbr\":\"");
-				strncat((char *)this->uiData, uiJson["effects"][effectIndex]["abbr"].asString().c_str(),
-						4);
-				strcat((char *)this->uiData, "\",\"name\":\"");
-				strncat((char *)this->uiData, uiJson["effects"][effectIndex]["name"].asString().c_str(),
-						10);
-				strcat((char *)this->uiData, "\",\"params\":[");
-
-				for(guiParamIndex = 0; guiParamIndex < guiParamCount; guiParamIndex++)
-				{
-					if(uiJson["effects"][effectIndex]["params"][guiParamIndex]["name"].asString().size() > 1
-        					&& uiJson["effects"][effectIndex]["params"][guiParamIndex]["name"].asString().compare("none") != 0)
-					{
-						strcat((char *)this->uiData, "{\"abbr\":\"");
-						strncat((char *)this->uiData, uiJson["effects"][effectIndex]["params"][guiParamIndex]["abbr"].asString().c_str(),
-								4);
-						strcat((char *)this->uiData, "\",\"name\":\"");
-						strncat((char *)this->uiData, uiJson["effects"][effectIndex]["params"][guiParamIndex]["name"].asString().c_str(),
-								10);
-
-						strcat((char *)this->uiData, "\",\"value\":");
-						sprintf(intCharArray,"%d",uiJson["effects"][effectIndex]["params"][guiParamIndex]["value"].asInt());
-						strcat((char *)this->uiData, intCharArray);
-
-						strcat((char *)this->uiData, ",\"type\":");
-						sprintf(intCharArray,"%d",uiJson["effects"][effectIndex]["params"][guiParamIndex]["type"].asInt());
-						strcat((char *)this->uiData, intCharArray);
-
-						strcat((char *)this->uiData, ",\"index\":");
-						sprintf(intCharArray,"%d",uiJson["effects"][effectIndex]["params"][guiParamIndex]["index"].asInt());
-						strcat((char *)this->uiData, intCharArray);
-
-						strcat((char *)this->uiData, "}");
-
-						if(guiParamIndex != guiParamCount-1) strcat((char *)this->uiData, ",");
-
-					}
-				}
-				strcat((char *)this->uiData, "]}");
-				if(effectIndex != effectCount-1 && uiJson["effects"][effectIndex+1]["params"].size() != 0)
-					strcat((char *)this->uiData, ",");
-			}
-		}
-		strcat((char *)this->uiData, "]}");
-	}*/
-
-	//cout << "creating uiJson string." << endl;
 	string uiJsonString = uiJson.toStyledString();
 #if(dbg>=2)
 	if(debugOutput) cout << "uiJsonString: " + uiJsonString << endl;
@@ -159,19 +96,13 @@ int PedalUiInt::sendComboUiData(Json::Value uiJson)
 	uiJsonString.erase(remove(uiJsonString.begin(), uiJsonString.end(), '\r'), uiJsonString.end());
 	uiJsonString.erase(remove(uiJsonString.begin(), uiJsonString.end(), '\t'), uiJsonString.end());
 	uiJsonString.erase(remove(uiJsonString.begin(), uiJsonString.end(), ' '), uiJsonString.end());
-	/*cout << uiJsonString << endl;
-	cout << "creating uiJson Cstring." << endl;
-	char uiJsonCstring[1000];
-	strncpy(uiJsonCstring, uiJsonString.c_str(), 1000);
-	cout << uiJsonCstring << endl;
-	cout << "copying Cstring to uiData." << endl;*/
 	strncpy(this->uiData, uiJsonString.c_str(), 1000);
 
 
 	errno = 0;
-	//this->sendData(MCU_SHARED_MEMORY_SECTION_ADDRESS, this->uiData, strlen(this->uiData));
-	int txSentCount = write(this->pedalUiTxFd, this->uiData, strlen(this->uiData));
+	int txSentCount = write(pedalUiTxFd, this->uiData, strlen(this->uiData));
 #if(dbg>=2)
+	if(debugOutput) cout << "this->pedalUiTxFd:" << pedalUiTxFd << endl;
 	if(debugOutput) cout << "this->uiData:" << this->uiData << endl;
 	if(debugOutput) cout << "this->uiData length:" << strlen(this->uiData) << endl;
 	if(debugOutput) cout << "txSentCount: " << txSentCount << endl;
@@ -210,7 +141,7 @@ int PedalUiInt::sendFlxUtilUiData(Json::Value uiJson)
 	strncpy(this->uiData, uiJsonString.c_str(), 1000);
 
 	errno = 0;
-	int txSentCount = write(this->pedalUiTxFd, this->uiData, strlen(this->uiData));
+	int txSentCount = write(pedalUiTxFd, this->uiData, strlen(this->uiData));
 #if(dbg>=2)
 	if(debugOutput) cout << "this->uiData:" << this->uiData << endl;
 	if(debugOutput) cout << "this->uiData length:" << strlen(this->uiData) << endl;
@@ -228,21 +159,4 @@ int PedalUiInt::sendFlxUtilUiData(Json::Value uiJson)
 	cout << "***** EXITING: PedalUiInt::sendFlxUtilUiData: " << status << endl;
 #endif
 	return status;
-}
-
-
-#define dbg 1
-Json::Value PedalUiInt::recieveFlxUtilUiData()
-{
-	Json::Value utilData;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: PedalUiInt::sendFlxUtilUiData: " <<  endl;
-#endif
-
-
-
-#if(dbg >= 1)
-	cout << "***** EXITING: PedalUiInt::sendFlxUtilUiData: " << status << endl;
-#endif
-	return utilData;
 }

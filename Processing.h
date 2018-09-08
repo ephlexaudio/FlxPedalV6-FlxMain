@@ -24,46 +24,21 @@
 #include "Controls.h"
 #include "structs.h"
 #include "ComboDataInt.h"
-//#include "Effects2.h"
 #include "utilityFunctions.h"
 #include "jackaudioio.h"
 #include "Processes.h"
 
 
 
-//extern ComboDataInt comboData[10];
-/*typedef struct _processingParams{
-	double lowGateThres;
-	double highGateThres;
-	double gatedGain;
-};*/
-
-struct _noiseGate {
-	double openThres;
-	double closeThres;
-	double gain;
-};
-
-struct _trigger {
-	double lowThres;
-	double highThres;
-};
-
-struct _processingParams{
-	struct _noiseGate noiseGate;
-	struct _trigger trigger;
-};
-
-
 class Processing: public JackCpp::AudioIO {
 private:
-	//Combo *combo;
-
-	//ProcessBuffer outProcBuffer;
+	int bufferSize = 256;
 	int switchedStatus = 0;
 	float gateCloseThreshold = 0.01;
 	float gateOpenThreshold = 0.30;
 	float gateClosedGain = 0.002;
+	float gateGain;
+	double noiseGateBuffer[2][256];
 	double inPosPeak[2];
 	double inNegPeak[2];
 	double inMaxAmp[2];
@@ -72,20 +47,20 @@ private:
 	double inNegPeakArray[4][2];
 	int chan1GndCount;
 	int chan2GndCount;
-	//double comboInputBuffer[2][BUFFER_SIZE];
-	//double comboOutputBuffer[2][BUFFER_SIZE];
-	double inputLevel = 0.01;
+	double inputGain = 0.01;
 	bool gateOpen;
 	double envGenTriggerMultiple = 5.0;
 	double triggerHighThreshold;
 	double triggerLowThreshold;
 	bool envTrigger;
-	int envTriggerPeriods;
+
 	double inMaxAmpFilter[16];
 	double inMaxAmpFilterOut;
 	double inPrevMaxAmpFilterOut;
 	int inMaxAmpFilterIndex;
-	int gateEnvStatus;
+	int gateStatus;
+	double intermediaryGainBuffer[2][256];
+	int envTriggerStatus;
 	double inSignalLevel;
 	double inPrevSignalLevel;
 	double inSignalLevelHighPeak;
@@ -101,55 +76,41 @@ private:
 	double outMaxAmp[2][2];
 	double outGain;
 	float sampleGain = 0;
-	//bool audioCallbackRunning;
 	bool processingEnabled;
 	int gatePosition = 0;
 	bool cutSignal = false;
-	int triggerInputSignalFiltering();
-	int noiseGateEnvTrigger();
+	string comboName;
+	bool footswitchStatus[10];
+	void triggerInputSignalFiltering();
+	void noiseGate(double* bufferIn, double *bufferOut);
+	void envelopeTrigger();
 
 public:
 	Processing();
 	~Processing();
+	string getComboName();
+	void setComboName(string comboName);
 	GPIOClass portConSwitch[3];
 	GPIOClass audioOutputEnable;
 
-	int comboIndex;
-	string comboName;
-	bool footswitchStatus[10];
-	bool processingUpdated;
-	bool updateProcessing;
-	bool processingContextAllocationError;
-	/*int setCheckInputs();
-	int clearCheckInputs();*/
 	bool areInputsSwitched(); // needs to be public to access sysfs (?)
 
-	//int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<Json::Value> connectionsJson);
-	int loadCombo(int comboIndex);
 	int loadCombo(void);
-	int enableComboBypass();
-	int disableComboBypass();
-	//int start();
-	//void stop();
-	int stopCombo(int loadComboIndex);
-	int stopCombo(void);
 	int audioCallback(jack_nframes_t nframes,
 					// A vector of pointers to each input port.
 					audioBufVector inBufs,
 					// A vector of pointers to each output port.
 					audioBufVector outBufs);
-	int getProcessData(int index, double *data);
 	int getPitch(bool activate, double *signal);
-	int clearProcessData(int index, double *data);
 	int updateFootswitch(bool footswitchStatus[]);
 	int enableProcessing();
 	int disableProcessing();
+	int enableAudioInput();
+	int disableAudioInput();
 	int enableAudioOutput();
 	int disableAudioOutput();
-	int bypassAll();
 	int updateProcessParameter(string processName, int parameterIndex, int parameterValue);
 	int updateControlParameter(string controlName, int parameterIndex, int parameterValue);
-	double getOutputAmplitudes(void);
 	int setNoiseGateCloseThreshold(float closeThres);
 	int setNoiseGateOpenThreshold(float openThres);
 	int setNoiseGateGain(float gain);

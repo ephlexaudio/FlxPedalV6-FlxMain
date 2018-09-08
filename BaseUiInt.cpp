@@ -6,10 +6,12 @@
  */
 #include "config.h"
 #include "BaseUiInt.h"
-//#include "ComboDataInt.h"
 #include "utilityFunctions.h"
 
 extern bool debugOutput;
+int pedalUiTxFd;
+int pedalUiRxFd;
+
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "********** ENTERING BaseUiInt::: " << endl;
@@ -18,29 +20,7 @@ extern bool debugOutput;
 	if(debugOutput) cout << "********** EXITING BaseUiInt::: "  <<  endl;
 #endif
 
-//extern int comboTime;
-/*
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: BaseUiInt::" << endl;
-#endif
 
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: BaseUiInt::" << endl;
-#endif
-*/
-
-/*#define MCU_SHARED_MEMORY_SECTION_ADDRESS 0
-#define CM0_SHARED_MEMORY_SECTION_ADDRESS 4096
-#define SHARED_MEMORY_SECTION_SIZE 4096
-
-#define TX_DATA_SIZE 1500
-#define RX_DATA_SIZE 1500
-#define SEND_BUFFER_SIZE 250
-
-
-
-#define SHARED_MEMORY_SOURCE 4
-#define SHARED_MEMORY_READY 29*/
 #define RQST_DATA_FILTER_COUNT 5
 const char* rxFifoPath = "/home/pedalUiTx";
 const char* txFifoPath = "/home/pedalUiRx";
@@ -56,7 +36,7 @@ extern int globalComboIndex;
  *  Use this signature to ONLY detect new data (not access it), and
  *  wait for shared memory access release
  */
-#define dbg 0
+#define dbg 2
 BaseUiInt::BaseUiInt()
 {
 #if(dbg >= 1)
@@ -65,70 +45,30 @@ BaseUiInt::BaseUiInt()
 
 
 	this->status = 0;
-	/*if(mkfifo("/home/pedalUiTx",666) >= 0)
-	{
-		if((this->pedalUiTx = open("/home/pedalUiTx",O_RDWR | O_NONBLOCK, 'w')) >= 0)
-		{
-
-		}
-		else
-		{
-			if(debugOutput) cout << "error opening pedalUiTx FIFO" << endl;
-		}
-	}
-	else
-	{
-		if(debugOutput) cout << "error creating pedalUiTx FIFO" << endl;
-		this->status = -1;
-	}
-
-	if(status >= 0)
-	{
-		if(mkfifo("/home/pedalUiRx",666) >= 0)
-		{
-			if((this->pedalUiRx = open("/home/pedalUiRx",O_RDWR | O_NONBLOCK),'r') >= 0)
-			{
-
-			}
-			else
-			{
-				if(debugOutput) cout << "error opening pedalUiRx FIFO" << endl;
-			}
-		}
-		else
-		{
-			if(debugOutput) cout << "error creating pedalUiRx FIFO" << endl;
-			this->status = -1;
-		}
-	}*/
-	this->pedalUiTxFd = -1;
-	this->pedalUiRxFd = -1;
-	bool exit = false;
-	char rxData[RX_DATA_SIZE];
-	int rxDataSize = 0;
-	char txData[TX_DATA_SIZE];
-	int txDataSize = 0;
-	string rxCommand;
-	string rxCommandData;
+	pedalUiTxFd = -1;
+	pedalUiRxFd = -1;
 	errno = 0;
 	if(mkfifo(rxFifoPath,S_IWUSR | S_IRUSR) != 0)
 	{
-		printf("********** OFX_MAIN: mkfifo rxFifoPath errno: %d\n", errno);
+		cout << "********** OFX_MAIN: mkfifo rxFifoPath errno: " << errno << endl;
 	}
+	errno = 0;
 	if(mkfifo(txFifoPath,S_IWUSR | S_IRUSR) != 0)
 	{
-		printf("********** OFX_MAIN: mkfifo txFifoPath errno: %d\n", errno);
+		cout << "********** OFX_MAIN: mkfifo txFifoPath errno: " << errno << endl;
 	}
 
 	errno = 0;
-	for(int i = 0; (this->pedalUiRxFd == -1 || this->pedalUiTxFd == -1) && i < 10; i++)
+	for(int i = 0; (pedalUiRxFd == -1 || pedalUiTxFd == -1) && i < 10; i++)
 	{
-		this->pedalUiRxFd = open(rxFifoPath, O_RDONLY | O_NONBLOCK);
-		usleep(100000);
-		this->pedalUiTxFd = open(txFifoPath, O_WRONLY | O_NONBLOCK);
-		usleep(100000);
+		pedalUiRxFd = open(rxFifoPath, O_RDWR | O_NONBLOCK);
+		usleep(10000);
+		pedalUiTxFd = open(txFifoPath, O_RDWR | O_NONBLOCK);
+		usleep(10000);
+#if(dbg >= 2)
 		if(debugOutput) cout << "waiting for FIFOs" << endl;
 		if(debugOutput) cout << "********** OFX_MAIN: " << strerror(errno) << endl;
+#endif
 	}
 
 #if(dbg >= 1)
@@ -142,10 +82,10 @@ BaseUiInt::~BaseUiInt()
 {
 	int ret;
 
-	if(this->pedalUiTxFd >= 0)
+	if(pedalUiTxFd >= 0)
 	{
 		if(debugOutput) cout << "closing and removing /home/pedalUiTx." << endl;
-		close(this->pedalUiTxFd);
+		close(pedalUiTxFd);
 		system("rm /home/pedalUiTx");
 	}
 	else
@@ -153,10 +93,10 @@ BaseUiInt::~BaseUiInt()
 		if(debugOutput) cout << "/home/pedalUiTx not found." << endl;
 	}
 
-	if(this->pedalUiRxFd >= 0)
+	if(pedalUiRxFd >= 0)
 	{
 		if(debugOutput) cout << "closing and removing /home/pedalUiRx." << endl;
-		close(this->pedalUiRxFd);
+		close(pedalUiRxFd);
 		system("rm /home/pedalUiRx");
 	}
 	else
@@ -179,42 +119,30 @@ int BaseUiInt::checkForNewData()
 	int pinString;
 	int charCount = 0;
 	int dataStatus = 0;
-	int/*uint8_t*/ pinValue = 0;
+	int pinValue = 0;
 	int tempBufferIndex = 4;
 	char tempBuffer[100];
-	//newData.getval_gpio(pinString);
-	//pinValue = atoi(pinString.c_str());
 	clearBuffer(this->request,RX_DATA_SIZE);
 	errno = 0;
-	//if(this->getData(SHARED_MEMORY_SECTION_SIZE*sectionIndex, tempBuffer, 100) == 0)
-	int dataReadSize = read(this->pedalUiRxFd, tempBuffer, 100);
+	int dataReadSize = read(pedalUiRxFd, tempBuffer, 100);
 	if( dataReadSize > 0)
 	{
 #if(dbg >= 2)
 		if(debugOutput) cout << "tempBuffer: " << tempBuffer << endl;
 #endif
-		//strncpy(this->request, tempBuffer, 100);
+
 		dataStatus = 1;
 		for(tempBufferIndex = 0; tempBufferIndex < 100; tempBufferIndex++)
 		{
 			if(' ' <= tempBuffer[tempBufferIndex] && tempBuffer[tempBufferIndex] <= '~')
 			{
-				//strcat(this->request, (const char*)tempBuffer[tempBufferIndex]);
+
 				this->request[charCount++] = tempBuffer[tempBufferIndex];
-				//charCount++;
+
 #if(dbg >= 2)
 				if(debugOutput) cout << "tempBuffer[" << tempBufferIndex << "]: valid data: " << tempBuffer[tempBufferIndex] << "(" << (int)(tempBuffer[tempBufferIndex]) << ")" << endl;
 #endif
 			}
-			/*else if(charCount > RQST_DATA_FILTER_COUNT && tempBuffer[tempBufferIndex] == 255) // found end marker, data is ready
-			{
-				dataStatus = 1;
-				this->request[charCount] = 0;
-#if(dbg >= 2)
-				if(debugOutput) cout << "found end marker, data is ready" << endl;
-#endif
-				break;
-			}*/
 			else if(tempBuffer[tempBufferIndex] == 0)
 			{
 				dataStatus = 1;
@@ -237,7 +165,6 @@ int BaseUiInt::checkForNewData()
 		dataStatus = 0;
 	}
 
-	//if(debugOutput) cout << "status: " << status << endl;
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** EXITING: BaseUiInt::checkForNewData 2: " << dataStatus << ":" << dataReadSize << endl;
@@ -278,22 +205,7 @@ string BaseUiInt::getUserRequest(void)
 	return responseString;
 }
 
-/*int BaseUiInt::processUserRequest(char *request)
-{
 
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: BaseUiInt::processUserRequest" << endl;
-#endif
-
-	if(this->status == 1) return 1;
-	uint8_t status = 0;
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: BaseUiInt::processUserRequest: " << status <<endl;
-#endif
-
-	return status;
-}*/
 
 #define dbg 0
 
@@ -306,11 +218,8 @@ int BaseUiInt::sendComboList(string comboList)
 #endif
 	uint8_t status = 0;
 
-	/*for(int i = 0; i < SEND_BUFFER_SIZE; i++) this->sendBuffer[i] = 0;
-	strncpy(this->sendBuffer, (char *)comboList.c_str(),SEND_BUFFER_SIZE-1);
-	//this->sendData(this->uiSectionStartAddress, this->sendBuffer, 150);
-	write(this->pedalUiTx,this->sendBuffer, 150);*/
-	write(this->pedalUiTxFd,comboList.c_str(), comboList.length());
+
+	write(pedalUiTxFd,comboList.c_str(), comboList.length());
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** EXITING: BaseUiInt::sendComboList: " << status << endl;
@@ -337,15 +246,14 @@ int BaseUiInt::sendCurrentStatus(char *currentStatus)
 	sprintf(hostUiStatusString,"|hostUiStatus:%d", (hostGuiActive?1:0));
 	strcat(this->uiData, hostUiStatusString);
 	clearBuffer(hostUiStatusString,20);
-	//sprintf(hostUiStatusString,"|comboTime:%d", comboTime);
+
 	strcat(this->uiData, hostUiStatusString);
 
 #if(dbg >= 2)
 	if(debugOutput) cout << "sendCurrentData: " << this->uiData << "\tsize: " << strlen(this->uiData) << endl;
 #endif
 
-	//this->sendData(this->uiSectionStartAddress, this->uiData, 150/*strlen(this->uiData)*/);
-	write(this->pedalUiTxFd, this->uiData, TX_DATA_SIZE/*strlen(this->uiData)*/);
+	write(pedalUiTxFd, this->uiData, TX_DATA_SIZE);
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** EXITING: BaseUiInt::sendCurrentStatus: " << status << endl;
@@ -370,15 +278,10 @@ int BaseUiInt::sendCurrentData(vector<IndexedProcessParameter> currentParams)
 	sprintf(hostUiStatusString,"|hostUiStatus:%d", (hostGuiActive?1:0));
 	strcat(this->uiData, hostUiStatusString);
 
-	//if(debugOutput) cout << "sendCurrentData: " << this->uiData << "\tsize: " << strlen(this->uiData) << endl;
-
-	//this->sendData(this->uiSectionStartAddress, this->uiData, strlen(this->uiData));
-	write(this->pedalUiTxFd, this->uiData, strlen(this->uiData));
+	write(pedalUiTxFd, this->uiData, strlen(this->uiData));
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** EXITING: BaseUiInt::sendCurrentData: " << status << endl;
 #endif
 	return status;
 }
-
-

@@ -23,20 +23,15 @@
 #include <json/json.h>
 
 #include "structs.h"
-/*#include "filterValues.h"
-#include "volumeValues.h"
-#include "delayValues.h"
-#include "lfoFreqValues.h"
-#include "envGenTimeValues.h"*/
 #include "ControlSymbols.h"
 
 //******************************** Controls for manipulating process parameters ********************************
 
-int control(/*int*/ char action, bool envTrigger, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
+int control(char action, bool envTrigger, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
 
-int normal(/*int*/ char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
-int envGen(/*int*/ char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
-int lfo(/*int*/ char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
+int normal(char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
+int envGen(char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
+int lfo(char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
 
 
 

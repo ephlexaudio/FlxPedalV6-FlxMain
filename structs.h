@@ -10,25 +10,16 @@
 
 using namespace std;
 
-//#include <string>
 #include "config.h"
 #include <vector>
 #include <sys/types.h>
-//#include <stdbool.h>
-/*#include <stdint.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string>
-#include <cstring>
-#include <linux/types.h>*/
 
-//#define BUFFER_SIZE 1024
 #define AVE_ARRAY_SIZE 16
 /*************** CONTROL CONTEXTS ************************/
 struct EnvGenContext{
 	int envStage; //0:attack, 1:decay, 2:sustain, 3:release
+	unsigned int stageTimeValue;
 	double slewRate;
-	int stageTimeValue;
 };
 
 
@@ -42,11 +33,9 @@ struct LfoContext{
 
 /****************** EFFECTS CONTEXTS *********************/
 struct DelayContext{
-	//double dummy[100];
-	unsigned int inputPtr;
-	unsigned int outputPtr;
+	unsigned long inputPtr;
+	unsigned long outputPtr;
 	double delayBuffer[DELAY_BUFFER_LENGTH+10];
-	//double dummy1[100];
 	double delayTimeAveragingBuffer[4];
 	double delaySignalAveragingBuffer[8];
 	unsigned int previousDelay;
@@ -54,23 +43,23 @@ struct DelayContext{
 
 #define NUMBER_OF_BANDS 2
 struct Filter3bbContext{
-	double lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
-	double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+	double lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4];
+	double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4];
 	double couplingFilter_y[4], couplingFilter_x[4];
 	double rolloffFilter_y[4], rolloffFilter_x[4];
 };
 
 struct Filter3bb2Context{
-	double lp_y[4], lp_x[4]; // needs to be static to retain data from previous processing
-	double bp_y[7], bp_x[7]; // needs to be static to retain data from previous processing
-	double hp_y[4], hp_x[4]; // needs to be static to retain data from previous processing
+	double lp_y[4], lp_x[4];
+	double bp_y[7], bp_x[7];
+	double hp_y[4], hp_x[4];
 	double couplingFilter_y[3], couplingFilter_x[3];
 	double rolloffFilter_y[3], rolloffFilter_x[3];
 };
 
 struct LohifilterbContext{
-	double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
-	double lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4]; // needs to be static to retain data from previous processing
+	double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4];
+	double lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4];
 	double couplingFilter_y[3], couplingFilter_x[3];
 	double noiseFilter_y[3], noiseFilter_x[3];
 };
@@ -139,8 +128,6 @@ struct Control{
 	vector<ControlParameter> params;
 	vector<unsigned int> absProcessParameterIndexes;  // index from sortedParameterArray
 	vector<unsigned int> absProcessParameterIndexesInv;  // index from sortedParameterArray
-	//int targetParameterType;   // using same type system as ProcessParams and ControlParameter
-	//int targetParameterTypeInv;   // using same type system as ProcessParams and ControlParameter
 };
 
 
@@ -186,7 +173,6 @@ struct IndexedControlParameter{
 	string controlParamName;
 	int controlParamIndex;
 	int effectParamIndex;
-	//vector<int> absProcessParamIndex;
 	int controlParamValue;
 };
 
@@ -197,14 +183,6 @@ struct PedalUI{
 	vector<Control> effect[2];
 };
 
-
-
-
-
-/*struct Connector{
-	string process;
-	string port;
-};*/
 
 struct ParameterControlConnection{
 	int processIndex;
@@ -245,7 +223,6 @@ struct ProcessEvent{
 	vector<string> inputBufferNames;
 	int outputBufferIndexes[5];
 	vector<string> outputBufferNames;
-	//void *processContext;
 	bool processFinished;
 };
 
@@ -256,33 +233,27 @@ struct ControlEvent{
 		int value;
 		bool cvEnabled;
 	}parameter[10];
-	//int parameter[10];		// Normal: 	parameter[0]=parameter value
+							// Normal: 	parameter[0].value=parameter value
 
-							// EnvGen: 	parameter[0]=attack time
-							//			parameter[1]=decay time
-							//			parameter[2]=sustain time
-							//			parameter[3]=release time
-							//			parameter[4]=peak value index;
-							//			parameter[5]=sustain value index;
+							// EnvGen: 	parameter[0].value=attack time
+							//			parameter[1].value=decay time
+							//			parameter[2].value=sustain time
+							//			parameter[3].value=release time
+							//			parameter[4].value=peak value index;
+							//			parameter[5].value=sustain value index;
 
-							// LFO:		parameter[0]=frequency
-							//			parameter[1]=amplitude
-							//			parameter[2]=offset
-							//			parameter[3]=
-							//			parameter[4]=
+							// LFO:		parameter[0].value=frequency
+							//			parameter[1].value=amplitude
+							//			parameter[2].value=offset
 
 
-	//int absProcessParameterIndex[5];  // from unsortedParameterArray, using variable absParamIndex
-								// get process:parameter from ControlConnection.dest, then
-								// get index using getProcessParameterIndex(dest.process, dest.parameter)
 	ParameterControlConnection paramContConnection[5];
 	int paramContConnectionCount; // number of process parameters being written to by this control
 	ParameterControlConnection paramContConnectionInv[5];
 	int paramContConnectionCountInv; // number of process parameters being written to by this control
-	//void *controlContext;
 	int controlTypeIndex;
 	bool gateOpen;
-	bool envTriggerStatus;
+	bool envTrigger;
 	double output;
 	double outputInv;
 	unsigned int int_output;

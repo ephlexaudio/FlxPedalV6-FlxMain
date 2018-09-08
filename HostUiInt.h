@@ -14,12 +14,10 @@
 #include "FileSystemFuncts.h"
 #include "GPIOClass.h"
 #include "structs.h"
-//using namespace std;
 #define FILE_SIZE 32000
 class HostUiInt
 {
 private:
-	//char comboData[FILE_SIZE];
 	UsbInt usb;
 	char hostUiRawRequestCharArray[FILE_SIZE];
 	char hostUiRequestCharArray[FILE_SIZE];
@@ -33,8 +31,6 @@ public:
 	// Files are retrieved from the directory and sent straight to the host
 	int connect();
 	int disconnect();
-	int open();
-	bool isPortOpen();
 	int close();
 	bool isConnected();
 	int sendControlTypeData();

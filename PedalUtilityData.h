@@ -34,19 +34,23 @@ private:
 	int antiAliasingNumber;
 	int inputCouplingMode;
 	int waveshaperMode;
+
 	struct {
 		int period;
 		int buffer;
 	}jack;
+
 	struct {
 		float closeThres;
 		float openThres;
 		float gain;
 	}noiseGate;
+
 	struct {
 		float highThres;
 		float lowThres;
 	}trigger;
+	
 	int delayFineDivisor;
 
 public:
@@ -64,6 +68,7 @@ public:
 	int getInputCouplingMode();
 	int getWaveshaperMode();
 	int getJack_Period();
+	int getBufferSize();
 	int getJack_Buffer();
 	float getNoiseGate_CloseThres();
 	float getNoiseGate_OpenThres();

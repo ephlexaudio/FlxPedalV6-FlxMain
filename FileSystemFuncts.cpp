@@ -7,38 +7,14 @@
 #include "config.h"
 #include "FileSystemFuncts.h"
 
-/*extern std::vector<string> jsonComponentList;
-extern std::vector<string> jsonComboList;
-
-extern std::vector<string> jsonProcessList;*/
 
 
-/**********************************************************************************/
-/**********************************************************************************/
-/**************************************
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::" << endl;
-#endif
 
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: FileSystemFuncts::" << endl;
-#endif
-
-#if(dbg >=2)
-#endif
-********************************************/
 #define JSON_BUFFER_LENGTH 32000
 #define FILE_SIZE 32000
-#define COMBO_DATA_VECTOR 0
-#define COMBO_DATA_ARRAY 0
-#define COMBO_DATA_MAP 1
 
 extern bool debugOutput;
 
-struct _segFaultInfo {
-	string function;
-	int line;
-};
 
 #define dbg 0
 int validateJsonString(std::string jsonString)
@@ -59,7 +35,6 @@ int validateJsonString(std::string jsonString)
 	char cleanBuffer[FILE_SIZE];
 	string cleanBufferString;
 	string tempBufferString;
-	//char outputBuffer[FILE_SIZE];
 
 	clearBuffer(dirtyBuffer,FILE_SIZE);
 	clearBuffer(cleanBuffer,FILE_SIZE);
@@ -105,14 +80,9 @@ int validateJsonString(std::string jsonString)
 #endif
 			status = 1;
 		}
-		else /*if(dirtyBufferString.size() > cleanBufferString.size())*/
+		else
 		{
-			/*if(dirtyBufferString.size()/2 > cleanBufferString.size()) // something went REALLY wrong
-			{
-				if(debugOutput) cout << "jsonString is highly corrupted and cannot be repaired" << endl;
-				status = -1; // jsonString is highly corrupted and cannot be repaired
-			}
-			else*/
+
 			{
 				dirtyBufferString.clear();
 				dirtyBufferString.assign(cleanBufferString);
@@ -181,7 +151,6 @@ int validateJsonBuffer(char *jsonBuffer)
 {
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** ENTERING: FileSystemFuncts::validateJsonBuffer" << endl;
-	//if(debugOutput) cout << "jsonBuffer: " << jsonBuffer << endl;
 #endif
 	int status = 0;
 	Json::Value jsonClean;
@@ -194,7 +163,6 @@ int validateJsonBuffer(char *jsonBuffer)
 	char cleanBuffer[FILE_SIZE];
 	string cleanBufferString;
 	string tempBufferString;
-	//char outputBuffer[FILE_SIZE];
 
 	clearBuffer(dirtyBuffer,FILE_SIZE);
 	clearBuffer(cleanBuffer,FILE_SIZE);
@@ -211,7 +179,6 @@ int validateJsonBuffer(char *jsonBuffer)
 	if(newlineIndex == (tempBufferString.length()-1)) newlineIndex = std::string::npos; // ignore newline at end of string
 	if((newlineIndex != std::string::npos))
 	{
-		//if(debugOutput) cout << "newline found at: " << newlineIndex << endl;
 		dirtyBufferString = tempBufferString.substr(0,newlineIndex);
 	}
 	else
@@ -229,7 +196,6 @@ int validateJsonBuffer(char *jsonBuffer)
 	if(debugOutput) cout << "Dirty string length: " << dirtyBufferString.size() << endl;
 #endif
 
-	//printAsciiNumbers(dirtyBufferString);
 
 	if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 	{
@@ -243,7 +209,7 @@ int validateJsonBuffer(char *jsonBuffer)
 		if(debugOutput) cout << "Clean string length: " << cleanBufferString.size() << endl;
 #endif
 
-		//printAsciiNumbers(cleanBufferString);
+
 
 		if(dirtyBufferString.size() == cleanBufferString.size() && (newlineIndex == std::string::npos))
 		{
@@ -252,14 +218,9 @@ int validateJsonBuffer(char *jsonBuffer)
 #endif
 			status = 1;
 		}
-		else /*if(dirtyBufferString.size() > cleanBufferString.size())*/
+		else
 		{
-			/*if(dirtyBufferString.size()/2 > cleanBufferString.size()) // something went REALLY wrong
-			{
-				if(debugOutput) cout << "jsonString is highly corrupted and cannot be repaired" << endl;
-				status = -1; // jsonString is highly corrupted and cannot be repaired
-			}
-			else*/
+
 			{
 				dirtyBufferString.clear();
 				dirtyBufferString.assign(cleanBufferString);
@@ -383,7 +344,7 @@ std::string getComponentData(std::string componentName)
 #endif
 	char compString[50];
 	sprintf(compString,"/home/Components/%s.txt", componentName.c_str());
-	//printf("compString: %s\n", compString);
+
 	FILE *fdComp = fopen(compString, "r");
 	char outputString[1000];
 	if(fdComp == NULL)
@@ -396,7 +357,7 @@ std::string getComponentData(std::string componentName)
 	{
 		while(fgets(outputString,1000,fdComp) != NULL)
 		{
-			//printf("componentData: %s\n", outputString);
+
 		}
 	}
 	fclose(fdComp);
@@ -413,7 +374,6 @@ std::string getComponentData(std::string componentName)
 /**********************************************************************************/
 
 
-//def update_combo_directory_data():
 #define dbg 0
 std::vector<string> getComboListFromFileSystem(void)
 {
@@ -499,24 +459,6 @@ std::string getComboDataFromFileSystem(std::string comboName)
 		}
 		jsonBufferString = string(jsonBuffer);
 
-		int result = validateJsonString(jsonBufferString);
-
-		if(result == 0) // file needed cleaning, so replacing with cleaned file
-		{
-			if(debugOutput) cout << "file needed cleaning, so replacing with cleaned file" << endl;
-			fclose(fdCombo);
-			fdCombo = fopen(comboString, "w");
-			if(fputs(jsonBufferString.c_str(),fdCombo) == -1)
-			{
-				jsonBufferString.clear();
-				if(debugOutput) cout << "error writing jsonBufferString back to combo file." << endl;
-			}
-		}
-		else if(result == -1) // file is too corrupted to clean
-		{
-			jsonBufferString.clear();
-			if(debugOutput) cout << "error parsing jsonBufferString" << endl;
-		}
 		fclose(fdCombo);
 	}
 #if(dbg >= 1)
@@ -555,7 +497,6 @@ string saveComboToFileSystem(std::string comboJson)
 #if(dbg>=2)
 		if(debugOutput) std::cout << "saveComboToFileSystem: " << fileNameBuffer << '\n';
 #endif
-		//saveComboFD = fopen(fileNameString,"w");
 		if((saveComboFD = fopen(fileNameBuffer,"w")) != NULL )
 		{
 			strcpy(comboDataBuffer, comboJson.c_str());
@@ -621,8 +562,3 @@ int deleteComboFromFileSystem(std::string comboName)
 
 	return status;
 }
-
-
-
-
-

@@ -39,52 +39,22 @@
 #include <jack/control.h>
 #include <algorithm>
 
-
-struct _jackParams{
-	int period; // number of frames/period
-	int buffer; // number of periods
-};
-
-
-int openJack(void);
 int startJack(void);
 int stopJack(void);
-int closeJack(void);
-
-/*int createIPCFiles(void);
-int openIPCFiles(void);
-int closeIPCFiles(void);*/
 
 
 int loadComponentSymbols(void);
 int loadControlTypeSymbols(void);
 
-
-//int updateCombo(int paramIndex, int paramValueIndex);
 int stopCombo(void);
 ComboDataInt getComboObject(string comboName);
 int listComboMapObjects(void);
 
-/*int loadComboStructArray(vector<string> comboList);
-std::vector<string> getComboArrayList(void);
-int getComboListIndex(string comboName);
-int addComboStructToArray(string comboName);
-int deleteComboStructFromArray(char *comboName);*/
-
-/*int loadComboStructVector(void);
-std::vector<string> getComboVectorList(void);
-int getComboVectorIndex(string comboName);
-int addComboStructToVector(string comboName);
-int deleteComboStructFromVector(string comboName);*/
-
 int loadComboStructMapAndList(void);
 std::vector<string> getComboMapList(void);
-int getComboMapIndex(string comboName);
 int addComboStructToMapAndList(string comboName);
 int addComboStructToMap(string comboName);
 int deleteComboStructFromMapAndList(string comboName);
-
-int deleteComboNameFromList(string comboName);
 
 
 

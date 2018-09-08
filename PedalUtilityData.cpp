@@ -10,19 +10,6 @@
 extern bool debugOutput;
 extern unsigned int bufferSize;
 extern ProcessingControl procCont;
-/**************************************
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: PedalUtilityData::" << endl;
-	if(debugOutput) cout << ": " <<  << endl;
-#endif
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: PedalUtilityData::: " << status << endl;
-#endif
-
-#if(dbg >=2)
-#endif
-********************************************/
 
 PedalUtilityData::PedalUtilityData() {
 	// TODO Auto-generated constructor stub
@@ -37,15 +24,12 @@ PedalUtilityData::~PedalUtilityData() {
 int PedalUtilityData::readUtilityDataFromFile()
 {
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: PedalUtilityData::setUtilityData" << endl;
-	//if(debugOutput) cout << ": " <<  << endl;
+	if(debugOutput) cout << "***** ENTERING: PedalUtilityData::readUtilityDataFromFile" << endl;
 #endif
 
 
 	int status = 0;
 	char pedalUtilityString[500];
-	/*Json::Value ofxParamJsonData;
-	Json::Reader ofxParamJsonReader;*/
 	/******* Get JACK initialization data ***************/
 	cout << "getting ofxParams.txt." << endl;
 	int ofxParamsFD = open("/home/ofxParams.txt", O_CREAT, O_RDONLY);
@@ -74,16 +58,6 @@ int PedalUtilityData::readUtilityDataFromFile()
 			if(debugOutput) cout << "anti-aliasing: off." << endl;
 		}
 
-		/*if(ofxParamJsonData["antiAliasingNumber"].asString().compare("on") == 0)
-		{
-			antiAliasing = true;
-			if(debugOutput) cout << "anti-aliasing: on." << endl;
-		}
-		else
-		{
-			antiAliasing = false;
-			if(debugOutput) cout << "anti-aliasing: off." << endl;
-		}*/
 
 		if(this->pedalUtilityJson["inputCoupling"].asString().compare("offset") == 0)
 		{
@@ -114,7 +88,6 @@ int PedalUtilityData::readUtilityDataFromFile()
 		}
 
 		this->jack.period = atoi(this->pedalUtilityJson["jack"]["period"].asString().c_str());
-		bufferSize = this->jack.period;
 		this->jack.buffer = atoi(this->pedalUtilityJson["jack"]["buffer"].asString().c_str());
 		if(debugOutput) cout << "JACK period: " << this->jack.period << "\tJACK buffer: " << this->jack.buffer << endl;
 
@@ -129,7 +102,7 @@ int PedalUtilityData::readUtilityDataFromFile()
 		if(debugOutput) cout << "Delay Fine Divisor: " << this->delayFineDivisor << endl;
 	}
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: PedalUtilityData::setUtilityData: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: PedalUtilityData::readUtilityDataFromFile: " << status << endl;
 #endif
 
 
@@ -153,14 +126,13 @@ Json::Value PedalUtilityData::getUtilityDataForPedalUi()
 	return pedalUiUtilityDataJson;
 }
 
-#define dbg 2
+#define dbg 1
 int PedalUtilityData::writeUtilityDataToFile()
 {
 	int status = 0;
 	int size = 0;
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** ENTERING: PedalUtilityData::writeUtilityDataToFile" << endl;
-	//if(debugOutput) cout << ": " <<  << endl;
 #endif
 	Json::FastWriter pedalUiUtilityDataStringWriter;
 	string pedalUiUtilityDataString;
@@ -195,7 +167,7 @@ int PedalUtilityData::writeUtilityDataToFile()
 }
 
 
-#define dbg 2
+#define dbg 0
 int PedalUtilityData::updateUtilityValue(string utilityParameterName, string utilityParameterValue)
 {
 
@@ -324,7 +296,7 @@ int PedalUtilityData::updateUtilityValue(string utilityParameterName, string uti
 
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: PedalUtilityData::: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: PedalUtilityData::updateUtilityValue: " << status << endl;
 #endif
 
 
@@ -361,6 +333,10 @@ int PedalUtilityData::getJack_Buffer()
 	return this->jack.buffer;
 }
 
+int PedalUtilityData::getBufferSize()
+{
+	return this->jack.period;
+}
 float PedalUtilityData::getNoiseGate_CloseThres()
 {
 	return this->noiseGate.closeThres;

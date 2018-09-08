@@ -24,31 +24,26 @@
 #include <json/json.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
-//#include "SharedMemoryInt.h"
 #include "ComboDataInt.h"
 #include "GPIOClass.h"
-/*#define TX_BUFFER_SIZE 1500
-#define RX_BUFFER_SIZE 1500*/
 #define SEND_BUFFER_SIZE 250
 
 #define RX_DATA_SIZE 100
 #define TX_DATA_SIZE 1000
 
 
+
 using namespace std;
 
-class BaseUiInt //: public SharedMemoryInt
+class BaseUiInt
 {
 
-private:
 
-
-	char gpioStr[5];
 protected:
 	char uiData[TX_DATA_SIZE];
+	uint8_t status;
 	char request[RX_DATA_SIZE];
 	char sendBuffer[SEND_BUFFER_SIZE];
-	uint8_t status;
 
 public:
 	BaseUiInt();
@@ -56,24 +51,12 @@ public:
 	~BaseUiInt();
 
 
-	GPIOClass newData;// = GPIOClass(SHARED_MEMORY_READY);//, "in");
-	GPIOClass dataSource;// = GPIOClass(SHARED_MEMORY_READY);//, "in");
-
-	int pedalUiTxFd;
-	int pedalUiRxFd;
-
 	int checkForNewData(void);
 	string getUserRequest(void);
-	int processUserRequest(char *request);
 	virtual int sendComboUiData(Json::Value uiData){return 0;}
 	int sendComboList(string comboLists);
 	int sendCurrentStatus(char *currentStatus);
 	int sendCurrentData(vector<IndexedProcessParameter> currentParams);
-	int clearSharedMemorySection(void);
-	void waitForAccessRelease(void);
-	/*int checkMemory(void);
-	int sendData(char *data, uint16_t length);
-	int getData(char *data, uint16_t length);*/
 };
 
 

@@ -54,8 +54,6 @@ void clearBuffer(char *buffer, int length)
 void pabort(const char *s)
 {
 	perror(s);
-	//abort();
-	//goto exit;
 }
 
 void zero2Space(char* buffer, uint16_t length)
@@ -103,4 +101,3 @@ void printAsciiNumbers(string stringData)
 	if(debugOutput) cout << endl;
 
 }
-

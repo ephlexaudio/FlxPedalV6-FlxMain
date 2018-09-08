@@ -16,7 +16,7 @@
 #include <string>
 #include <cstring>
 #include <linux/types.h>
-
+#include <errno.h>
 #include <iostream>
 #include <fcntl.h>
 #include <json/json.h>
@@ -30,25 +30,15 @@
 
 
 
-//static void pabort(const char *s);
-
-/*struct Request {
-	int requestCommand;
-	char requestData[200];
-};*/
-//using namespace std;
-
 class PedalUiInt : public BaseUiInt {
-
+private:
 
 public:
 	PedalUiInt();
 	~PedalUiInt();
-
 	int checkForNewPedalData(void);
 	int sendComboUiData(Json::Value uiJson);
 	int sendFlxUtilUiData(Json::Value uiJson);
-	Json::Value recieveFlxUtilUiData();
 };
 
 

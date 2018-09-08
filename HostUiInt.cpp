@@ -6,26 +6,16 @@
  */
 
 #include "config.h"
-//#include "BaseUiInt.h"
 #include "HostUiInt.h"
 
 
 #define FILE_SIZE 32000
-//#define JSON_STRING_SIZE 32000
 #define SHARED_MEMORY_FILE_ADDRESS 32768
 extern vector<string> componentVector;
 extern vector<string> controlTypeVector;
 extern bool debugOutput;
 
-/*
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::" << endl;
-#endif
 
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::" << endl;
-#endif
-*/
 using namespace std;
 
 HostUiInt::HostUiInt()
@@ -76,40 +66,6 @@ int HostUiInt::disconnect()
 	return status;
 }
 
-#define dbg 0
-int HostUiInt::open()
-{
-	int status = 0;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::open" << endl;
-#endif
-
-	status = usb.isPortOpen();
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::open:" << status << endl;
-#endif
-
-	return status;
-
-}
-
-#define dbg 0
-bool HostUiInt::isPortOpen()
-{
-	bool status;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::isPortOpen" << endl;
-#endif
-
-	status = usb.isPortOpen();
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::isPortOpen: " << status << endl;
-#endif
-
-	return status;
-}
 
 #define dbg 0
 int HostUiInt::close()
@@ -359,15 +315,17 @@ int HostUiInt::sendCurrentData(vector<IndexedProcessParameter> currentParams)
 int HostUiInt::sendComboToHost(string comboName)
 {
 	#if(dbg >= 1)
+		if(debugOutput) cout << "******************************************" << endl;
 		if(debugOutput) cout << "***** ENTERING: HostUiInt::sendComboToHost" << endl;
 		if(debugOutput) cout << "comboName: " << comboName << endl;
+		if(debugOutput) cout << "******************************************" << endl;
+		startTimer();
 	#endif
 
 	int status = 0;
 	string comboString;
 
 	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
-	//strcpy(this->hostUiResponseCharArray, getComboData(comboName).c_str());
 
 	comboString = getComboDataFromFileSystem(comboName);
 	if(comboString.empty() == false)
@@ -407,10 +365,12 @@ int HostUiInt::sendComboToHost(string comboName)
 		if(debugOutput) cout << "error reading data" << endl;
 	}
 
-	//clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 
 #if(dbg >= 1)
+	if(debugOutput) cout << "******************************************" << endl;
 	if(debugOutput) cout << "***** EXITING: HostUiInt::sendComboToHost: " << status << endl;
+	if(debugOutput) stopTimer("sendComboToHost");
+	if(debugOutput) cout << "******************************************" << endl;
 #endif
 
 	return status;
@@ -420,7 +380,10 @@ int HostUiInt::sendComboToHost(string comboName)
 string HostUiInt::getComboFromHost(string comboJson)
 {
 	#if(dbg >= 1)
+		if(debugOutput) cout << "******************************************" << endl;
 		if(debugOutput) cout << "***** ENTERING: HostUiInt::getComboFromHost" << endl;
+		if(debugOutput) cout << "******************************************" << endl;
+		startTimer();
 	#endif
 
 		clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
@@ -432,59 +395,52 @@ string HostUiInt::getComboFromHost(string comboJson)
 
 
 	{
-		//int retVal;
 		bool done = false;
 
-		strcpy(this->hostUiRawRequestCharArray, comboJson.c_str()/*usb.readData()*/);
-		if(debugOutput) cout << "USB data size: " << strlen(/*comboJson.c_str()*/usb.readData()) << endl;
+		strcpy(this->hostUiRawRequestCharArray, comboJson.c_str());
+		if(debugOutput) cout << "USB data size: " << strlen(usb.readData()) << endl;
 		if(strlen(usb.readData()) < 4000)
 			done = true;
 
 		while(!done)
 		{
-			//if(debugOutput) cout << "waiting for next packet..." << endl;
+
 			if(usb.newData() == 1)
 			{
 				strcat(this->hostUiRawRequestCharArray, usb.readData());
 				if(debugOutput) cout << "USB data size: " << strlen(usb.readData()) << endl;
 				if(strlen(usb.readData()) < 4000) done = true;
 			}
-			/*else
-			{
-				if(debugOutput) cout << "error getting data from host." << endl;
-				status = 1;
-				break;
-			}*/
+
 		}
-		//if(this->getData(SHARED_MEMORY_FILE_ADDRESS, this->comboJson, SHARED_MEMORY_FILE_SIZE) == 0)
-		{
-			// Filter data first
-			int filteredDataIndex = 0;
-	#if(dbg >= 2)
-				if(debugOutput) cout << "filtering data" << endl;
-	#endif
-			for(int dataIndex = 0; this->hostUiRawRequestCharArray[dataIndex] != 0 && dataIndex < FILE_SIZE; dataIndex++)
-			{
-				if(' ' <= this->hostUiRawRequestCharArray[dataIndex] && this->hostUiRawRequestCharArray[dataIndex] <= '~')
-				{
-					filteredComboData[filteredDataIndex] = this->hostUiRawRequestCharArray[dataIndex];
-		#if(dbg >= 2)
-					if(debugOutput) cout << filteredComboData[filteredDataIndex] << ',';
-		#endif
-					filteredDataIndex++;
-				}
-			}
+
+		// Filter data first
+		int filteredDataIndex = 0;
 #if(dbg >= 2)
-			if(debugOutput) cout << "data filtered" << endl;
-			if(debugOutput) cout << "filtered combo data: " << filteredComboData << endl;
+			if(debugOutput) cout << "filtering data" << endl;
 #endif
-			comboName = saveComboToFileSystem(string(filteredComboData));
-			if(comboName.empty() == true)
+		for(int dataIndex = 0; this->hostUiRawRequestCharArray[dataIndex] != 0 && dataIndex < FILE_SIZE; dataIndex++)
+		{
+			if(' ' <= this->hostUiRawRequestCharArray[dataIndex] && this->hostUiRawRequestCharArray[dataIndex] <= '~')
 			{
-				if(debugOutput) cout << "error saving combo." << endl;
-				status = -1;
+				filteredComboData[filteredDataIndex] = this->hostUiRawRequestCharArray[dataIndex];
+	#if(dbg >= 2)
+				if(debugOutput) cout << filteredComboData[filteredDataIndex] << ',';
+	#endif
+				filteredDataIndex++;
 			}
 		}
+#if(dbg >= 2)
+		if(debugOutput) cout << "data filtered" << endl;
+		if(debugOutput) cout << "filtered combo data: " << filteredComboData << endl;
+#endif
+		comboName = saveComboToFileSystem(string(filteredComboData));
+		if(comboName.empty() == true)
+		{
+			if(debugOutput) cout << "error saving combo." << endl;
+			status = -1;
+		}
+
 	}
 
 #if(dbg >= 2)
@@ -493,7 +449,10 @@ string HostUiInt::getComboFromHost(string comboJson)
 	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 
 #if(dbg >= 1)
+	if(debugOutput) cout << "******************************************" << endl;
 	if(debugOutput) cout << "***** EXITING: HostUiInt::getComboFromHost: " << comboName << endl;
+	if(debugOutput) cout << stopTimer("getComboFromHost");
+	if(debugOutput) cout << "******************************************" << endl;
 #endif
 
 	return comboName;

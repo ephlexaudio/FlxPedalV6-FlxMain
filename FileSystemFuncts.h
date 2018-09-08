@@ -30,7 +30,6 @@ int validateJsonBuffer(char *jsonBuffer);
 std::vector<string> getComponentList(void);
 std::string getComponentData(std::string componentName);
 std::vector<string> getComboListFromFileSystem(void);
-//std::vector<string> getComboFileList(void);
 std::string getComboDataFromFileSystem(std::string comboName);
 string saveComboToFileSystem(std::string comboData);
 int deleteComboFromFileSystem(std::string comboName);

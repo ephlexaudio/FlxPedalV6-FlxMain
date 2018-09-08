@@ -21,7 +21,6 @@
 #include <iostream>
 #include <errno.h>
 #include "utilityFunctions.h"
-#include "ComputeModulePinOuts2.h"
 #include "GPIOClass.h"
 
 #define FILE_SIZE 32000
@@ -39,7 +38,6 @@ private:
 public:
 	UsbInt();
 	~UsbInt();
-	GPIOClass usbDetect;// = GPIOClass(USB_CONNECTED);
 	int connect();
 	int disconnect();
 	int openPort();

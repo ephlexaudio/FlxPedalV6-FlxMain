@@ -10,10 +10,6 @@
 #include "ProcessingControl.h"
 
 
-/*#define COMBO_DATA_VECTOR 0
-#define COMBO_DATA_ARRAY 0
-#define COMBO_DATA_MAP 1*/
-
 using namespace std;
 
 extern bool debugOutput;
@@ -31,19 +27,7 @@ extern int oldComboStructIndex;
 #define FS1_PIN	33 // 33 and 32 are switch around
 #define FS2_PIN	32
 
-/**************************************
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: ProcessingControl::" << endl;
-	if(debugOutput) cout << ": " <<  << endl;
-#endif
 
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: ProcessingControl::: " << status << endl;
-#endif
-
-#if(dbg >=2)
-#endif
-********************************************/
 extern int globalComboIndex;
 extern bool justPoweredUp;
 extern bool inputsSwitched;
@@ -52,55 +36,33 @@ extern bool inputsSwitched;
 #define CONTROL_PIN_1_NUMBER 42
 #define CONTROL_PIN_2_NUMBER 43
 
-#if(COMBO_DATA_VECTOR == 1)
-	extern vector<ComboDataInt> comboDataVector;
-#elif(COMBO_DATA_ARRAY == 1)
-	extern ComboDataInt comboDataArray[15];
-#elif(COMBO_DATA_MAP == 1)
 	extern map<string, ComboDataInt> comboDataMap;
-#endif
 
 
 ProcessingControl::ProcessingControl()
 {
 
-	//this->footswitchStatus = {false, false};
 	//right/control port signal switches (audio/control_voltage/ground)
 	char gpioStr[5];
 	strcpy(gpioStr,"out");
-	//this->processing = new Combo; /
-	/*this->portConSwitch[0] = GPIOClass(CONTROL_PIN_0_NUMBER);
-	this->portConSwitch[0].export_gpio();
-	this->portConSwitch[0].setdir_gpio(gpioStr);
-	//this->portConSwitch[0].setdir_gpio("out");
-	this->portConSwitch[0].setval_gpio(1);
 
-	this->portConSwitch[1] = GPIOClass(CONTROL_PIN_1_NUMBER);
-	this->portConSwitch[1].export_gpio();
-	this->portConSwitch[1].setdir_gpio(gpioStr);
-	this->portConSwitch[1].setval_gpio(0);
 
-	this->portConSwitch[2] = GPIOClass(CONTROL_PIN_2_NUMBER);
-	this->portConSwitch[2].export_gpio();
-	this->portConSwitch[2].setdir_gpio(gpioStr);
-	this->portConSwitch[2].setval_gpio(0);*/
-
-	this->footswitchLed[0] = GPIOClass(FS1_LED/*"4"*/);//, "in");
+	this->footswitchLed[0] = GPIOClass(FS1_LED);
 	this->footswitchLed[0].export_gpio();
 	this->footswitchLed[0].setdir_gpio(gpioStr);
 	this->footswitchLed[0].setval_gpio(1);
 
-	this->footswitchLed[1] = GPIOClass(FS2_LED/*"5"*/);//, "out");
+	this->footswitchLed[1] = GPIOClass(FS2_LED);
 	this->footswitchLed[1].export_gpio();
 	this->footswitchLed[1].setdir_gpio(gpioStr);
 	this->footswitchLed[1].setval_gpio(1);
 
 	strcpy(gpioStr,"in");
-	this->footswitchPin[0] = GPIOClass(FS1_PIN/*"4"*/);//, "in");
+	this->footswitchPin[0] = GPIOClass(FS1_PIN);
 	this->footswitchPin[0].export_gpio();
 	this->footswitchPin[0].setdir_gpio(gpioStr);
 
-	this->footswitchPin[1] = GPIOClass(FS2_PIN/*"5"*/);//, "out");
+	this->footswitchPin[1] = GPIOClass(FS2_PIN);
 	this->footswitchPin[1].export_gpio();
 	this->footswitchPin[1].setdir_gpio(gpioStr);
 
@@ -114,10 +76,9 @@ ProcessingControl::~ProcessingControl()
 }
 
 int audioCallbackComboIndex = 100;
-#define dbg 0
+#define dbg 1
 
 
-#if(COMBO_DATA_MAP == 1)
 	int ProcessingControl::load(string comboName)
 	{
 		int status = 0;
@@ -127,27 +88,23 @@ int audioCallbackComboIndex = 100;
 		if(debugOutput) cout << "comboName: " << comboName << endl;
 	#endif
 
-		this->processing->comboName = comboName;
+		this->processing->setComboName(comboName);
 #if(dbg >= 2)
 		if(debugOutput) cout << "comboName: " << comboName << endl;
 
 		if(debugOutput) cout << "stopping combo." << endl;
 #endif
 
-		/*oldComboStructIndex = currentComboStructIndex;
-		currentComboStructIndex ^= 1;*/
+
 #if(dbg >= 2)
 		if(debugOutput) cout << "oldComboStructIndex: " << oldComboStructIndex << "\tcurrentComboStructIndex: " << currentComboStructIndex << endl;
 #endif
 
-		combo = getComboStructFromComboName(this->processing->comboName);
+		combo = comboDataMap[this->processing->getComboName()].getComboStruct();
 		if(combo.name.empty() == false)
 		{
-			if(debugOutput) cout << "loading combo: " << this->processing->comboName  << endl;
+			if(debugOutput) cout << "loading combo: " << this->processing->getComboName()  << endl;
 			this->processing->loadCombo();
-			this->processing->processingUpdated = true;
-			//this->processing->updateProcessing = false;
-			this->processing->processingContextAllocationError = false;
 			if(debugOutput) cout << "combo loaded." << endl;
 		}
 		else
@@ -162,11 +119,10 @@ int audioCallbackComboIndex = 100;
 	#endif
 		return status;
 	}
-#endif
 
 
 
-#define dbg 0
+#define dbg 1
 int ProcessingControl::start() // start clients and connect them
 {
 	int status = 0;
@@ -205,7 +161,6 @@ int ProcessingControl::start() // start clients and connect them
 	this->processing->connectFromPhysical(0,0);	// connects this client in port 0 to physical source port 0
 	this->processing->connectFromPhysical(1,1);	// connects this client in port 1 to physical source port 1
 
-	//char connToString[25];
 #if(dbg >= 1)
 	if(debugOutput) cout << "connecting processes." << endl;
 #endif
@@ -259,7 +214,6 @@ int ProcessingControl::stop() // stop clients and disconnect them
 #if(dbg >= 1)
 	if(debugOutput) cout << "delete this->processing" << endl;
 #endif
-	//exit(0);
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** EXITING: ProcessingControl::stop: " << status << endl;
 #endif
@@ -267,23 +221,7 @@ int ProcessingControl::stop() // stop clients and disconnect them
 	return status;
 }
 
-/*int ProcessingControl::getProcessData(int index, double *data)
-{
-	int status = 0;
 
-	this->processing->getProcessData(index, data);
-
-	return status;
-}*/
-
-/*int ProcessingControl::clearProcessData(int index, double *data)
-{
-	int status = 0;
-
-	this->processing->clearProcessData(index, data);
-
-	return status;
-}*/
 
 #define dbg 0
 
@@ -295,24 +233,18 @@ int ProcessingControl::updateProcessParameter(int parameterIndex, int parameterV
 	if(debugOutput) cout << "parameterIndex: " << parameterIndex << "\tparameterValue: "  << parameterValue << endl;
 #endif
 
-#if(COMBO_DATA_VECTOR == 1)
-	IndexedProcessParameter parameter = comboDataVector[this->processing->comboIndex].sortedParameterArray[parameterIndex];
-#elif(COMBO_DATA_ARRAY == 1)
-	IndexedProcessParameter parameter = comboDataArray[this->processing->comboIndex].sortedParameterArray[parameterIndex];
-#elif(COMBO_DATA_MAP == 1)
-	IndexedProcessParameter parameter = comboDataMap[this->processing->comboName].sortedParameterArray[parameterIndex];
-#endif
+	IndexedProcessParameter parameter = comboDataMap[this->processing->getComboName()].getProcessParameter(parameterIndex);
 	string processName = parameter.processName; // need to use process name instead of index because process index
 											// in parameterArray does not correspond to process index in processSequence
 
 #if(dbg >= 2)
-	if(debugOutput) cout << "processName: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.processName
-			<< "\t\tabsProcessIndex: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.absProcessIndex
-			<< "\t\tparamName: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.paramName
-			<< "\t\tprocessParamIndex: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.processParamIndex
-			<< "\t\tabsParamIndex: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.absParamIndex
-			<< "\t\tparamName: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.paramName
-			<< "\t\tparamValue: " << /*comboData.sortedParameterArray[parameterIndex]*/parameter.paramValue << endl;
+	if(debugOutput) cout << "processName: " << parameter.processName
+			<< "\t\tabsProcessIndex: " << parameter.absProcessIndex
+			<< "\t\tparamName: " << parameter.paramName
+			<< "\t\tprocessParamIndex: " << parameter.processParamIndex
+			<< "\t\tabsParamIndex: " << parameter.absParamIndex
+			<< "\t\tparamName: " << parameter.paramName
+			<< "\t\tparamValue: " << parameter.paramValue << endl;
 #endif
 
 	int processParameterIndex = parameter.processParamIndex;
@@ -345,24 +277,17 @@ int ProcessingControl::updateControlParameter(int parameterIndex, int parameterV
 	if(debugOutput) cout << "this->processing->comboIndex: " << this->processing->comboIndex << endl;
 #endif
 
-#if(COMBO_DATA_VECTOR == 1)
-	IndexedControlParameter parameter = comboDataVector[this->processing->comboIndex].controlParameterArray[parameterIndex];
-#elif(COMBO_DATA_ARRAY == 1)
-	IndexedControlParameter parameter = comboDataArray[this->processing->comboIndex].controlParameterArray[parameterIndex];
-#elif(COMBO_DATA_MAP == 1)
 	string tempString;
-	IndexedControlParameter parameter = comboDataMap[this->processing->comboName].controlParameterArray[parameterIndex];
-#endif
+	IndexedControlParameter parameter = comboDataMap[this->processing->getComboName()].getControlParameter(parameterIndex);
 	string controlName = parameter.controlName; // need to use control name instead of index because control index
 											// in parameterArray does not correspond to control index in controlSequence
 
 #if(dbg >= 2)
-	//int procParamIndex = comboData.controlParameterArray[parameterIndex].absProcessParamIndex;
-	if(debugOutput) cout << "controlName: " << /*comboData.controlParameterArray[parameterIndex]*/parameter.controlName
-			<< "\tabsControlIndex: " << /*comboData.controlParameterArray[parameterIndex]*/parameter.absControlIndex
-			<< "\tcontrolParamName: " << /*comboData.controlParameterArray[parameterIndex]*/parameter.controlParamName
-			<< "\tcontrolParamIndex: " << /*comboData.controlParameterArray[parameterIndex]*/parameter.controlParamIndex
-			<< "\tcontrolParamValue: " << /*comboData.controlParameterArray[parameterIndex]*/parameter.controlParamValue << endl;
+	if(debugOutput) cout << "controlName: " << parameter.controlName
+			<< "\tabsControlIndex: " << parameter.absControlIndex
+			<< "\tcontrolParamName: " << parameter.controlParamName
+			<< "\tcontrolParamIndex: " << parameter.controlParamIndex
+			<< "\tcontrolParamValue: " << parameter.controlParamValue << endl;
 #endif
 
 	int controlParameterIndex = parameter.controlParamIndex;
@@ -409,6 +334,39 @@ int ProcessingControl::disableEffects()
 	return status;
 }
 
+#define dbg 0
+int ProcessingControl::enableAudioInput()
+{
+	int status = 0;
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** ENTERING: ProcessingControl::enableAudioInput" << endl;
+#endif
+
+	status = this->processing->enableAudioInput();
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** EXITING: ProcessingControl::enableAudioInput: " << status << endl;
+#endif
+	return status;
+}
+
+
+int ProcessingControl::disableAudioInput()
+{
+	int status = 0;
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** ENTERING: ProcessingControl::disableAudioInput" << endl;
+#endif
+
+	status = this->processing->disableAudioInput();
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "***** EXITING: ProcessingControl::disableAudioInput: " << status << endl;
+#endif
+	return status;
+}
+
+
 #define dbg 1
 int ProcessingControl::enableAudioOutput()
 {
@@ -417,8 +375,7 @@ int ProcessingControl::enableAudioOutput()
 	if(debugOutput) cout << "***** ENTERING: ProcessingControl::enableAudioOutput" << endl;
 #endif
 
-	system("i2cset -f -y 1 0x1a 0x0a 0x07");
-	//status = this->processing->enableAudioOutput();
+	status = this->processing->enableAudioOutput();
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** EXITING: ProcessingControl::enableAudioOutput: " << status << endl;
@@ -434,29 +391,12 @@ int ProcessingControl::disableAudioOutput()
 	if(debugOutput) cout << "***** ENTERING: ProcessingControl::disableAudioOutput" << endl;
 #endif
 
-	system("i2cset -f -y 1 0x1a 0x0a 0x0F");
-	//status = this->processing->disableAudioOutput();
+	status = this->processing->disableAudioOutput();
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** EXITING: ProcessingControl::disableAudioOutput: " << status << endl;
 #endif
 	return status;
-}
-
-#define dbg 0
-double ProcessingControl::getOutputAmplitudes(void)
-{
-	double amplitude = 0.000;
-#if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: ProcessingControl::getOutputAmplitudes" << endl;
-#endif
-
-	//amplitude = this->processing->getOutputAmplitudes();
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "EXITING: ProcessingControl::getOutputAmplitudes: " << amplitude << endl;
-#endif
-	return amplitude;
 }
 
 
@@ -491,7 +431,7 @@ int ProcessingControl::readFootswitches(void)
 			{
 				this->footswitchStatus[i] ^= true; // footswitches are active low
 				if(debugOutput) cout << "footswitch[" << i << "] = 1: " << this->footswitchStatus[i] << endl;
-				this->footswitchLed[i].setval_gpio((footswitchStatus[i]?0:1));
+				this->footswitchLed[i].setval_gpio((this->footswitchStatus[i]?0:1));
 				this->footSwitchPressed[i] = true;
 			}
 		}
@@ -499,7 +439,6 @@ int ProcessingControl::readFootswitches(void)
 
 
 	this->processing->updateFootswitch(this->footswitchStatus);
-	//if(debugOutput) cout << "footswitchStatusArray: " << footswitchStatusArray[0] << "," << footswitchStatusArray[1] << "," << footswitchStatusArray[2] << "," << footswitchStatusArray[3] << endl;
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** EXITING: ProcessingControl::readFootswitches:" << this->footswitchStatus[0] << "," << this->footswitchStatus[1] << endl;
@@ -508,21 +447,7 @@ int ProcessingControl::readFootswitches(void)
 	return status;
 }
 
-/*#define dbg 0
-int ProcessingControl::updateFootswitch(int *footswitchStatus)
-{
-#if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: ProcessingControl::updateFootswitch" << endl;
-#endif
-	int status = 0;
 
-	this->processing->updateFootswitch(footswitchStatus);
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "EXIT: ProcessingControl::updateFootswitch" << endl;
-#endif
-	return status;
-}*/
 
 int ProcessingControl::setNoiseGateCloseThreshold(float closeThres)
 {

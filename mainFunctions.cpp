@@ -13,12 +13,8 @@
 
 #include "ProcessingControl.h"
 #include "PedalUtilityData.h"
-//#include "Server.h"
-//CONNECTION connArray;
 
-/*#define COMBO_DATA_VECTOR 0
-#define COMBO_DATA_ARRAY 0
-#define COMBO_DATA_MAP 1*/
+
 
 using namespace std;
 
@@ -49,19 +45,12 @@ jack_status_t jackStatus;
 const char **ports;
 std::vector<jack_port_t *> portList;
 
-//extern void setupGpio(void);
 extern std::vector<linuxProcess> linuxProcessList;
 #define FILE_LENGTH 1000
 extern jack_client_t *ofxJackClient;
 
 
-#if(COMBO_DATA_VECTOR == 1)
-extern std::vector<string> comboList;//comboVectorList;
-#elif(COMBO_DATA_ARRAY == 1)
 extern std::vector<string> comboList;
-#elif(COMBO_DATA_MAP == 1)
-extern std::vector<string> comboList;
-#endif
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** ENTERING: mainFunctions::" << endl;
@@ -72,7 +61,6 @@ extern std::vector<string> comboList;
 #endif
 
 
-//extern std::vector<ProcessInt> procIntArray;
 extern int ofxPid;
 extern int childPgid;
 extern int procCount;
@@ -83,117 +71,14 @@ extern int wrapperParamData[10];
 extern PedalUtilityData pedalUtilityData;
 extern ProcessingControl procCont;
 
-#if(COMBO_DATA_VECTOR == 1)
-	extern vector<ComboDataInt> comboDataVector;
-#elif(COMBO_DATA_ARRAY == 1)
-	extern ComboDataInt comboDataArray[15];
-#elif(COMBO_DATA_MAP == 1)
 	extern map<string, ComboDataInt> comboDataMap;
-#endif
 
 extern struct _jackParams jackParams;
 extern int comboDataCount;
-/*extern void *toProcessMemory;
-extern void *fromProcessMemory;
-extern int toProcFD;
-extern int fromProcFD;*/
-
-
-#define dbg 0
 
 
 
-int openJack(void)
-{
-	int status = 0;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: mainFunctions::openJack" << endl;
-#endif
-
-
-	uint8_t i2cInitSequence[][2] = 	{
-			{0x12 ,0},		// setting to inactive
-			{0x10 ,0},		// resetting
-			{0x0E ,0x4E},	// setting DAIF
-			{0x00 ,0x17},	// setting left line-in register
-			{0x02 ,0x17},	// setting right line-in register
-			{0x08 ,0x12},	// enabling DAC
-			{0x0A ,0x04},	// disable DAC soft mute
-			{0x0C ,0x5F},	// disabling POWEROFF
-			{0x0C ,0x5E},	// powering line inputs
-			{0x0C ,0x5A},	// powering ADC
-			{0x0C ,0x52},	// powering DAC
-			{0x0C ,0x42},	// powering outputs
-			{0x12 ,0x01}	// setting to active
-	};
-	uint8_t i2cInitLength = 13;
-
-	int i2cDevFile;
-	int i2cAdapter=1;
-	char i2cDevFileName[20];
-	uint8_t i2cBuffer[2];
-	uint8_t i2cStatus = 0;
-
-    int pipe_stdin[2], pipe_stdout[2];
-    int p,p2;
-
-
-    if(debugOutput) cout << "jackctl_server_create" << endl;
-    ofxJackServer = jackctl_server_create(NULL, NULL);
-
-	//*************  Finish setting codec registers ************
-	  snprintf(i2cDevFileName, 19, "/dev/i2c-%d", i2cAdapter);
-	  i2cDevFile = open(i2cDevFileName, O_WRONLY);
-	  if (i2cDevFile < 0)
-	  {
-	    // ERROR HANDLING; you can check errno to see what went wrong
-#if(dbg==1)
-		  printf("error creating I2C device file.\n");
-#endif
-		  status = 1;
-	  }
-	  int addr = 0x1a; // The I2C address
-
-	  if((ioctl(i2cDevFile, I2C_SLAVE_FORCE, addr) < 0) && status == 0)
-	  {
-	    // ERROR HANDLING; you can check errno to see what went wrong
-#if(dbg==1)
-		  printf("error opening I2C device file: %d\n", errno);
-#endif
-		  status = 1;
-	  }
-
-	  if(status == 0)
-	  {
-		  do{
-			  errno = 0;
-			  i2cStatus = write(i2cDevFile,i2cInitSequence[0],2);
-#if(dbg==1)
-			  printf("i2c deactivate result: %d\n", errno);
-#endif
-			  nanosleep((const struct timespec[]){{0, 100000000L}}, NULL);
-
-		  }while ((errno != 0));
-
-
-		  for(uint8_t i = 1; i < i2cInitLength; i++)
-		  {
-			  i2cStatus = write(i2cDevFile,i2cInitSequence[i],2);
-#if(dbg==1)
-			  printf("i2c init result: %d\n", errno);
-#endif
-
-		  } //while(i2cStatus < 2);
-	  }
-	  close(i2cDevFile);
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: mainFunctions::openJack:" << status << endl;
-#endif
-
-    return status;
-}
-
-#define dbg 0
+#define dbg 1
 int startJack(void)
 {
 	int status = 0;
@@ -203,12 +88,11 @@ int startJack(void)
 #endif
 
 
-	if(debugOutput) cout << "mainFunctions JACK period: " << pedalUtilityData.getJack_Period()/*jackParams.period*/ << "\tJACK buffer: " << pedalUtilityData.getJack_Buffer()/*jackParams.buffer*/ << endl;
+	if(debugOutput) cout << "mainFunctions JACK period: " << pedalUtilityData.getJack_Period() << "\tJACK buffer: " << pedalUtilityData.getJack_Buffer() << endl;
 
 	char jackInitString[100];
-	sprintf(jackInitString, "jackd -d alsa -p %d -n %d &", pedalUtilityData.getJack_Period(), pedalUtilityData.getJack_Buffer()/*jackParams.period, jackParams.buffer*/);
+	sprintf(jackInitString, "jackd -d alsa -p %d -n %d &", pedalUtilityData.getJack_Period(), pedalUtilityData.getJack_Buffer());
 	system(jackInitString);
-	//system("jackd -d alsa &");
 	sleep(2);
 	if(debugOutput) cout << "setting up I2C port..." << endl;
 	uint8_t i2cInitSequence[][2] = 	{
@@ -234,8 +118,6 @@ int startJack(void)
 	uint8_t i2cBuffer[2];
 	uint8_t i2cStatus = 0;
 
-    /*if(debugOutput) cout << "jackctl_server_create" << endl;
-    ofxJackServer = jackctl_server_create(NULL, NULL);*/
 
 	//*************  Finish setting codec registers ************
 	  snprintf(i2cDevFileName, 19, "/dev/i2c-%d", i2cAdapter);
@@ -279,7 +161,7 @@ int startJack(void)
 			  printf("i2c init result: %d\n", errno);
 #endif
 
-		  } //while(i2cStatus < 2);
+		  }
 	  }
 	  close(i2cDevFile);
 #if(dbg >= 1)
@@ -298,31 +180,10 @@ int stopJack(void)
     return status;
 }
 
-int closeJack(void)
-{
-	int status = 0;
-
-    //jackctl_server_destroy(ofxJackServer);
-
-	status = system("killall -9 jackd");
-
-	//sleep(1);
-    return status;
-}
-
-
-
-
-
-
-
 
 #define dbg 0
 int stopCombo(void)
 {
-	//if(debugOutput) cout << "stopCombo connectionArray size: " << connCont.connectionArray.size() << endl;
-
-	//if(debugOutput) cout << "closing dummy client: " << jack_client_close(ofxJackClient) << endl;
 
 	printf("stopCombo\n");
 	int status = 0;
@@ -330,16 +191,12 @@ int stopCombo(void)
 	if(debugOutput) cout << "***** ENTERING: mainFunctions::stopCombo" << endl;
 #endif
 
-	//int procCount = 0;
 	char procOutput[15];
 	int connCount = 0;
 	stopJack();
-	//procCont.stop();//stopCombo();
 	sleep(1);
 	char disconnString[100];
 	startTimer();
-	//procCount = 1;//combo.effectComboJson["processes"].size();
-
 
 
 	  stopTimer("stopCombo");
@@ -349,7 +206,7 @@ int stopCombo(void)
 	return status;
 }
 
-#define dbg 1
+#define dbg 0
 ComboDataInt getComboObject(string comboName)
 {
 	ComboDataInt comboObject;
@@ -363,20 +220,12 @@ ComboDataInt getComboObject(string comboName)
 	status = comboObject.loadComboStructFromName((char *)comboName.c_str());
 
 
-	//if(status >= 0)
 	{
 #if(dbg >= 1)
-		if(debugOutput) cout << "***** EXITING mainFunctions::getComboObject: " << comboObject.comboName << endl;
+		if(debugOutput) cout << "***** EXITING mainFunctions::getComboObject: " << comboObject.getName() << endl;
 #endif
 		return comboObject;
 	}
-	/*else
-	{
-#if(dbg >= 1)
-		if(debugOutput) cout << "***** EXITING mainFunctions::getComboObject: " << nullObject.comboName << endl;
-#endif
-		return nullObject;
-	}*/
 }
 
 
@@ -400,21 +249,12 @@ int listComboMapObjects(void)
 }
 
 #define dbg 0
-#if(COMBO_DATA_MAP == 1)
 int loadComboStructMapAndList(void)
 {
 	int status = 0;
 #if(dbg >= 1)
 if(debugOutput) cout << "*****ENTERING mainFunctions::loadComboStructMapAndList" << endl;
 #endif
-
-/*	FILE *fdComboList = popen("ls /home/Combos","r");
-char buffer[20];
-
-for(int i = 0; i<20;i++)
-{
-	buffer[i] = 0;
-}*/
 
 	comboList = getComboListFromFileSystem();
 
@@ -428,7 +268,6 @@ for(int i = 0; i<20;i++)
 	else
 	{
 		comboDataMap.clear();
-		//while(fgets(buffer,20,fdComboList) != NULL)
 		for(vector<string>::size_type comboListIndex = 0; comboListIndex < comboList.size(); comboListIndex++)
 		{
 			addComboStructToMap(comboList[comboListIndex]);
@@ -469,21 +308,6 @@ if(debugOutput) cout << "***** EXITING mainFunctions::getComboMapList" << endl;
 		return tempComboList;
 }
 
-int getComboMapIndex(string comboName)
-{
-	int status = 0;
-#if(dbg >= 1)
-if(debugOutput) cout << "*****ENTERING mainFunctions::getComboMapIndex" << endl;
-if(debugOutput) cout << "comboName: " << comboName << endl;
-#endif
-
-
-
-#if(dbg >= 1)
-if(debugOutput) cout << "***** EXITING mainFunctions::getComboMapIndex: " << status << endl;
-#endif
-	return status;
-}
 
 //************* Use this when adding individual comboStructs to comboStruct map and comboList *****************
 int addComboStructToMapAndList(string comboName)
@@ -495,9 +319,8 @@ int addComboStructToMapAndList(string comboName)
 #endif
 
 	ComboDataInt tempCombo = getComboObject(comboName);
-	if(tempCombo.comboName.empty() == false)
+	if(tempCombo.getName().empty() == false)
 	{
-		//comboDataMap.insert({comboName, tempCombo});
 		comboDataMap[comboName] = tempCombo;
 		comboList = getComboMapList();
 	}
@@ -513,7 +336,7 @@ int addComboStructToMapAndList(string comboName)
 	return status;
 }
 
-#define dbg 1
+#define dbg 0
 //************* Use this when re-creating entire comboStruct map *****************
 int addComboStructToMap(string comboName)
 {
@@ -524,9 +347,8 @@ int addComboStructToMap(string comboName)
 #endif
 
 	ComboDataInt tempCombo = getComboObject(comboName);
-	if(tempCombo.comboName.empty() == false)
+	if(tempCombo.getName().empty() == false)
 	{
-		//comboDataMap.insert({comboName, tempCombo});
 		comboDataMap[comboName] = tempCombo;
 	}
 	else
@@ -566,35 +388,3 @@ if(debugOutput) cout << "***** EXITING mainFunctions::deleteComboStructFromMapAn
 #endif
 	return status;
 }
-#endif
-
-
-int deleteComboNameFromList(string comboName)
-{
-int status = 0;
-#if(dbg >= 1)
-if(debugOutput) cout << "*****ENTERING mainFunctions::deleteComboNameFromList" << endl;
-if(debugOutput) cout << "comboName: " << comboName << endl;
-#endif
-
-for(int i = 0; i < comboList.size(); i++)
-{
-	if(comboList[i].compare(string(comboName)) == 0)
-	{
-		comboList.erase(comboList.begin() + i);
-		break;
-	}
-	if(i == comboList.size() - 1)
-	{
-		if(debugOutput) cout << "combo object not found:" << comboName << endl;
-		status = -1;
-	}
-}
-
-	#if(dbg >= 1)
-if(debugOutput) cout << "***** EXITING mainFunctions::deleteComboNameFromList: " << status << endl;
-#endif
-	return status;
-}
-
-

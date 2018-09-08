@@ -8,15 +8,6 @@
 #include "config.h"
 #include "UsbInt.h"
 #define FILE_SIZE 32000
-/*
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: UsbInt::" << endl;
-#endif
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: UsbInt::" << endl;
-#endif
-*/
 
 using namespace std;
 
@@ -25,7 +16,6 @@ extern bool debugOutput;
 UsbInt::UsbInt() {
 	// TODO Auto-generated constructor stub
 	this->hostUiFD = 0;
-	//this->usbDetect = GPIOClass(USB_CONNECTED);
 	this->portOpenStatus = 0;
 }
 
@@ -132,7 +122,6 @@ int UsbInt::openPort()
 	cout << "********** ENTERING UsbInt::openPort: " <<  endl;
 #endif
 
-	//if(this->portOpenStatus == 0)
 	{
 		this->hostUiFD = open("/dev/ttyGS0", O_RDWR | O_NONBLOCK);
 		if(this->hostUiFD >= 0)
@@ -145,11 +134,6 @@ int UsbInt::openPort()
 			if(debugOutput) cout << "failed to open USB:"  << errno << endl;
 		}
 	}
-	/*else
-	{
-		if(debugOutput) cout << "USB already connected." << endl;
-		status = 0;
-	}*/
 #if(dbg >= 1)
 	cout << "********** EXITING UsbInt::openPort: " << status << endl;
 #endif
@@ -185,22 +169,7 @@ int UsbInt::closePort()
 
 int UsbInt::isConnected()
 {
-	//bool status = false;
-	int usbLine = 0;
-#if(dbg >= 1)
-	cout << "********** ENTERING UsbInt::isUsbCableConnected: " <<  endl;
-#endif
-
-	//this->usbDetect.getval_gpio(usbLine);
-	//if(usbLine == 1) status = true;
-
-#if(dbg >= 1)
-	cout << "********** EXITING UsbInt::isUsbCableConnected: " << status << endl;
-#endif
-
-	//return status;
 	return this->connectionStatus;
-
 }
 
 
@@ -228,8 +197,6 @@ int UsbInt::newData(void)
 #endif
 		status = 1;
 	}
-	/*else
-		status = strlen(this->usbCleanInputBuffer );*/
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** EXITING: UsbInt::newData" << endl;
@@ -254,7 +221,6 @@ int UsbInt::writeData(char *input)
 #endif
 	clearBuffer(this->usbOutputBuffer,FILE_SIZE);
 
-	//sprintf(this->usbOutputBuffer,"%s\r\n", input);
 	sprintf(this->usbOutputBuffer,"%s\n", input);
 
 #if(dbg >= 2)

@@ -54,8 +54,9 @@
 							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.pkgconfig.751352265" name="Buildroot ARM Pkg config (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.pkgconfig"/>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.2047983589.1868786271" name="Effects2.h" rcbsApplicability="disable" resourcePath="Processes.h" toolsToInvoke=""/>
 					<sourceEntries>
-						<entry excluding="SharedMemoryInt.h|SharedMemoryInt.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="ComputeModulePinOuts2.h|ComputeModulePinOuts.h|ComponentSymbols.old3h|ComponentSymbols_Mar_2018.txt|SharedMemoryInt.h|SharedMemoryInt.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

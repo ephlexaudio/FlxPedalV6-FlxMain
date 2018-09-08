@@ -1,5 +1,5 @@
 /*
- * DatabaseInt.h
+ * ComboDataInt.h
  *
  *  Created on: Dec 24, 2015
  *      Author: mike
@@ -21,36 +21,9 @@
 
 using namespace std;
 
-//#include "ConnectionCont.h"
 #include "structs.h"
 #include "utilityFunctions.h"
 
-
-
-/*typedef struct ProcessParams{
-	string name;
-	int type;
-	int value;
-};
-
-typedef struct Process{
-	string name;
-	string type;
-	int footswitchType;
-	int footswitchNumber;
-	vector<string> inputs;
-	vector<string> outputs;
-	vector<ProcessParams> params;
-
-};*/
-
-struct effectIO{
-	string effectName;
-	string inputProcess[2];
-	string inputPort[2];
-	string outputProcess[2];
-	string outputPort[2];
-};
 
 #define JSON_BUFFER_LENGTH 32000
 class ComboDataInt
@@ -58,33 +31,46 @@ class ComboDataInt
 
 private:
 
-	/*struct Connector{
-		string process;
-		string port;
-	};*/
 
 	int comboFD;
-	//FILE * comboFD;
 	Json::Reader comboReader;
 	Json::FastWriter comboWriter;
 	char jsonBuffer[JSON_BUFFER_LENGTH];
 	char fileNameBuffer[20];
 	char fileNamePathBuffer[40];
-	/*unsigned int delaybCount;
-	unsigned int filter3bbCount;
-	unsigned int filter3bb2Count;
-	unsigned int lohifilterbCount;
-	unsigned int mixerbCount;
-	unsigned int volumebCount;
-	unsigned int waveshaperbCount;
-	unsigned int reverbbCount;
-	unsigned int samplerbCount;
-	unsigned int oscillatorbCount;*/
 	int inputProcBufferIndex[2];
 	int outputProcBufferIndex[2];
 
 	std::vector<Connector> dataReadyList;
 	string currentTargetProcess;
+	string comboName;
+	Json::Value effectComboJson;
+	Json::Value pedalUiJson;
+	std::vector<Json::Value> unsequencedProcessListJson;
+	std::vector<Process> unsequencedProcessListStruct;
+	std::vector<Json::Value> unsequencedConnectionListJson;
+	std::vector<ProcessConnection> unsequencedConnectionListStruct;
+
+	std::vector<Json::Value> connectionsJson;
+	std::vector<Json::Value> processesJson;
+
+	std::vector<Process> processesStruct; // process here are in order
+	std::vector<ProcessConnection> connectionsStruct;
+	std::vector<Control> controlsStruct;
+	std::vector<ControlConnection> controlConnectionsStruct;
+
+	std::vector<IndexedProcessParameter> unsortedProcessParameterArray;
+	std::vector<IndexedProcessParameter> sortedProcessParameterArray;
+	std::vector<IndexedControlParameter> sortedControlParameterArray;
+
+	ProcessEvent processSequence[20];
+	ControlEvent controlSequence[20];
+	ProcessBuffer procBufferArray[60];
+	int footswitchStatus[10];
+	int processCount;
+	int effectCount;
+	int controlCount;
+	int bufferCount;
 	/**** Tasks for sequencing processes *******/
 
 	void readUnsequencedConnectionListJsonIntoUnsequencedConnectionListStruct();
@@ -99,13 +85,9 @@ private:
 	std::vector<string> getNextProcesses();
 	std::vector<IndexedProcessParameter> tempParameterArray;
 
-	//int addFirstConnectionToConnectionList();
-	//int addNextConnectionToConnectionList(string srcProcess, string srcPort);
-	//bool checkConnectionListDestinationsAgainstUnsequencedProcessInputs(string processName);
 	int areDataBuffersReadyForProcessInputs(string processName);
 	int areAllProcessInputsSatisfied(string processName);
 	int transferProcessToSequencedProcessList(string processName);
-	//void deleteConnectionsFromConnectionListContainingProcessInputs(string processName);
 	int addOutputConnectionsToDataReadyList(string processName);
 	int addOutputConnectionsToDataReadyList(vector<string> processNames);
 	int transferProcessesToSequencedProcessList(vector<string> processNames);
@@ -113,57 +95,43 @@ private:
 	bool isOutputInDataReadyList(Connector output);
 	Json::Value getJsonValueFromUnorderedJsonValueList(int index, string arrayName, Json::Value arrayContainer);
 	Json::Value getJsonValueFromUnorderedJsonValueList(int index, Json::Value array);
-	//int getParameterArray();
 	Json::Value mergeConnections(Json::Value srcConn, Json::Value destConn);
 	ProcessConnection mergeConnections(ProcessConnection srcConn, ProcessConnection destConn);
 	bool compareConnectionsSrc2Dest(Json::Value conn1, Json::Value conn2);
 	bool compareConnectionsSrc2Dest(ProcessConnection srcConn, ProcessConnection destConn);
 	int transferConnection(Json::Value conn, vector<Json::Value> *srcConnArray, vector<Json::Value> *destConnArray);
+	//************************ previously in public space ******************************
+
 	int getProcessSequenceIndex(string processName);
 	int getControlSequenceIndex(string controlName);
-	//int processCount;
-	//int controlCount;
-	//int bufferCount;
-
-public:
-	ComboDataInt();
-	~ComboDataInt();
-	string comboName;
-	Json::Value effectComboJson;
-	Json::Value pedalUiJson;
-	std::vector<Json::Value> unsequencedProcessListJson;
-	std::vector<Process> unsequencedProcessListStruct;
-	std::vector<Json::Value> unsequencedConnectionListJson;
-	std::vector<ProcessConnection> unsequencedConnectionListStruct;
-
-	std::vector<Json::Value> connectionsJson;
-	std::vector<Json::Value> processesJson;
-
-	std::vector<Process> processesStruct;
-	//std::vector<ProcessConnection> connectionsStruct;
-	std::vector<ProcessConnection> connectionsStruct;
-	std::vector<Control> controlsStruct;
-	std::vector<ControlConnection> controlConnectionsStruct;
-
-	std::vector<IndexedProcessParameter> unsortedParameterArray;
-	std::vector<IndexedProcessParameter> sortedParameterArray;
-	std::vector<IndexedControlParameter> controlParameterArray;
-	//std::vector<Parameter> parameterArray;
-
-	ProcessEvent processSequence[20]; // do these 5 variables/structs need to be public ??
-	ControlEvent controlSequence[20];
-	ProcessBuffer procBufferArray[60];
-	int footswitchStatus[10];
-	/*int inputProcBufferIndex[2];
-	int outputProcBufferIndex[2];*/
-	int processCount;
-	int controlCount;
-	int bufferCount;
-
 	int getInputProcBufferIndex(int LRindex);
 	int getOutputProcBufferIndex(int LRindex);
 	void setInputProcBufferIndex(int LRindex, int bufferIndex);
 	void setOutputProcBufferIndex(int LRindex, int bufferIndex);
+	int getCombo(char *comboName); //get JSON data from file and parse into effectComboJson
+	int getConnections2(void);
+	int getProcesses(void); // setup processesStruct and unsortedParameterArray using effectComboJson
+	int getControls(void);	// setup controlsStruct and controlParameterArray using effectComboJson
+	int getControlConnections(void);  // setup controlConnectionsStruct using effectComboJson
+	int setProcData(struct ProcessEvent *procEvent, Process processStruct);
+
+	int setProcParameters(struct ProcessEvent *procEvent, Process processStruct);
+
+	int initProcInputBufferIndexes(struct ProcessEvent *procEvent);
+	int initProcOutputBufferIndexes(struct ProcessEvent *procEvent);
+	int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<ProcessConnection> connectionsStruct);
+	int connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray();
+	int connectProcessInputsToProcessOutputBuffersUsingConnectionsStruct();
+	int initializeProcessDataIntoProcessEventElement();
+	int initializeControlDataIntoControlEventElement();
+	int setProcessSequenceParameter(string processName, int parameterIndex, int valueIndex);
+	int setControlSequenceParameter(string controlName, int parameterIndex, int valueIndex);
+
+
+public:
+	ComboDataInt();
+	~ComboDataInt();
+
 
 	void printSequencedConnectionJsonList();
 	void printSequencedConnectionStructList();
@@ -181,60 +149,30 @@ public:
 	void printControlConnectionList(void);
 	void printControlParameter(int controlParameterIndex);
 	void printBufferList(void);
+	int getProcessCount();
+	int getControlCount();
+	int getBufferCount();
 
-	int getCombo(char *comboName); //get JSON data from file and parse into effectComboJson
-	int getCombo(string comboData); //get JSON data from input string and parse into effectComboJson
 	int getPedalUi(void); // setup pedalUiJson using effectComboJson
-	int setPedalUiParameter();
-	int getConnections(void); // setup connectionsJson using effectComboJson
-	int getConnections2(void);
-	int getProcesses(void); // setup processesStruct and unsortedParameterArray using effectComboJson
-	int getControls(void);	// setup controlsStruct and controlParameterArray using effectComboJson
-	int getControlConnections(void);  // setup controlConnectionsStruct using effectComboJson
+	Json::Value getPedalUiJson(void);
 
-	int initProcBuffers(struct ProcessBuffer *procBufferArray);
-	int setProcBuffer(struct ProcessBuffer procBufferArray, int processed, int ready);
-	//int resetProcBuffer(struct ProcessBuffer procBufferArray);
-
-	int setProcData(struct ProcessEvent *procEvent, Process processStruct);
-
-	int setProcParameters(struct ProcessEvent *procEvent, Process processStruct);
-
-	int initProcInputBufferIndexes(struct ProcessEvent *procEvent);
-	int initProcOutputBufferIndexes(struct ProcessEvent *procEvent);
-
-	//int setProcInputBufferIndex(struct ProcessEvent *procEvent, int processInputIndex, int inputBufferIndex, struct ProcessBuffer *procBufferArray);
-	//int setProcOutputBufferIndex(struct ProcessEvent *procEvent, int processOutputIndex, int outputBufferIndex, struct ProcessBuffer *procBufferArray);
-
-	int initProcBufferArray(struct ProcessBuffer *bufferArray, vector<ProcessConnection/*Json::Value*/> connectionsStruct);
-	int connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray();
-	int connectProcessInputsToProcessOutputBuffersUsingConnectionsStruct();
-	int initializeProcessDataIntoProcessEventElement();
-	int initializeControlDataIntoControlEventElement();
 	int loadComboStructFromName(char *comboName);
-	int loadComboStructFromJsonString(string comboJson);
-	int loadComboStructFromName2(char *comboName);
-	int saveComboStruct(ComboStruct comboStructData);
 
-	void getProcParameters(int procIndex, int params[10]);
-	int saveCombo(void/*Json::Value combo*/);
+	int saveCombo(void);
 	void listParameters(void);
-	int getProcessIndex(int absParameterIndex);
-	int getControlIndex(string targetProcessName, string targetParameterName);
 	int getProcessParameterIndex(string processName, string parameterName);
 	int getControlParameterIndex(string controlName, string parameterName);
-	int setProcessSequenceParameter(string processName, int parameterIndex, int valueIndex);
-	int setControlSequenceParameter(string controlName, int parameterIndex, int valueIndex);
 
 	int updateProcess(int absParamIndex, int valueIndex);
 	int updateControl(int absParamIndex, int valueIndex);
 	string getName();
+	ComboStruct getComboStruct();
+	IndexedProcessParameter getProcessParameter(int arrayIndex);
+	IndexedControlParameter getControlParameter(int arrayIndex);
+	int getProcessParameterArraySize();
+	int getControlParameterArraySize();
+
 };
-
-//ComboStruct getComboStructFromName(char *comboName);
-
-ComboStruct getComboStructFromComboName(string comboName);
-
 
 
 
