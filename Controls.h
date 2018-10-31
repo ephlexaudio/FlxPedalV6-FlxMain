@@ -12,6 +12,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <array>
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
@@ -23,16 +24,12 @@
 #include <json/json.h>
 
 #include "structs.h"
-#include "ControlSymbols.h"
 
 //******************************** Controls for manipulating process parameters ********************************
 
-int control(char action, bool envTrigger, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
-
-int normal(char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
-int envGen(char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
-int lfo(char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent);
-
+int normal(char action, bool envTrigger, int controlVoltageIndex,  ControlEvent *controlEvent, array<ProcessParameterControlBuffer,60> &paramContBufferArray);
+int envGen(char action, bool envTrigger, int controlVoltageIndex,  ControlEvent *controlEvent, array<ProcessParameterControlBuffer,60> &paramContBufferArray);
+int lfo(char action, bool envTrigger, int controlVoltageIndex,  ControlEvent *controlEvent, array<ProcessParameterControlBuffer,60> &paramContBufferArray);
 
 
 

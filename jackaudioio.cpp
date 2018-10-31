@@ -71,9 +71,9 @@ int JackCpp::AudioIO::jackToClassAudioCallback(jack_nframes_t nframes){
 	}
 
 	//get the input and output buffers
-	for(unsigned int i = 0; i < mNumInputPorts; i++)
+	for(int i = 0; i < mNumInputPorts; i++)
 		mJackInBuf[i] = (jack_default_audio_sample_t *) jack_port_get_buffer ( mInputPorts[i], nframes);
-	for(unsigned int i = 0; i < mNumOutputPorts; i++)
+	for(int i = 0; i < mNumOutputPorts; i++)
 		mJackOutBuf[i] = (jack_default_audio_sample_t *) jack_port_get_buffer ( mOutputPorts[i], nframes);
 
 	return audioCallback(nframes, mJackInBuf, mJackOutBuf);
@@ -83,7 +83,7 @@ jack_client_t * JackCpp::AudioIO::client(){
 	return mJackClient;
 }
 
-JackCpp::AudioIO::AudioIO(std::string name, unsigned int inPorts, unsigned int outPorts, bool startServer) 
+JackCpp::AudioIO::AudioIO(std::string name, int inPorts, int outPorts, bool startServer) 
 	throw(std::runtime_error) : mCmdBuffer(256,true)
 {
 	std::cout << "AudioIO name: " << name << std::endl;
@@ -94,7 +94,7 @@ JackCpp::AudioIO::AudioIO() : mCmdBuffer(256,true), mJackClient(NULL)
 {
 }
 
-void JackCpp::AudioIO::createClient(std::string name, unsigned int inPorts, unsigned int outPorts, bool startServer) 
+void JackCpp::AudioIO::createClient(std::string name, int inPorts, int outPorts, bool startServer) 
 	throw(std::runtime_error) 
 {
   if (mJackClient) {
@@ -127,7 +127,7 @@ void JackCpp::AudioIO::createClient(std::string name, unsigned int inPorts, unsi
 
 	//allocate ports
 	if (inPorts > 0){
-		for(unsigned int i = 0; i < inPorts; i++){
+		for(int i = 0; i < inPorts; i++){
 			std::string portname = "input";
 			portname.append(ToString(i));
 			mInputPorts.push_back(
@@ -135,11 +135,11 @@ void JackCpp::AudioIO::createClient(std::string name, unsigned int inPorts, unsi
 			mPortNames.push_back(portname);
 		}
 		//reserve the data for the jack callback buffers
-		for(unsigned int i = 0; i < mInputPorts.size(); i++)
+		for(int i = 0; i < mInputPorts.size(); i++)
 			mJackInBuf.push_back(NULL);
 	} 
 	if (outPorts > 0){
-		for(unsigned int i = 0; i < outPorts; i++){
+		for(int i = 0; i < outPorts; i++){
 			std::string portname = "output";
 			portname.append(ToString(i));
 			mOutputPorts.push_back(
@@ -147,7 +147,7 @@ void JackCpp::AudioIO::createClient(std::string name, unsigned int inPorts, unsi
 			mPortNames.push_back(portname);
 		}
 		//reserve the data for the jack callback buffers
-		for(unsigned int i = 0; i < mOutputPorts.size(); i++)
+		for(int i = 0; i < mOutputPorts.size(); i++)
 			mJackOutBuf.push_back(NULL);
 	} 
 
@@ -182,7 +182,7 @@ bool JackCpp::AudioIO::portExists(std::string name){
 		return false;
 }
 
-void JackCpp::AudioIO::reserveOutPorts(unsigned int num)
+void JackCpp::AudioIO::reserveOutPorts(int num)
 	throw(std::runtime_error)
 {
 	if(getState() == active)
@@ -191,7 +191,7 @@ void JackCpp::AudioIO::reserveOutPorts(unsigned int num)
 	mJackOutBuf.reserve(num);
 }
 
-void JackCpp::AudioIO::reserveInPorts(unsigned int num)
+void JackCpp::AudioIO::reserveInPorts(int num)
 	throw(std::runtime_error)
 {
 	if(getState() == active)
@@ -200,15 +200,15 @@ void JackCpp::AudioIO::reserveInPorts(unsigned int num)
 	mJackInBuf.reserve(num);
 }
 
-unsigned int JackCpp::AudioIO::inPorts(){
+int JackCpp::AudioIO::inPorts(){
 	return mInputPorts.size();
 }
 
-unsigned int JackCpp::AudioIO::outPorts(){
+int JackCpp::AudioIO::outPorts(){
 	return mOutputPorts.size();
 }
 
-unsigned int JackCpp::AudioIO::addInPort(std::string name)
+int JackCpp::AudioIO::addInPort(std::string name)
 	throw(std::runtime_error)
 {
 	if (mJackState == active && mInputPorts.size() == mInputPorts.capacity())
@@ -244,7 +244,7 @@ unsigned int JackCpp::AudioIO::addInPort(std::string name)
 
 //add an output port, if we are active then deactivate and reactivate after
 //maybe we can do this more intelligently in the future?
-unsigned int JackCpp::AudioIO::addOutPort(std::string name)
+int JackCpp::AudioIO::addOutPort(std::string name)
 	throw(std::runtime_error)
 {
 	if (mJackState == active && mOutputPorts.size() == mOutputPorts.capacity())
@@ -278,7 +278,7 @@ unsigned int JackCpp::AudioIO::addOutPort(std::string name)
 	return mOutputPorts.size() - 1;
 }
 
-void JackCpp::AudioIO::connectTo(unsigned int index, std::string destPortName)
+void JackCpp::AudioIO::connectTo(int index, std::string destPortName)
 	throw(std::range_error, std::runtime_error)
 {
 	int connect_ret;
@@ -298,7 +298,7 @@ void JackCpp::AudioIO::connectTo(unsigned int index, std::string destPortName)
 		throw std::range_error("outport index out of range");
 }
 
-void JackCpp::AudioIO::connectFrom(unsigned int index, std::string sourcePortName)
+void JackCpp::AudioIO::connectFrom(int index, std::string sourcePortName)
 	throw(std::range_error, std::runtime_error)
 {
 	int connect_ret;
@@ -319,7 +319,7 @@ void JackCpp::AudioIO::connectFrom(unsigned int index, std::string sourcePortNam
 }
 
 //XXX should the "free" free the names that these ports point too as well?
-void JackCpp::AudioIO::connectToPhysical(unsigned int index, unsigned physical_index)
+void JackCpp::AudioIO::connectToPhysical(int index, unsigned physical_index)
 	throw(std::range_error, std::runtime_error)
 {
 	const char **ports;
@@ -332,7 +332,7 @@ void JackCpp::AudioIO::connectToPhysical(unsigned int index, unsigned physical_i
 		throw std::range_error("no physical inports to connect to");
 	}
 	//make sure the port exists
-	for(unsigned int i = 0; i <= physical_index; i++){
+	for(int i = 0; i <= physical_index; i++){
 		if(ports[i] == NULL){
 			free(ports);
 			throw std::range_error("physical inport index out of range");
@@ -343,7 +343,7 @@ void JackCpp::AudioIO::connectToPhysical(unsigned int index, unsigned physical_i
 }
 
 //XXX should the "free" free the names that these ports point too as well?
-void JackCpp::AudioIO::connectFromPhysical(unsigned int index, unsigned physical_index)
+void JackCpp::AudioIO::connectFromPhysical(int index, unsigned physical_index)
 	throw(std::range_error, std::runtime_error)
 {
 	const char **ports;
@@ -356,7 +356,7 @@ void JackCpp::AudioIO::connectFromPhysical(unsigned int index, unsigned physical
 		throw std::range_error("no physical outports to connect to");
 	}
 	//make sure the port exists
-	for(unsigned int i = 0; i <= physical_index; i++){
+	for(int i = 0; i <= physical_index; i++){
 		if(ports[i] == NULL){
 			free(ports);
 			throw std::range_error("physical outport index out of range");
@@ -366,7 +366,7 @@ void JackCpp::AudioIO::connectFromPhysical(unsigned int index, unsigned physical
 	free(ports);
 }
 
-void JackCpp::AudioIO::disconnectInPort(unsigned int index)
+void JackCpp::AudioIO::disconnectInPort(int index)
 	throw(std::range_error, std::runtime_error)
 {
 	if (mJackState != active)
@@ -377,7 +377,7 @@ void JackCpp::AudioIO::disconnectInPort(unsigned int index)
 		throw std::range_error("inport index out of range");
 }
 
-void JackCpp::AudioIO::disconnectOutPort(unsigned int index)
+void JackCpp::AudioIO::disconnectOutPort(int index)
 	throw(std::range_error, std::runtime_error)
 {
 	if (mJackState != active)
@@ -388,7 +388,7 @@ void JackCpp::AudioIO::disconnectOutPort(unsigned int index)
 		throw std::range_error("outport index out of range");
 }
 
-unsigned int JackCpp::AudioIO::numConnectionsInPort(unsigned int index)
+int JackCpp::AudioIO::numConnectionsInPort(int index)
 	throw(std::range_error)
 {
 	if(index < mInputPorts.size())
@@ -397,7 +397,7 @@ unsigned int JackCpp::AudioIO::numConnectionsInPort(unsigned int index)
 		throw std::range_error("inport index out of range");
 }
 
-unsigned int JackCpp::AudioIO::numConnectionsOutPort(unsigned int index)
+int JackCpp::AudioIO::numConnectionsOutPort(int index)
 	throw(std::range_error)
 {
 	if(index < mOutputPorts.size())
@@ -406,9 +406,9 @@ unsigned int JackCpp::AudioIO::numConnectionsOutPort(unsigned int index)
 		throw std::range_error("outport index out of range");
 }
 
-unsigned int JackCpp::AudioIO::numPhysicalDestinationPorts(){
+int JackCpp::AudioIO::numPhysicalDestinationPorts(){
 	const char **ports;
-	unsigned int cnt = 0;
+	int cnt = 0;
 	ports = jack_get_ports (mJackClient, NULL, NULL, JackPortIsPhysical|JackPortIsInput);
 	if (ports != NULL){
 		while(ports[cnt] != NULL)
@@ -419,9 +419,9 @@ unsigned int JackCpp::AudioIO::numPhysicalDestinationPorts(){
 		return 0;
 }
 
-unsigned int JackCpp::AudioIO::numPhysicalSourcePorts(){
+int JackCpp::AudioIO::numPhysicalSourcePorts(){
 	const char **ports;
-	unsigned int cnt = 0;
+	int cnt = 0;
 	//XXX is this really correct? we should get the naming right...
 	ports = jack_get_ports (mJackClient, NULL, NULL, JackPortIsPhysical|JackPortIsOutput);
 	if (ports != NULL){
@@ -433,7 +433,7 @@ unsigned int JackCpp::AudioIO::numPhysicalSourcePorts(){
 		return 0;
 }
 
-std::string JackCpp::AudioIO::getInputPortName(unsigned int index)
+std::string JackCpp::AudioIO::getInputPortName(int index)
 	throw(std::range_error)
 {
 	if(index < mInputPorts.size())
@@ -442,7 +442,7 @@ std::string JackCpp::AudioIO::getInputPortName(unsigned int index)
 		throw std::range_error("inport index out of range");
 
 }
-std::string JackCpp::AudioIO::getOutputPortName(unsigned int index)
+std::string JackCpp::AudioIO::getOutputPortName(int index)
 	throw(std::range_error)
 {
 	if(index < mOutputPorts.size())

@@ -112,7 +112,7 @@ thread. Their identities cannot be interchanged.
 			  */
 			void read(Type *dest, unsigned cnt){
 				jack_ringbuffer_data_t readVec[2];
-				unsigned int read_size = sizeof(Type) * cnt;
+				int read_size = sizeof(Type) * cnt;
 				if(getReadSpace() <= 0){
 					//throw error!!!!
 					return;
@@ -160,9 +160,9 @@ thread. Their identities cannot be interchanged.
 			  \param src an array of values to write
 			  \param cnt the number of items from the array to write into our buffer
 			  */
-			void write(Type *src, unsigned int cnt){
+			void write(Type *src, int cnt){
 				jack_ringbuffer_data_t writeVec[2];
-				unsigned int write_size = sizeof(Type) * cnt;
+				int write_size = sizeof(Type) * cnt;
 				if(cnt > getWriteSpace()){
 					//throw error!!!!
 					return;

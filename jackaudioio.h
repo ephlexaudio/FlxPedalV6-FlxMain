@@ -64,8 +64,8 @@ In that method you can get audio in from jack and write it out to jack.
 			//these are only accessed by the callback [once it is activated]
 			//they will usually be equal mOutputPorts.size() etc, except when
 			//a new port is added, before the callback
-			unsigned int mNumOutputPorts;
-			unsigned int mNumInputPorts;
+			int mNumOutputPorts;
+			int mNumInputPorts;
 
 			//these items are used for grabbing data for the jack callback
 			audioBufVector mJackInBuf;
@@ -104,8 +104,8 @@ In that method you can get audio in from jack and write it out to jack.
 			  \sa audioCallback
 			  */
 			AudioIO(std::string name, 
-					unsigned int inPorts = 0, 
-					unsigned int outPorts = 2, 
+					int inPorts = 0, 
+					int outPorts = 2, 
 #ifdef __APPLE__
 					bool startServer = false)
 #else
@@ -117,8 +117,8 @@ In that method you can get audio in from jack and write it out to jack.
 			AudioIO();
 
 			void createClient(std::string name, 
-					unsigned int inPorts = 0, 
-					unsigned int outPorts = 2, 
+					int inPorts = 0, 
+					int outPorts = 2, 
 #ifdef __APPLE__
 					bool startServer = false)
 #else
@@ -157,7 +157,7 @@ In that method you can get audio in from jack and write it out to jack.
 				the client is running.
 			  \param num an integer indicating the number of output ports to reserve
 			*/
-			virtual void reserveOutPorts(unsigned int num)
+			virtual void reserveOutPorts(int num)
 				throw(std::runtime_error);
 			/**
 			   @brief Reserve input ports
@@ -171,7 +171,7 @@ In that method you can get audio in from jack and write it out to jack.
 				the client is running.
 			  \param num an integer indicating the number of input ports to reserve
 			*/
-			virtual void reserveInPorts(unsigned int num)
+			virtual void reserveInPorts(int num)
 				throw(std::runtime_error);
 
 			///Start the jack client.
@@ -185,23 +185,23 @@ In that method you can get audio in from jack and write it out to jack.
 				throw(std::runtime_error);
 
 			///Get the number of jack input ports
-			unsigned int inPorts();
+			int inPorts();
 			///Get the number of jack output ports
-			unsigned int outPorts();
+			int outPorts();
 
 			/**
 			   @brief Add a jack input port to our client
 			  \param name string the name of the port to add
 			  \return the number of total input ports
 			*/
-			virtual unsigned int addInPort(std::string name)
+			virtual int addInPort(std::string name)
 				throw(std::runtime_error);
 			/**
 			   @brief Add a jack output port to our client
 			  \param name string the name of the port to add
 			  \return the number of total output ports
 			*/
-			virtual unsigned int addOutPort(std::string name)
+			virtual int addOutPort(std::string name)
 				throw(std::runtime_error);
 
 			/**
@@ -209,59 +209,59 @@ In that method you can get audio in from jack and write it out to jack.
 			  \param index the index of our output port to connect from.
 			  \param sourcePortName the client:port name to connect to
 			*/
-			void connectTo(unsigned int index, std::string sourcePortName) 
+			void connectTo(int index, std::string sourcePortName) 
 				throw(std::range_error, std::runtime_error);
 			/**
 			   @brief Connect our input to a jack client's destination port.
 			  \param index the index of our input port to connect to
 			  \param destPortName the client:port name to connect from
 			*/
-			void connectFrom(unsigned int index, std::string destPortName)
+			void connectFrom(int index, std::string destPortName)
 				throw(std::range_error, std::runtime_error);
 			/**
 			   @brief Connect our output port to a physical output port
 			  \param index the index of our output port to connect from
 			  \param physical_index the physical output port index to connect to
 			*/
-			void connectToPhysical(unsigned int index, unsigned physical_index)
+			void connectToPhysical(int index, unsigned physical_index)
 				throw(std::range_error, std::runtime_error);
 			/**
 			   @brief Connect our input port to a physical input port
 			  \param index the index of our input port to connect to
 			  \param physical_index the physical input port index to connect from
 			*/
-			void connectFromPhysical(unsigned int index, unsigned physical_index)
+			void connectFromPhysical(int index, unsigned physical_index)
 				throw(std::range_error, std::runtime_error);
 			///Disconnect input port from all connections
-			void disconnectInPort(unsigned int index)
+			void disconnectInPort(int index)
 				throw(std::range_error, std::runtime_error);
 			///Disconnect output port from all connections
-			void disconnectOutPort(unsigned int index)
+			void disconnectOutPort(int index)
 				throw(std::range_error, std::runtime_error);
 
 			///Get the number of connections to our input port
-			unsigned int numConnectionsInPort(unsigned int index)
+			int numConnectionsInPort(int index)
 				throw(std::range_error);
 			///Get the number of connections to our output port
-			unsigned int numConnectionsOutPort(unsigned int index)
+			int numConnectionsOutPort(int index)
 				throw(std::range_error);
 
 			/**
 			   @brief Get the number of physical audio input ports
 				These are ports that can send audio to your client
 			*/
-			unsigned int numPhysicalSourcePorts();
+			int numPhysicalSourcePorts();
 			/**
 			   @brief Get the number of physical audio output ports
 				These are ports that your client can send audio to
 			*/
-			unsigned int numPhysicalDestinationPorts();
+			int numPhysicalDestinationPorts();
 
 			///Get the name of our client's input port
-			std::string getInputPortName(unsigned int index)
+			std::string getInputPortName(int index)
 				throw(std::range_error);
 			///Get the name of our client's output port
-			std::string getOutputPortName(unsigned int index)
+			std::string getOutputPortName(int index)
 				throw(std::range_error);
 
 			/**

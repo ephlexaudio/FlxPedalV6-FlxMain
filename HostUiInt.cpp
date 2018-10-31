@@ -9,10 +9,8 @@
 #include "HostUiInt.h"
 
 
-#define FILE_SIZE 32000
+
 #define SHARED_MEMORY_FILE_ADDRESS 32768
-extern vector<string> componentVector;
-extern vector<string> controlTypeVector;
 extern bool debugOutput;
 
 
@@ -21,189 +19,18 @@ using namespace std;
 HostUiInt::HostUiInt()
 {
 	// TODO Auto-generated constructor stub
-	UsbInt usb = UsbInt();
-	clearBuffer(this->hostUiRawRequestCharArray,FILE_SIZE);
-	clearBuffer(this->hostUiRequestCharArray,FILE_SIZE);
-	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 
 }
 
 HostUiInt::~HostUiInt() {
 	// TODO Auto-generated destructor stub
 }
-#define dbg 1
-
-int HostUiInt::connect()
-{
-	int status = 0;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::connect" << endl;
-#endif
-
-	status = usb.connect();
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::connect: " << status << endl;
-#endif
-
-	return status;
-}
-
-#define dbg 1
-int HostUiInt::disconnect()
-{
-	int status = 0;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::disconnect" << endl;
-#endif
-
-	status = usb.disconnect();
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::disconnect:" << status << endl;
-#endif
-
-	return status;
-}
-
-
 #define dbg 0
-int HostUiInt::close()
-{
-	int status = 0;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::close" << endl;
-#endif
-
-	status = usb.closePort();
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::close:" << status << endl;
-#endif
-
-	return status;
-}
-
-#define dbg 0
-bool HostUiInt::isConnected()
-{
-	bool status = false;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::isConnected" << endl;
-#endif
-
-	if(usb.isConnected()) status = true;
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::isConnected:" << status << endl;
-#endif
-
-	return status;
-
-}
 
 
-#define dbg 1
-int HostUiInt::sendComponentData(void)
-{
-	int status = 0;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendComponentData" << endl;
-#endif
-	string componentDataString;
-	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
-
-	sprintf(this->hostUiResponseCharArray,"<ComponentData>[");
-	for(vector<string>::size_type componentIndex = 0; componentIndex < componentVector.size(); componentIndex++)
-	{
-		strcat(this->hostUiResponseCharArray,componentVector[componentIndex].c_str());
-		if(componentIndex < componentVector.size()-1)
-			strcat(this->hostUiResponseCharArray,",");
-	}
-	strcat(this->hostUiResponseCharArray,"]</ComponentData>");
-
-	#if(dbg >= 2)
-		if(debugOutput) cout << "Data retrieved, sending to host...." << this->hostUiResponseCharArray << endl;
-	#endif
-
-	if(usb.writeData(this->hostUiResponseCharArray) >= 0)
-	{
-#if(dbg >= 2)
-		if(debugOutput) cout << "combo data: " << this->hostUiResponseCharArray << endl;
-#endif
-
-	}
-	else
-	{
-		if(debugOutput) cout << "error sending data to host" << endl;
-		status = -1;
-	}
 
 
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::sendComponentData:" << status << endl;
-#endif
 
-	return status;
-}
-
-#define dbg 1
-int HostUiInt::sendControlTypeData(void)
-{
-	int status = 0;
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendControlTypeData" << endl;
-#endif
-	string controlTypeDataString;
-	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
-
-	sprintf(this->hostUiResponseCharArray,"<ControlTypeData>[");
-	for(vector<string>::size_type controlTypeIndex = 0; controlTypeIndex < controlTypeVector.size(); controlTypeIndex++)
-	{
-		strcat(this->hostUiResponseCharArray,controlTypeVector[controlTypeIndex].c_str());
-		if(controlTypeIndex < controlTypeVector.size()-1)
-			strcat(this->hostUiResponseCharArray,",");
-	}
-	strcat(this->hostUiResponseCharArray,"]</ControlTypeData>");
-
-	#if(dbg >= 2)
-		if(debugOutput) cout << "Data retrieved, sending to host...." << this->hostUiResponseCharArray << endl;
-	#endif
-
-	if(usb.writeData(this->hostUiResponseCharArray) >= 0)
-	{
-#if(dbg >= 2)
-		if(debugOutput) cout << "combo data: " << this->hostUiResponseCharArray << endl;
-#endif
-	}
-	else
-	{
-		if(debugOutput) cout << "error sending data to host" << endl;
-		status = -1;
-	}
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::sendControlTypeData:" << status << endl;
-#endif
-
-	return status;
-}
-
-
-#define dbg 0
-int HostUiInt::checkForNewHostData(void)
-{
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::checkForNewHostData" << endl;
-#endif
-
-	int status = usb.newData();
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::checkForNewHostData: " << status << endl;
-#endif
-	return status;
-}
 
 #define dbg 0
 string HostUiInt::getUserRequest(void)
@@ -211,15 +38,15 @@ string HostUiInt::getUserRequest(void)
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** ENTERING: HostUiInt::getUserRequest" << endl;
 #endif
-
+	string newData = UsbInt::readNewData();
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::getUserRequest" << usb.readData() << endl;
+	if(debugOutput) cout << "***** EXITING: HostUiInt::getUserRequest" << newData << endl;
 #endif
-	return string(usb.readData());
+	return newData;
 }
 
 
-#define dbg 1
+#define dbg 0
 int HostUiInt::sendComboList(string comboLists)
 {
 
@@ -227,15 +54,17 @@ int HostUiInt::sendComboList(string comboLists)
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendComboList" << endl;
 #endif
+	string hostUiResponse;
 
-	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
-	sprintf(this->hostUiResponseCharArray,"<ComboList>%s</ComboList>",(char *)comboLists.c_str());
+	hostUiResponse = "<ComboList>";
+	hostUiResponse += comboLists;
+	hostUiResponse += "</ComboList>";
 	errno = 0;
-	if(usb.writeData(this->hostUiResponseCharArray) >= 0)
+	if(UsbInt::writeData(hostUiResponse) >= 0)
 	{
 		status = 0;
 #if(dbg >= 2)
-		if(debugOutput) cout << this->hostUiResponseCharArray << endl;
+		if(debugOutput) cout << hostUiResponse << endl;
 #endif
 	}
 	else
@@ -254,64 +83,99 @@ int HostUiInt::sendComboList(string comboLists)
 	return status;
 }
 
+
 #define dbg 0
-int HostUiInt::sendCurrentStatus(char *currentStatus)
+int HostUiInt::sendComponentData(vector<string> componentDataVector)
 {
 	int status = 0;
-
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendCurrentStatus" << endl;
+	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendComponentData" << endl;
+#endif
+	string hostUiResponse;
+	string componentDataString;
+
+	hostUiResponse = "<ComponentData>[";
+	size_t componentIndex = 0;
+	for(auto & component : componentDataVector)
+	{
+		hostUiResponse += component;
+		if(componentIndex < componentDataVector.size()-1)
+			hostUiResponse += ",";
+		componentIndex++;
+	}
+	hostUiResponse += "]</ComponentData>";
+
+	#if(dbg >= 2)
+		if(debugOutput) cout << "Data retrieved, sending to host...." << hostUiResponse << endl;
+	#endif
+
+	if(UsbInt::writeData((char *)hostUiResponse.c_str()) >= 0)
+	{
+#if(dbg >= 2)
+		if(debugOutput) cout << "combo data: " << hostUiResponse << endl;
 #endif
 
-	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
-	sprintf(this->hostUiResponseCharArray,"<CurrentStatus>%s</CurrentStatus>",currentStatus);
-	if(usb.writeData(this->hostUiResponseCharArray) >= 0)
-	{
-		status = 0;
 	}
 	else
 	{
+		if(debugOutput) cout << "error sending data to host" << endl;
 		status = -1;
 	}
 
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::sendCurrentStatus: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: HostUiInt::sendComponentData:" << status << endl;
 #endif
 
 	return status;
 }
 
 #define dbg 0
-int HostUiInt::sendCurrentData(vector<IndexedProcessParameter> currentParams)
+int HostUiInt::sendControlTypeData(vector<string>controlTypeDataVector)
 {
 	int status = 0;
-
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendCurrentData" << endl;
+	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendControlTypeData" << endl;
 #endif
+	string hostUiResponse;
+	string controlTypeDataString;
 
-	char paramString[50];
-	if(debugOutput) cout << "currentParams size: " << currentParams.size() << endl;
-	clearBuffer(paramString,50);
-	sprintf(paramString,"<CurrentData>{paramValue:0}</CurrentData>");
-	if(usb.writeData(paramString) >= 0)
+	hostUiResponse = "<ControlTypeData>[";
+	size_t controlTypeIndex = 0;
+	for(auto & controlType : controlTypeDataVector)
 	{
-		status = 0;
+		hostUiResponse += controlType;
+		if(controlTypeIndex < controlTypeDataVector.size()-1)
+			hostUiResponse += ",";
+		controlTypeIndex++;
+	}
+	hostUiResponse += "]</ControlTypeData>";
+
+	#if(dbg >= 2)
+		if(debugOutput) cout << "Data retrieved, sending to host...." << hostUiResponse << endl;
+	#endif
+
+	if(UsbInt::writeData((char *)hostUiResponse.c_str()) >= 0)
+	{
+#if(dbg >= 2)
+		if(debugOutput) cout << "combo data: " << hostUiResponse << endl;
+#endif
 	}
 	else
 	{
+		if(debugOutput) cout << "error sending data to host" << endl;
 		status = -1;
 	}
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::sendCurrentData: " << status << endl;
+	if(debugOutput) cout << "***** EXITING: HostUiInt::sendControlTypeData:" << status << endl;
 #endif
 
 	return status;
 }
 
-#define dbg 1
+
+#define dbg 0
 int HostUiInt::sendComboToHost(string comboName)
 {
 	#if(dbg >= 1)
@@ -324,31 +188,36 @@ int HostUiInt::sendComboToHost(string comboName)
 
 	int status = 0;
 	string comboString;
+	string hostUiResponse;
 
-	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 
-	comboString = getComboDataFromFileSystem(comboName);
+	comboString = fsInt.getComboDataFromFileSystem(comboName);
 	if(comboString.empty() == false)
 	{
 		int checkSum = 0;
-		for (int comboStringIndex = 0; comboStringIndex < comboString.length(); comboStringIndex++)
+		for(auto & c : comboString)
 		{
-			if(comboString[comboStringIndex] > 31)
+			if(c > 31)
 			{
-				checkSum += comboString[comboStringIndex];
+				checkSum += c;
 			}
 
 		}
-		sprintf(this->hostUiResponseCharArray,"<ComboData>%s#%i</ComboData>",comboString.c_str(),checkSum);
+
+		char checkSumCharArray[10] = "";
+		snprintf(checkSumCharArray,10,"%d",checkSum);
+		hostUiResponse = "<ComboData>";
+		hostUiResponse += comboString + "#" + string(checkSumCharArray);
+		hostUiResponse += "</ComboData>";
 
 	#if(dbg >= 2)
-		if(debugOutput) cout << "Data retrieved, sending to host...." << this->hostUiResponseCharArray << endl;
+		if(debugOutput) cout << "Data retrieved, sending to host...." << hostUiResponse << endl;
 	#endif
 
-		if(usb.writeData(this->hostUiResponseCharArray) >= 0)
+		if(UsbInt::writeData(hostUiResponse) >= 0)
 		{
 	#if(dbg >= 2)
-			if(debugOutput) cout << "combo data: " << this->hostUiResponseCharArray << endl;
+			if(debugOutput) cout << "combo data: " << hostUiResponse << endl;
 	#endif
 
 		}
@@ -377,7 +246,7 @@ int HostUiInt::sendComboToHost(string comboName)
 }
 
 #define dbg 1
-string HostUiInt::getComboFromHost(string comboJson)
+string HostUiInt::getComboFromHost(string hostComboJson)
 {
 	#if(dbg >= 1)
 		if(debugOutput) cout << "******************************************" << endl;
@@ -386,67 +255,51 @@ string HostUiInt::getComboFromHost(string comboJson)
 		startTimer();
 	#endif
 
-		clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
-		clearBuffer(this->hostUiRawRequestCharArray,FILE_SIZE);
-
-	char filteredComboData[FILE_SIZE];
+	string hostUiRequest;
+	string comboData;
 	string comboName;
-	int status = 0;
+	bool done = false;
+	string usbData;
+	unsigned newDataSize = 0;
+	comboData.clear();
+	comboName.clear();
+
+	/* The Linux USB buffer is 4000 bytes in size.
+	 * comboJson is the first 4000 bytes of the combo file data from the host.  The file size will usually be
+	 * greater than 4000, so the while loop below reads in the 4000-byte blocks, until it gets a block
+	 * less than 4000 in size, indicating the end of the combo file.
+	 */
 
 
+	comboData = hostComboJson;
+	if(debugOutput) cout << "USB data size: " << comboData.size() << endl;
+	if(comboData.size() < 3990) // "saveCombo:" is removed, cutting string from 4000 to 3990
+		done = true;
+
+	while(!done)
 	{
-		bool done = false;
+		string newData = UsbInt::readNewData();
 
-		strcpy(this->hostUiRawRequestCharArray, comboJson.c_str());
-		if(debugOutput) cout << "USB data size: " << strlen(usb.readData()) << endl;
-		if(strlen(usb.readData()) < 4000)
-			done = true;
-
-		while(!done)
+		if(newData.empty() == false)
 		{
-
-			if(usb.newData() == 1)
-			{
-				strcat(this->hostUiRawRequestCharArray, usb.readData());
-				if(debugOutput) cout << "USB data size: " << strlen(usb.readData()) << endl;
-				if(strlen(usb.readData()) < 4000) done = true;
-			}
-
+			newDataSize = newData.size();
+			comboData += newData;
+			if(debugOutput) cout << "USB data size: " << newDataSize << endl;
+			if(newDataSize < 4000) done = true;
 		}
+	}
+	hostUiRequest = comboData;
 
-		// Filter data first
-		int filteredDataIndex = 0;
-#if(dbg >= 2)
-			if(debugOutput) cout << "filtering data" << endl;
-#endif
-		for(int dataIndex = 0; this->hostUiRawRequestCharArray[dataIndex] != 0 && dataIndex < FILE_SIZE; dataIndex++)
-		{
-			if(' ' <= this->hostUiRawRequestCharArray[dataIndex] && this->hostUiRawRequestCharArray[dataIndex] <= '~')
-			{
-				filteredComboData[filteredDataIndex] = this->hostUiRawRequestCharArray[dataIndex];
-	#if(dbg >= 2)
-				if(debugOutput) cout << filteredComboData[filteredDataIndex] << ',';
-	#endif
-				filteredDataIndex++;
-			}
-		}
-#if(dbg >= 2)
-		if(debugOutput) cout << "data filtered" << endl;
-		if(debugOutput) cout << "filtered combo data: " << filteredComboData << endl;
-#endif
-		comboName = saveComboToFileSystem(string(filteredComboData));
-		if(comboName.empty() == true)
-		{
-			if(debugOutput) cout << "error saving combo." << endl;
-			status = -1;
-		}
-
+	comboName = fsInt.saveComboToFileSystem(hostUiRequest);
+	if(comboName.empty() == true)
+	{
+		if(debugOutput) cout << "error saving combo." << endl;
 	}
 
+
 #if(dbg >= 2)
-	if(debugOutput) cout << "combo data: " << this->hostUiRawRequestCharArray << endl;
+	if(debugOutput) cout << "combo data: " << hostUiRequest << endl;
 #endif
-	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "******************************************" << endl;
@@ -456,42 +309,4 @@ string HostUiInt::getComboFromHost(string comboJson)
 #endif
 
 	return comboName;
-}
-
-
-#define dbg 0
-int HostUiInt::sendSimpleResponse(char *response)
-{
-	int status = 0;
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendSimpleResponse" << endl;
-	if(debugOutput) cout << "response: " << response << endl;
-#endif
-	sprintf(this->hostUiResponseCharArray,"<SimpleResponse>%s</SimpleResponse>",response);
-	if(usb.writeData(this->hostUiResponseCharArray) >= 0)
-	{
-		status = 0;
-	}
-	else
-	{
-		status = -1;
-	}
-	clearBuffer(this->hostUiResponseCharArray,FILE_SIZE);
-#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::sendSimpleResponse: " << status << endl;
-#endif
-
-
-	return status;
-}
-
-void HostUiInt::clearAllInternalCharArrays(void)
-{
-	for(int i = 0; i < FILE_SIZE; i++)
-	{
-		this->hostUiRawRequestCharArray[i] = 0;
-		this->hostUiRequestCharArray[i] = 0;
-		this->hostUiResponseCharArray[i] = 0;
-	}
 }

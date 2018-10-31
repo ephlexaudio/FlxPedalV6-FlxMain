@@ -6,11 +6,10 @@
  */
 #include "config.h"
 #include "Processing.h"
-#include "PedalUtilityData.h"
+
 #include "valueArrays.h"
 
 extern bool debugOutput;
-extern PedalUtilityData pedalUtilityData;
 
 
 #define TIMING_DBG 0
@@ -20,53 +19,34 @@ extern PedalUtilityData pedalUtilityData;
 #define CONTROL_PIN_2_NUMBER 43
 
 
-extern ComboStruct combo;
-extern int currentComboStructIndex;
-extern int oldComboStructIndex;
 
-	extern map<string, ComboDataInt> comboDataMap;
-
-extern bool inputsSwitched;
-
-int comboTime;
-
-Processing::Processing():JackCpp::AudioIO(string("process"), 2,2)
+#define dbg 1
+Processing::Processing(ProcessingUtility processingUtil):JackCpp::AudioIO(string("process"), 2,2)
 {
+#if(dbg >= 1)
+	cout << "ENTERING: Processing Constructor" << endl;
+#endif
 	// TODO Auto-generated constructor stub
 	reserveInPorts(8);
 	reserveOutPorts(8);
-	this->gateOpenThreshold = pedalUtilityData.getNoiseGate_OpenThres();
-	cout << "this->gateOpenThreshold :" <<  this->gateOpenThreshold << endl;
-	this->gateCloseThreshold = pedalUtilityData.getNoiseGate_CloseThres();
-	cout << "this->gateCloseThreshold :" <<  this->gateCloseThreshold << endl;
-	this->triggerHighThreshold = pedalUtilityData.getTrigger_HighThres();
-	cout << "this->triggerHighThreshold :" << this->triggerHighThreshold  << endl;
-	this->triggerLowThreshold = pedalUtilityData.getTrigger_LowThres();
-	cout << "this->triggerLowThreshold :" << this->triggerLowThreshold  << endl;
-	this->gateClosedGain = pedalUtilityData.getNoiseGate_Gain();
-	cout << "this->gateClosedGain :" <<  this->gateClosedGain << endl;
-	this->bufferSize = pedalUtilityData.getBufferSize();
+	this->bufferSize = processingUtil.procUtil.bufferSize;
+	cout << "this->bufferSize: " << this->bufferSize << endl;
+	double gateCloseThreshold = processingUtil.noiseGateUtil.closeThres;
+	double gateOpenThreshold = processingUtil.noiseGateUtil.openThres;
+	double gateClosedGain = processingUtil.noiseGateUtil.gain;
+	double triggerHighThreshold = processingUtil.triggerUtil.highThres;
+	double triggerLowThreshold = processingUtil.triggerUtil.lowThres;
 	this->gateOpen = true;
-	this->inMaxAmpFilterIndex = 0;
-	this->inSignalLevelLowPeak = 0.0;
-	this->inSignalLevelHighPeak = 0.0;
 	this->gateStatus = 0;
+	this->gateGain = 0.0;
 	this->envTriggerStatus = 0;
-	this->inSignalDeltaPositiveCount = 0;
-	this->inSignalDeltaNegativeCount = 0;
-	this->chan1GndCount = 0;
-	this->chan2GndCount = 0;
-	this->inMaxAmpFilterOut = 0;
-	this->inPrevMaxAmpFilterOut = 0.0;
+	this->envTrigger = false;
+	this->inputsSwitched = false;
 	this->inPrevSignalLevel = 0.0;
-	this->inSignalDeltaFilterIndex = 0;
 	this->inSignalDeltaFilterOut = 0.0;
 	this->inSignalLevel = 0.0;
 	this->processingEnabled = false;
-	this->outGain = 1.000;
-	this->gatePosition = 0;
-	this->sampleGain = 1.000;
-	this->cutSignal = false;
+	this->comboTime = 0;
 	char gpioStr[5];
 	strcpy(gpioStr,"out");
 	this->audioOutputEnable = GPIOClass(45);
@@ -88,6 +68,13 @@ Processing::Processing():JackCpp::AudioIO(string("process"), 2,2)
 	this->portConSwitch[2].export_gpio();
 	this->portConSwitch[2].setdir_gpio(gpioStr);
 	this->portConSwitch[2].setval_gpio(0);
+
+
+#if(dbg >= 1)
+	cout << "EXITING: Processing Constructor" << endl;
+#endif
+
+
 }
 
 Processing::~Processing()
@@ -108,11 +95,20 @@ void Processing::setComboName(string comboName)
 	 this->comboName = comboName;
 }
 
+void getSignalBufferPeaks()
+{
+
+}
 
 #define dbg 0
 bool Processing::areInputsSwitched(void) // see if JACK has connected input jacks backwards
 {
-	bool intInputsSwitched = false;
+	int chan1GndCount = 0;
+	int chan2GndCount = 0;
+	double inPosPeakArray[4][2];
+	double inNegPeakArray[4][2];
+
+
 #if(dbg >= 1)
 	if(debugOutput) cout << "***** ENTERING: Processing::" << endl;
 	if(debugOutput) cout << ": " <<  << endl;
@@ -127,38 +123,36 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 	this->portConSwitch[0].setval_gpio(0);
 	this->portConSwitch[2].setval_gpio(1);
 	usleep(100000);
-	inPosPeakArray[0][0] = inPosPeak[0];
-	inNegPeakArray[0][0] = inNegPeak[0];
-	inPosPeakArray[0][1] = inPosPeak[1];
-	inNegPeakArray[0][1] = inNegPeak[1];
-	if(debugOutput) cout << "inPosPeak[0]: " << inPosPeak[0] << "\tinNegPeak[0]: " << inNegPeak[0] << "\tinPosPeak[1]: " << inPosPeak[1] << "\tinNegPeak[1]: " << inNegPeak[1] << endl;
+	inPosPeakArray[0][0] = this->inPosPeak[0];
+	inNegPeakArray[0][0] = this->inNegPeak[0];
+	inPosPeakArray[0][1] = this->inPosPeak[1];
+	inNegPeakArray[0][1] = this->inNegPeak[1];
+	if(debugOutput) cout << "inPosPeak[0]: " <<  this->inPosPeak[0] << "\tinNegPeak[0]: " <<  this->inNegPeak[0] << "\tinPosPeak[1]: " <<  this->inPosPeak[1] << "\tinNegPeak[1]: " <<  this->inNegPeak[1] << endl;
 	usleep(50000);
 
-	inPosPeakArray[1][0] = inPosPeak[0];
-	inNegPeakArray[1][0] = inNegPeak[0];
-	inPosPeakArray[1][1] = inPosPeak[1];
-	inNegPeakArray[1][1] = inNegPeak[1];
-	if(debugOutput) cout << "inPosPeak[0]: " << inPosPeak[0] << "\tinNegPeak[0]: " << inNegPeak[0] << "\tinPosPeak[1]: " << inPosPeak[1] << "\tinNegPeak[1]: " << inNegPeak[1] << endl;
+	inPosPeakArray[1][0] = this->inPosPeak[0];
+	inNegPeakArray[1][0] = this->inNegPeak[0];
+	inPosPeakArray[1][1] = this->inPosPeak[1];
+	inNegPeakArray[1][1] = this->inNegPeak[1];
+	if(debugOutput) cout << "inPosPeak[0]: " << this->inPosPeak[0] << "\tinNegPeak[0]: " << this->inNegPeak[0] << "\tinPosPeak[1]: " << this->inPosPeak[1] << "\tinNegPeak[1]: " << this->inNegPeak[1] << endl;
 	usleep(50000);
 
-	inPosPeakArray[2][0] = inPosPeak[0];
-	inNegPeakArray[2][0] = inNegPeak[0];
-	inPosPeakArray[2][1] = inPosPeak[1];
-	inNegPeakArray[2][1] = inNegPeak[1];
-	if(debugOutput) cout << "inPosPeak[0]: " << inPosPeak[0] << "\tinNegPeak[0]: " << inNegPeak[0] << "\tinPosPeak[1]: " << inPosPeak[1] << "\tinNegPeak[1]: " << inNegPeak[1] << endl;
+	inPosPeakArray[2][0] = this->inPosPeak[0];
+	inNegPeakArray[2][0] = this->inNegPeak[0];
+	inPosPeakArray[2][1] = this->inPosPeak[1];
+	inNegPeakArray[2][1] = this->inNegPeak[1];
+	if(debugOutput) cout << "inPosPeak[0]: " << this->inPosPeak[0] << "\tinNegPeak[0]: " << this->inNegPeak[0] << "\tinPosPeak[1]: " << this->inPosPeak[1] << "\tinNegPeak[1]: " << this->inNegPeak[1] << endl;
 	usleep(50000);
 
-	inPosPeakArray[3][0] = inPosPeak[0];
-	inNegPeakArray[3][0] = inNegPeak[0];
-	inPosPeakArray[3][1] = inPosPeak[1];
-	inNegPeakArray[3][1] = inNegPeak[1];
-	if(debugOutput) cout << "inPosPeak[0]: " << inPosPeak[0] << "\tinNegPeak[0]: " << inNegPeak[0] << "\tinPosPeak[1]: " << inPosPeak[1] << "\tinNegPeak[1]: " << inNegPeak[1] << endl;
+	inPosPeakArray[3][0] = this->inPosPeak[0];
+	inNegPeakArray[3][0] = this->inNegPeak[0];
+	inPosPeakArray[3][1] = this->inPosPeak[1];
+	inNegPeakArray[3][1] = this->inNegPeak[1];
+	if(debugOutput) cout << "inPosPeak[0]: " << this->inPosPeak[0] << "\tinNegPeak[0]: " << this->inNegPeak[0] << "\tinPosPeak[1]: " << this->inPosPeak[1] << "\tinNegPeak[1]: " << this->inNegPeak[1] << endl;
 
 	this->portConSwitch[0].setval_gpio(1);
 	this->portConSwitch[2].setval_gpio(0);
 
-	chan1GndCount = 0;
-	chan2GndCount = 0;
 	for(int i = 0; i < 4; i++)
 	{
 		if((0.098 < inPosPeakArray[i][0] && inPosPeakArray[i][0] < 0.1)) chan1GndCount++;
@@ -168,173 +162,327 @@ bool Processing::areInputsSwitched(void) // see if JACK has connected input jack
 	if(debugOutput) cout << "chan1GndCount: " << chan1GndCount << "\tchan2GndCount: " << chan2GndCount << endl;
 	if(chan1GndCount > chan2GndCount)
 	{
-		intInputsSwitched = true;
+		this->inputsSwitched = true;
 		if(debugOutput) cout << "*******************inputs switched"  << endl;
 	}
 	else
 	{
-		intInputsSwitched = false;
+		this->inputsSwitched = false;
 		if(debugOutput) cout << "*******************inputs not switched"  << endl;
 	}
-	return intInputsSwitched;
+
+	return this->inputsSwitched;
 }
 
-#define dbg 0
 
 
-	int Processing::loadCombo(void)
+void Processing::printProcessParameterControlBuffer()
+{
+
+	if(debugOutput)
 	{
-		int status = 0;
-	#if(dbg >= 1)
-		if(debugOutput) cout << "ENTERING: Processing::loadCombo" << endl;
-		if(debugOutput) cout << "currentComboStructIndex: " << currentComboStructIndex << endl;
-	#endif
-
-		this->aveArrayIndex = 0;
-
-		if(debugOutput) cout << "Control Count: " << combo.controlCount << endl;
-		if(debugOutput) cout << "Process Count: " << combo.processCount << endl;
-		if(debugOutput) cout << "Buffer Count: " << combo.bufferCount << endl;
-
-		if(combo.controlVoltageEnabled == true) // set analog input switches to DC input
+		cout << "ENTERING: Processing::printProcessParameterControlBuffer" << endl;
+		for(auto & paramContBuffer : this->processParamControlBufferArray)
 		{
-			this->portConSwitch[0].setval_gpio(0);
-			this->portConSwitch[1].setval_gpio(1);
+			if(paramContBuffer.destProcessParameter.objectName.empty()) break;
+
+			cout << "paramContBuffer.src: " << paramContBuffer.srcControl.objectName;
+			cout << ":" << paramContBuffer.srcControl.portName;
+			cout << "\t\tparamContBuffer.parameterValueIndex: " << paramContBuffer.parameterValueIndex;
+			cout << "\t\tparamContBuffer.dest: " << paramContBuffer.destProcessParameter.objectName;
+			cout << ":" << paramContBuffer.destProcessParameter.portName << endl;
 		}
-		else // set analog input switches to AC input
-		{
-			this->portConSwitch[0].setval_gpio(1);
-			this->portConSwitch[1].setval_gpio(0);
-		}
-
-
-		for(int i = 0; i < combo.controlCount; i++)
-		{
-			switch(combo.controlSequence[i].conType)
-			{
-			case 0: // normal
-				normal('l', this->envTriggerStatus, 0, &combo.controlSequence[i], combo.processSequence);
-				break;
-			case 1:	// envelope generator
-				envGen('l', this->envTriggerStatus, 0, &combo.controlSequence[i], combo.processSequence);
-				break;
-			case 2: // low frequency oscillator
-				lfo('l', this->envTriggerStatus, 0, &combo.controlSequence[i], combo.processSequence);
-				break;
-			}
-		}
-
-		for(int i = 0; i < combo.processCount; i++)
-		{
-			switch(combo.processSequence[i].procType)
-			{
-				case 0:
-					delayb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-					break;
-				case 1:
-					filter3bb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-					break;
-				case 2:
-					filter3bb2('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-					break;
-				case 3:
-					lohifilterb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-					break;
-				case 4:
-					mixerb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-					break;
-				case 5:
-					volumeb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-					break;
-				case 6:
-					waveshaperb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-					break;
-				case 7:
-					break;
-				case 8:
-					samplerb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-					break;
-				case 9:
-					oscillatorb('l', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-					break;
-				default:;
-			}
-		}
-
-		for(unsigned int bufferIndex = 0; bufferIndex < combo.bufferCount; bufferIndex++)
-		{
-#if(dbg >= 2)
-			if(debugOutput) cout << "clearing procBufferArray[" << bufferIndex << "]:" << endl;
-#endif
-#if(PROC_BUFFER_REF == 1)
-			clearProcBuffer(&combo.procBufferArray[bufferIndex]);
-#elif(PROC_BUFFER_VAL == 1)
-			clearProcBuffer(combo.procBufferArray[bufferIndex]);
-#endif
-		}
-#if(dbg >= 2)
-			if(debugOutput) cout << "clearing procBufferArray[58]:" << endl;
-#endif
-#if(PROC_BUFFER_REF == 1)
-			clearProcBuffer(&combo.procBufferArray[58]);
-#elif(PROC_BUFFER_VAL == 1)
-			clearProcBuffer(combo.procBufferArray[58]);
-#endif
-
-	#if(dbg >= 1)
-		if(debugOutput) cout << "EXITING: Processing::loadCombo: " << status << endl;
-	#endif
-
-		return status;
+		cout << "EXITING: Processing::printProcessParameterControlBuffer" << endl;
 	}
+}
+
+
+
+#define dbg 1
+int Processing::loadComboStructData(struct ComboStruct comboStruct)
+{
+	int status = 0;
+#if(dbg >= 1)
+	if(debugOutput) cout << "ENTERING: Processing::loadComboStructData" << endl;
+#endif
+
+	this->controlCount = comboStruct.controlCount;
+	this->processCount = comboStruct.processCount;
+	this->processSignalBufferCount = comboStruct.processSignalBufferCount;
+	this->paramControlBufferCount = comboStruct.paramControlBufferCount;
+	this->controlVoltageEnabled = comboStruct.controlVoltageEnabled;
+
+	if(debugOutput) cout << "Control Count: " << this->controlCount << endl;
+	if(debugOutput) cout << "Process Count: " << this->processCount << endl;
+	if(debugOutput) cout << "processSignalBuffer Count: " << this->processSignalBufferCount << endl;
+	if(debugOutput) cout << "paramControlBuffer Count: " << this->paramControlBufferCount << endl;
+
+	if(this->controlVoltageEnabled == true) // set analog input switches to DC input
+	{
+		this->portConSwitch[0].setval_gpio(0);
+		this->portConSwitch[1].setval_gpio(1);
+	}
+	else // set analog input switches to AC input
+	{
+		this->portConSwitch[0].setval_gpio(1);
+		this->portConSwitch[1].setval_gpio(0);
+	}
+
+	this->controlSequence.fill(this->emptyContEvent);
+	this->processSequence.fill(this->emptyProcEvent);
+	this->processSignalBufferArray.fill(this->emptyProcSigBuffer);
+	this->processParamControlBufferArray.fill(this->emptyProcParamContBuffer);
+	this->processIndexMap.clear();
+	this->controlIndexMap.clear();
+	/********** Load data structures from comboStruct *********************/
+	for(int i = 0; i < this->controlCount; i++)
+	{
+		this->controlSequence[i] = comboStruct.controlSequence[i];
+	}
+	for(int i = 0; i < this->processCount; i++)
+	{
+		this->processSequence[i] = comboStruct.processSequence[i];
+	}
+	for(int i = 0; i < this->processSignalBufferCount; i++)
+	{
+		this->processSignalBufferArray[i] = comboStruct.processSignalBufferArray[i];
+	}
+	for(int i = 0; i < this->paramControlBufferCount; i++)
+	{
+		this->processParamControlBufferArray[i] = comboStruct.processParamControlBufferArray[i];
+	}
+	this->processIndexMap.insert(comboStruct.processIndexMap.begin(),
+								 comboStruct.processIndexMap.end());
+
+		this->controlIndexMap.insert(comboStruct.controlIndexMap.begin(),
+									 comboStruct.controlIndexMap.end());
+
+		this->printIndexMappedControlData();
+
+	for(int i = 0; i < this->controlCount; i++)
+	{
+		switch(this->controlSequence[i].conType)
+		{
+		case 0: // normal
+			normal('l', this->envTrigger, 0, &this->controlSequence[i], this->processParamControlBufferArray);
+			break;
+		case 1:	// envelope generator
+			envGen('l', this->envTrigger, 0, &this->controlSequence[i],this->processParamControlBufferArray);
+			break;
+		case 2: // low frequency oscillator
+			lfo('l', this->envTrigger, 0, &this->controlSequence[i],this->processParamControlBufferArray);
+			break;
+		default:;
+		}
+
+	}
+
+	for(int i = 0; i < this->processCount; i++)
+	{
+		switch(this->processSequence[i].processTypeInt)
+		{
+			case 0:
+				delayb('l', &this->processSequence[i], this->processSignalBufferArray,
+				       this->processParamControlBufferArray, this->footswitchStatus);
+				break;
+			case 1:
+				filter3bb('l', &this->processSequence[i], this->processSignalBufferArray,
+					  this->processParamControlBufferArray,this->footswitchStatus);
+				break;
+			case 2:
+				filter3bb2('l', &this->processSequence[i], this->processSignalBufferArray,
+					   this->processParamControlBufferArray,this->footswitchStatus);
+				break;
+			case 3:
+				lohifilterb('l', &this->processSequence[i], this->processSignalBufferArray,
+					    this->processParamControlBufferArray,this->footswitchStatus);
+				break;
+			case 4:
+				mixerb('l', &this->processSequence[i], this->processSignalBufferArray
+				       ,this->processParamControlBufferArray,this->footswitchStatus);
+				break;
+			case 5:
+				volumeb('l', &this->processSequence[i], this->processSignalBufferArray,
+					this->processParamControlBufferArray,this->footswitchStatus);
+				break;
+			case 6:
+				waveshaperb('l', &this->processSequence[i], this->processSignalBufferArray,
+					    this->processParamControlBufferArray,this->footswitchStatus);
+				break;
+			default:;
+		}
+
+	}
+
+	for(int bufferIndex = 0; bufferIndex < this->processSignalBufferCount; bufferIndex++)
+	{
+#if(dbg >= 2)
+		if(debugOutput) cout << "clearing procBufferArray[" << bufferIndex << "]:" << endl;
+#endif
+		clearProcBuffer(&this->processSignalBufferArray[bufferIndex]);
+	}
+
+	/********** Set the ProcessSignalBufferVector indexes for the system IO ***********/
+
+	this->inputSystemBufferIndex[0] = comboStruct.inputSystemBufferIndex[0];
+	this->inputSystemBufferIndex[1] = comboStruct.inputSystemBufferIndex[1];
+	this->outputSystemBufferIndex[0] = comboStruct.outputSystemBufferIndex[0];
+	this->outputSystemBufferIndex[1] = comboStruct.outputSystemBufferIndex[1];
+
+#if(dbg >= 2)
+	this->printProcessParameterControlBuffer();
+#endif
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "EXITING: Processing::loadComboStructData: " << status << endl;
+#endif
+	return status;
+}
+
+
+#define dbg 0
+ComboStruct Processing::getComboStruct()
+{
+	int status = 0;
+#if(dbg >= 1)
+	if(debugOutput) cout << "ENTERING: Processing::getComboStruct" << endl;
+	if(debugOutput) cout << "comboName: " << this->getComboName() << endl;
+#endif
+	ComboStruct combo;
+	try
+	{
+		string comboName = this->comboName;
+		int processIndex = 0;
+		int procParamIndex = 0;
+		string processName;
+		string procParamName;
+
+		map<string,ProcessIndexing> processMap = this->processIndexMap;
+		int bufferIndex = 0;
+
+		for(auto & buffer : this->processParamControlBufferArray)
+		{
+			if(buffer.destProcessParameter.objectName.empty()) break;
+
+			processName = buffer.destProcessParameter.objectName;
+
+			processIndex = processMap[processName].processSequenceIndex;
+			procParamName = buffer.destProcessParameter.portName;
+
+			procParamIndex = processMap[processName].paramIndexMap[procParamName].paramIndex;
+			int valueIndex = this->getProcessParameter(processName,procParamName);
+
+			combo.processParamControlBufferArray[bufferIndex].destProcessParameter.objectName = processName;
+			combo.processParamControlBufferArray[bufferIndex].destProcessParameter.portName = procParamName;
+			combo.processParamControlBufferArray[bufferIndex].parameterValueIndex = valueIndex;
+
+			bufferIndex++;
+		}
+
+		int controlIndex = 0;
+		for(auto & control : this->controlSequence)
+		{
+			int contParamIndex = 0;
+			combo.controlSequence[controlIndex].controlName = control.controlName;
+			for(auto & parameter : control.parameter)
+			{
+				if(parameter.parameterName.empty() == true) break;
+				combo.controlSequence[controlIndex].parameter[contParamIndex].parameterName = parameter.parameterName;
+				combo.controlSequence[controlIndex].parameter[contParamIndex].value =
+				this->getControlParameter(control.controlName, parameter.parameterName);
+
+				cout << combo.controlSequence[controlIndex].controlName;
+				cout << ":" << combo.controlSequence[controlIndex].parameter[contParamIndex].parameterName;
+				cout << "=" << combo.controlSequence[controlIndex].parameter[contParamIndex].value << endl;
+				contParamIndex++;
+			}
+			controlIndex++;
+		}
+	}
+	catch(exception &e)
+	{
+		cout << "exception in Processing::getComboStruct: " << e.what() << endl;
+		status = -1;
+	}
+
+
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "EXIT: Processing::getComboStruct: " << status << endl;
+#endif
+	return combo;
+}
+
+
+
+
+
+static void printSignalBufferData(ProcessSignalBuffer procSigBuffer)
+{
+	cout << "process signal data: " << procSigBuffer.srcProcess.objectName << ":  ";
+	for(int i = 0; i < 10; i++)
+	{
+		cout << procSigBuffer.buffer[i] << ",";
+	}
+	cout << endl;
+}
+
 
 #define dbg 0
 void Processing::triggerInputSignalFiltering()
 {
-	if(this->inMaxAmpFilterIndex < 15)
+	static double inMaxAmpFilter[16];
+	static double inMaxAmpFilterOut;
+	static int  inMaxAmpFilterIndex;
+	static double inSignalDeltaFilter[16];
+	static int  inSignalDeltaFilterIndex;
+
+
+
+
+	if(inMaxAmpFilterIndex < 15)
 	{
-		this->inMaxAmpFilter[this->inMaxAmpFilterIndex++] = this->inMaxAmp[0];
+		inMaxAmpFilter[inMaxAmpFilterIndex++] = this->inMaxAmp[0];
 	}
 	else
 	{
-		this->inMaxAmpFilter[this->inMaxAmpFilterIndex] = this->inMaxAmp[0];
-		this->inMaxAmpFilterIndex = 0;
+		inMaxAmpFilter[inMaxAmpFilterIndex] = this->inMaxAmp[0];
+		inMaxAmpFilterIndex = 0;
 	}
 
-	this->inMaxAmpFilterOut = (this->inMaxAmpFilter[0] + this->inMaxAmpFilter[1] + this->inMaxAmpFilter[2] +
-			this->inMaxAmpFilter[3] + this->inMaxAmpFilter[4] + this->inMaxAmpFilter[5] +
-			this->inMaxAmpFilter[6] + this->inMaxAmpFilter[7] + this->inMaxAmpFilter[8] +
-			this->inMaxAmpFilter[9] + this->inMaxAmpFilter[10] + this->inMaxAmpFilter[11] +
-			this->inMaxAmpFilter[12] + this->inMaxAmpFilter[13] + this->inMaxAmpFilter[14] +
-			this->inMaxAmpFilter[15])/16;
-	this->inSignalLevel = this->inMaxAmpFilterOut;
+	inMaxAmpFilterOut = (inMaxAmpFilter[0] + inMaxAmpFilter[1] + inMaxAmpFilter[2] +
+			inMaxAmpFilter[3] + inMaxAmpFilter[4] + inMaxAmpFilter[5] +
+			inMaxAmpFilter[6] + inMaxAmpFilter[7] + inMaxAmpFilter[8] +
+			inMaxAmpFilter[9] + inMaxAmpFilter[10] + inMaxAmpFilter[11] +
+			inMaxAmpFilter[12] + inMaxAmpFilter[13] + inMaxAmpFilter[14] +
+			inMaxAmpFilter[15])/16;
+	this->inSignalLevel = inMaxAmpFilterOut;
 
 #if(dbg >= 1)
 	cout << "this->inSignalLevel: " <<  (this->inSignalLevel) << endl;
 #endif
 
-	if(this->inSignalDeltaFilterIndex < 15)
+	if(inSignalDeltaFilterIndex < 15)
 	{
-		this->inSignalDeltaFilter[this->inSignalDeltaFilterIndex++] = this->inSignalLevel - this->inPrevSignalLevel;
+		inSignalDeltaFilter[inSignalDeltaFilterIndex++] = this->inSignalLevel - this->inPrevSignalLevel;
 	}
 	else
 	{
-		this->inSignalDeltaFilter[this->inSignalDeltaFilterIndex] = this->inSignalLevel - this->inPrevSignalLevel;
-		this->inSignalDeltaFilterIndex = 0;
+		inSignalDeltaFilter[inSignalDeltaFilterIndex] = this->inSignalLevel - this->inPrevSignalLevel;
+		inSignalDeltaFilterIndex = 0;
 	}
-	this->inSignalDeltaFilterOut = (this->inSignalDeltaFilter[0] + this->inSignalDeltaFilter[1] + this->inSignalDeltaFilter[2] +
-			this->inSignalDeltaFilter[3] + this->inSignalDeltaFilter[4] + this->inSignalDeltaFilter[5] +
-			this->inSignalDeltaFilter[6] + this->inSignalDeltaFilter[7] + this->inSignalDeltaFilter[8] +
-			this->inSignalDeltaFilter[9] + this->inSignalDeltaFilter[10] + this->inSignalDeltaFilter[11] +
-			this->inSignalDeltaFilter[12] + this->inSignalDeltaFilter[13] + this->inSignalDeltaFilter[14] +
-			this->inSignalDeltaFilter[15])/16;
+	this->inSignalDeltaFilterOut = (inSignalDeltaFilter[0] + inSignalDeltaFilter[1] + inSignalDeltaFilter[2] +
+			inSignalDeltaFilter[3] + inSignalDeltaFilter[4] + inSignalDeltaFilter[5] +
+			inSignalDeltaFilter[6] + inSignalDeltaFilter[7] + inSignalDeltaFilter[8] +
+			inSignalDeltaFilter[9] + inSignalDeltaFilter[10] + inSignalDeltaFilter[11] +
+			inSignalDeltaFilter[12] + inSignalDeltaFilter[13] + inSignalDeltaFilter[14] +
+			inSignalDeltaFilter[15])/16;
 }
 
 #define dbg 0
 void Processing::noiseGate(double *bufferIn, double *bufferOut)
 {
-	int status = 0;
-	static int closeIndex;
+
 #if(dbg >= 1)
 	cout << "ENTERING:  Processing::noiseGate()" <<   endl;
 #endif
@@ -355,12 +503,11 @@ void Processing::noiseGate(double *bufferIn, double *bufferOut)
 			if(debugOutput) cout << "gateEnvStatus:0\tinSignalLevel: " << this->inSignalLevel << "\tsignalLevelLowPeak: " << this->inSignalLevelLowPeak << "\tsignalLevelHighPeak: " << this->inSignalLevelHighPeak << endl;
 #endif
 			this->gateStatus = 1;
-			closeIndex = 0;
 			this->gateGain = 1.0;
 		}
 		else
 		{
-			for(int i = 0; i < BUFFER_SIZE; i++)
+			for(int i = 0; i < this->bufferSize; i++)
 			{
 				bufferOut[i] = this->gateGain*bufferIn[i];
 			}
@@ -371,7 +518,7 @@ void Processing::noiseGate(double *bufferIn, double *bufferOut)
 		{
 			this->gateGain = 1.0;
 			this->gateStatus = 2;
-			for(int i = 0; i < BUFFER_SIZE; i++)
+			for(int i = 0; i < this->bufferSize; i++)
 			{
 				bufferOut[i] = this->gateGain*bufferIn[i];
 			}
@@ -389,15 +536,14 @@ void Processing::noiseGate(double *bufferIn, double *bufferOut)
 				(inputsSwitched == true && this->gateCloseThreshold > this->inSignalLevel))
 		{
 #if(dbg >= 2)
-			if(debugOutput) cout << "PROCESSING: gateEnvStatus:2\tlevel below noise gate low threshold: going to case 5." << this->inputGain  << endl;
+			if(debugOutput) cout << "PROCESSING: gateEnvStatus:2\tlevel below noise gate low threshold: going to case 5." << endl;
 #endif
 
-			for(int i = 0; i < BUFFER_SIZE; i++)
+			for(int i = 0; i < this->bufferSize; i++)
 			{
 				if(this->gateGain < this->gateClosedGain )
 				{
 					this->gateStatus = 3;
-					closeIndex = 0;
 				}
 				else
 				{
@@ -408,7 +554,7 @@ void Processing::noiseGate(double *bufferIn, double *bufferOut)
 		}
 		else
 		{
-			for(int i = 0; i < BUFFER_SIZE; i++)
+			for(int i = 0; i < this->bufferSize; i++)
 			{
 				bufferOut[i] = this->gateGain*bufferIn[i];
 			}
@@ -418,7 +564,7 @@ void Processing::noiseGate(double *bufferIn, double *bufferOut)
 
 	case 3: // **************** NOISE GATE CLOSING ********************
 #if(dbg >= 1)
-	if(debugOutput) cout << "PROCESSING: level below noise gate low threshold: " << this->inputGain << endl;
+	if(debugOutput) cout << "PROCESSING: level below noise gate low threshold: "  << endl;
 #endif
 		this->gateOpen = false;
 
@@ -436,7 +582,6 @@ void Processing::noiseGate(double *bufferIn, double *bufferOut)
 #define dbg 0
 void Processing::envelopeTrigger()
 {
-	int status = 0;
 #if(dbg >= 1)
 	cout << "ENTERING:  Processing::envelopeTrigger()" <<   endl;
 #endif
@@ -479,14 +624,15 @@ void Processing::envelopeTrigger()
 	cout << "EXITING:  Processing::envelopeTrigger()" <<   endl;
 #endif
 
-
-
 }
 
 
 #define dbg 0
+
+int callbackPasses = 0;
 int controlVoltageSampleCount = 0;
 int secondMarkCounter = 0;
+
 	int Processing::audioCallback(jack_nframes_t nframes,
 					// A vector of pointers to each input port.
 					audioBufVector inBufs,
@@ -494,18 +640,15 @@ int secondMarkCounter = 0;
 					audioBufVector outBufs)
 	{
 		int status = 0;
-		bool processDone = false;
 
 		double inPosPeak[2];
 		double inNegPeak[2];
 		double outPosPeak[2];
 		double outNegPeak[2];
 		double tempOutBufs[2];
-		float controlVoltageFloat = 0.00;
-		float controlVoltageAdjustedFloat = 0.00;
-		int controlVoltageIndex = 0;
-		float gateGainIncrementSize = 0.0000;
-		int gatePositionCount = 5;
+		double controlVoltageFloat = 0.00;
+		double controlVoltageAdjustedFloat = 0.00;
+		int  controlVoltageIndex = 0;
 		inPosPeak[0] = 0.00;
 		inNegPeak[0] = 0.00;
 		inPosPeak[1] = 0.00;
@@ -516,35 +659,22 @@ int secondMarkCounter = 0;
 		outNegPeak[1] = 0.00;
 
 		startTimer();
-
 		if(this->processingEnabled == true )
 		{
 
-			for(unsigned int i = 0; i < bufferSize; i++)
+			for(int i = 0; i < this->bufferSize; i++)
 			{
 				if(inputsSwitched)
 				{
-					this->noiseGateBuffer[0][i] = inBufs[1][i]*this->inputGain;
-					if(combo.controlVoltageEnabled == true)
-					{
-						combo.procBufferArray[combo.inputProcBufferIndex[1]].buffer[i] = inBufs[0][i];
-					}
-					else
-					{
-						combo.procBufferArray[combo.inputProcBufferIndex[1]].buffer[i] = inBufs[0][i]*this->inputGain;
-					}
+					this->noiseGateBuffer[i] = inBufs[1][i];
+					this->processSignalBufferArray[this->inputSystemBufferIndex[1]].buffer[i] = inBufs[0][i];
+
 				}
 				else
 				{
-					this->noiseGateBuffer[0][i] = inBufs[0][i]*this->inputGain;
-					if(combo.controlVoltageEnabled == true)
-					{
-						combo.procBufferArray[combo.inputProcBufferIndex[1]].buffer[i] = inBufs[1][i];
-					}
-					else
-					{
-						combo.procBufferArray[combo.inputProcBufferIndex[1]].buffer[i] = inBufs[1][i]*this->inputGain;
-					}
+					this->noiseGateBuffer[i] = inBufs[0][i];
+					this->processSignalBufferArray[this->inputSystemBufferIndex[1]].buffer[i] = inBufs[1][i];
+
 				}
 
 
@@ -568,16 +698,13 @@ int secondMarkCounter = 0;
 			if(debugOutput) cout << "signal: " << this->inSignalLevel << ",signal delta: " << this->inSignalDeltaFilterOut << endl;
 		#endif
 
-			this->noiseGate(this->noiseGateBuffer[0], combo.procBufferArray[combo.inputProcBufferIndex[0]].buffer);
+			this->noiseGate(this->noiseGateBuffer, this->processSignalBufferArray[this->inputSystemBufferIndex[0]].buffer);
 			this->envelopeTrigger();
 
-			this->inPrevMaxAmpFilterOut = this->inMaxAmpFilterOut;
-			this->inPrevMaxAmp[1] = this->inMaxAmp[1];
 			this->inPrevSignalLevel = this->inSignalLevel;
 
-
 			//******************** Get control voltage from pedal ************************
-			controlVoltageFloat =  combo.procBufferArray[combo.inputProcBufferIndex[1]].buffer[0]+1.000;
+			controlVoltageFloat =  this->processSignalBufferArray[this->inputSystemBufferIndex[1]].buffer[0]+1.000;
 			controlVoltageAdjustedFloat =  49.50*controlVoltageFloat;
 			controlVoltageIndex = (int)(controlVoltageAdjustedFloat);
 
@@ -586,117 +713,87 @@ int secondMarkCounter = 0;
 			if(controlVoltageIndex > 99) controlVoltageIndex = 99;
 			//***************************** Run Controls for manipulating process parameters *************
 
-			for(int i = 0; i < combo.controlCount; i++)
+			for(int i = 0; i < this->controlCount; i++)
 			{
-				switch(combo.controlSequence[i].conType)
+				switch(this->controlSequence[i].conType)
 				{
 				case 0: // normal
-					normal('r', this->envTrigger, controlVoltageIndex, &combo.controlSequence[i], combo.processSequence);
+					normal('r', this->envTrigger, controlVoltageIndex, &this->controlSequence[i],this->processParamControlBufferArray);
 					break;
 				case 1:	// envelope generator
-					envGen('r', this->envTrigger, controlVoltageIndex, &combo.controlSequence[i], combo.processSequence);
+					envGen('r', this->envTrigger, controlVoltageIndex, &this->controlSequence[i],this->processParamControlBufferArray);
 					break;
 				case 2: // low frequency oscillator
-					lfo('r', this->envTrigger, controlVoltageIndex, &combo.controlSequence[i], combo.processSequence);
+					lfo('r', this->envTrigger, controlVoltageIndex, &this->controlSequence[i],this->processParamControlBufferArray);
 					break;
 				}
 			}
 
 			//****************************** Run processes *******************************************
 
-			for(int i = 0; i < combo.processCount; i++)
-			{
-		#if(dbg >= 1)
-				if(debugOutput) cout << "process number: " << i << endl;
-		#endif
-				switch(combo.processSequence[i].procType)
+	for(int i = 0; i < this->processCount; i++)
+	{
+				switch(this->processSequence[i].processTypeInt)
 				{
 					case 0:
-						delayb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						delayb('r', &this->processSequence[i], this->processSignalBufferArray,this->processParamControlBufferArray,this->footswitchStatus);
 						break;
 					case 1:
-						filter3bb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						filter3bb('r', &this->processSequence[i], this->processSignalBufferArray,this->processParamControlBufferArray,this->footswitchStatus);
 						break;
 					case 2:
-						filter3bb2('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						filter3bb2('r', &this->processSequence[i], this->processSignalBufferArray,this->processParamControlBufferArray,this->footswitchStatus);
 						break;
 					case 3:
-						lohifilterb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						lohifilterb('r', &this->processSequence[i], this->processSignalBufferArray,this->processParamControlBufferArray,this->footswitchStatus);
 						break;
 					case 4:
-						mixerb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						mixerb('r', &this->processSequence[i], this->processSignalBufferArray,this->processParamControlBufferArray,this->footswitchStatus);
 						break;
 					case 5:
-						volumeb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						volumeb('r', &this->processSequence[i], this->processSignalBufferArray,this->processParamControlBufferArray,this->footswitchStatus);
 						break;
 					case 6:
-						waveshaperb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-						break;
-					case 7:
-						break;
-					case 8:
-						samplerb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
-						break;
-					case 9:
-						oscillatorb('r', &combo.processSequence[i], combo.procBufferArray,this->footswitchStatus);
+						waveshaperb('r', &this->processSequence[i], this->processSignalBufferArray,this->processParamControlBufferArray,this->footswitchStatus);
 						break;
 					default:;
 				}
 			}
 
 
-			for(unsigned int i = 0; i < bufferSize; i++)
+			for(int i = 0; i < this->bufferSize; i++)
 			{
 
 				if(inputsSwitched)
 				{
-					tempOutBufs[1] = combo.procBufferArray[combo.outputProcBufferIndex[0]].buffer[i];
-					tempOutBufs[0] = combo.procBufferArray[combo.outputProcBufferIndex[1]].buffer[i];
+					tempOutBufs[1] = this->processSignalBufferArray[this->outputSystemBufferIndex[0]].buffer[i];
+					tempOutBufs[0] = this->processSignalBufferArray[this->outputSystemBufferIndex[1]].buffer[i];
 				}
 				else
 				{
-					tempOutBufs[0] = combo.procBufferArray[combo.outputProcBufferIndex[0]].buffer[i];
-					tempOutBufs[1] =combo.procBufferArray[combo.outputProcBufferIndex[1]].buffer[i];
+					tempOutBufs[0] = this->processSignalBufferArray[this->outputSystemBufferIndex[0]].buffer[i];
+					tempOutBufs[1] =this->processSignalBufferArray[this->outputSystemBufferIndex[1]].buffer[i];
 				}
 
 				outBufs[0][i] = tempOutBufs[0];
 				outBufs[1][i] = tempOutBufs[1];
-				if(outPosPeak[0] < outBufs[0][i]) outPosPeak[0] = outBufs[0][i];
-				if(outNegPeak[0] > outBufs[0][i]) outNegPeak[0] = outBufs[0][i];
-				if(outPosPeak[1] < outBufs[1][i]) outPosPeak[1] = outBufs[1][i];
-				if(outNegPeak[1] > outBufs[1][i]) outNegPeak[1] = outBufs[1][i];
 			}
 
-			//***************** Output automatic level controller (pseudo-compressor) ????? *************
-			{
-				this->outPosPeak[0] = outPosPeak[0];
-				this->outNegPeak[0] = outNegPeak[0];
-				this->outPosPeak[1] = outPosPeak[1];
-				this->outNegPeak[1] = outNegPeak[1];
-
-				this->outMaxAmp[0][0] = this->outPosPeak[0] - this->outNegPeak[0];
-				this->outMaxAmp[1][0] = this->outPosPeak[1] - this->outNegPeak[1];
-				this->outMaxAmp[0][1] = this->outMaxAmp[0][0];
-				this->outMaxAmp[1][1] = this->outMaxAmp[1][0];
-
-				if(this->outMaxAmp[0][1] > this->outMaxAmp[0][0]) this->outMaxAmp[0][0] = this->outMaxAmp[0][1];
-
-			}
 
 
 		#if(SIGPROC_DBG)
-			int bufferIndex;
+			int  bufferIndex;
 			if(debugOutput) cout << "BUFFER AVERAGES: " << endl;
-			for(bufferIndex = 0; bufferIndex < this->bufferCount; bufferIndex++)
+			for(bufferIndex = 0; bufferIndex < this->processSignalBufferCount; bufferIndex++)
 			{
-				if(debugOutput) cout << this->procBufferArray[bufferIndex].average << ", ";
+				if(debugOutput) cout << this->processSignalBufferArray[bufferIndex].average << ", ";
 			}
 			if(debugOutput) cout << endl;
 		#endif
 		}
 		else
 		{
-			for(unsigned int i = 0; i < bufferSize; i++)
+			for(int i = 0; i < this->bufferSize; i++)
 			{
 				outBufs[0][i] = inBufs[0][i];
 				outBufs[1][i] = inBufs[1][i];
@@ -721,7 +818,6 @@ int secondMarkCounter = 0;
 		comboTime = stopTimer(NULL);
 	#endif
 
-
 		return status;
 	}
 
@@ -745,52 +841,6 @@ struct peak postFilterHigh;
 struct peak postFilterLow;
 int getPitchFilterIndexAddendIndex = 0;
 int tempPitch;
-
-
-#define dbg 0
-int loadComponentSymbols(void)
-{
-#if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: ProcessingControl::loadComponentSymbols" << endl;
-#endif
-
-	delayb('c', NULL, NULL, NULL);
-	filter3bb('c', NULL, NULL, NULL);
-	filter3bb2('c', NULL, NULL, NULL);
-	lohifilterb('c', NULL, NULL, NULL);
-	mixerb('c', NULL, NULL, NULL);
-	volumeb('c', NULL, NULL, NULL);
-	waveshaperb('c', NULL, NULL, NULL);
-#if(dbg >= 1)
-	if(debugOutput) cout << "EXITING ProcessingControl::loadComponentSymbols" << endl;
-#endif
-
-	return 0;
-}
-
-#define dbg 0
-int loadControlTypeSymbols(void)
-{
-#if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: ProcessingControl::loadControlTypeSymbols" << endl;
-#endif
-
-	struct ControlEvent loadControlType;
-	loadControlType.conType = 0; // load Normal control type symbol data
-	normal('c', NULL, NULL, &loadControlType, NULL);
-	loadControlType.conType = 1; // load Envelope Generator control type symbol data;
-	envGen('c', NULL, NULL, &loadControlType, NULL);
-	loadControlType.conType = 2; // load LFO control type symbol data;
-	lfo('c', NULL, NULL, &loadControlType, NULL);
-#if(dbg >= 1)
-	if(debugOutput) cout << "EXITING ProcessingControl::loadControlTypeSymbols" << endl;
-#endif
-
-	return 0;
-}
-
-
-
 
 #define dbg 0
 int Processing::updateFootswitch(bool *footswitchStatus)
@@ -822,87 +872,155 @@ int Processing::updateFootswitch(bool *footswitchStatus)
 }
 
 
-#define dbg 1
 
-	int Processing::updateProcessParameter(string processName, int parameterIndex, int parameterValue)
-	{
-		int status = 0;
+#define dbg 0
+int Processing::updateProcessParameter(string processName, string parameter, int parameterValue)
+{
+	int status = 0;
 #if(dbg >= 1)
 	if(debugOutput) cout << "ENTERING: Processing::updateProcessParameter" << endl;
-	if(debugOutput) cout << "processName: " << processName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
+	if(debugOutput) cout << "processName: " << processName << "\parameter: " << parameter << "\tparameterValue: " << parameterValue << endl;
 #endif
-		int procSequenceIndex = 0;
-		// processIndex for processSequence doesn't correspond to process indexing in
-		// parameterArray, so needs to be calculated.
-		// indexes can't be redone in getCombo or getParameterArray because
-		// they are used in updating combo files.
 
-		for(int processIndex = 0; processIndex < combo.processCount; processIndex++)
-		{
-			if(combo.processSequence[processIndex].processName.compare(processName) == 0)
-			{
-				combo.processSequence[processIndex].parameters[parameterIndex] = parameterValue;
-				procSequenceIndex = processIndex;
-				break;
-			}
-		}
-	#if(dbg>=2)
-		if(debugOutput) cout << "\t\tprocessName: " << processName << "\t\procSequenceIndex: " << procSequenceIndex << "parameterIndex: " << parameterIndex  << "\t\parameterValue: " << parameterValue << endl;
-	#endif
+
+	int connectedBufferIndex = this->processIndexMap[processName.c_str()].
+					paramIndexMap[parameter.c_str()].connectedBufferIndex;
+
+	cout << "connectedBufferIndex: " << connectedBufferIndex << endl;
+	this->processParamControlBufferArray[connectedBufferIndex].parameterValueIndex = parameterValue;
 
 #if(dbg >= 1)
 	if(debugOutput) cout << "EXITING: Processing::updateProcessParameter: " << status << endl;
 #endif
-		return status;
+
+
+
+	return status;
+}
+#define dbg 2
+int Processing::getProcessParameter(string processName, string parameter)
+{
+	int status = 0;
+#if(dbg >= 1)
+	if(debugOutput) cout << "ENTERING: Processing::getProcessParameter" << endl;
+	if(debugOutput) cout << "comboName: " << this->comboName << "processName: " << processName << "\parameter: " << parameter << endl;
+#endif
+	int valueIndex = 0;
+	try
+	{
+		int connectedBufferIndex = this->processIndexMap[processName.c_str()].
+						paramIndexMap[parameter.c_str()].connectedBufferIndex;
+
+#if(dbg >= 2)
+		cout << "connectedBufferIndex: " << connectedBufferIndex << endl;
+#endif
+		if(0 > connectedBufferIndex || 59 < connectedBufferIndex)
+		{
+			cout << "connectedBufferIndex out of bounds: " << connectedBufferIndex << endl;
+			status = -1;
+			connectedBufferIndex = -1;
+		}
+
+		valueIndex = this->processParamControlBufferArray[connectedBufferIndex].parameterValueIndex;
+		if(0 > valueIndex || 99 < valueIndex)
+		{
+			cout << "valueIndex out of bounds: " << valueIndex << endl;
+			status = -1;
+			valueIndex = -1;
+		}
+
 	}
+	catch(exception &e)
+	{
+		cout << "exception in Processing::getProcessParameter: " << e.what() << endl;
+		status = -1;
+	}
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "EXITING: Processing::getProcessParameter: " << status << endl;
+#endif
+	return valueIndex;
+}
+
+
 
 
 #define dbg 1
-	int Processing::updateControlParameter(string controlName, int parameterIndex, int parameterValue)
-	{
-	#if(dbg >= 1)
-		if(debugOutput) cout << "ENTERING: Processing::updateControlParameter" << endl;
-		if(debugOutput) cout << "controlName: " << controlName << "\tparameterIndex: " << parameterIndex << "\tparameterValue: " << parameterValue << endl;
-	#endif
-		int status = 0;
-		int controlSequenceIndex = 0;
-		int controlIndex;
-		// processIndex for processSequence doesn't correspond to process indexing in
-		// parameterArray, so needs to be calculated.
-		// indexes can't be redone in getCombo or getParameterArray because
-		// they are used in updating combo files.
-
-		for(controlIndex = 0; controlIndex < 20; controlIndex++)
-		{
-#if(dbg >= 2)
-			if(debugOutput) cout << "comparing: " << combo.controlSequence[controlIndex].name << " and " << controlName << endl;
-#endif
-			if(combo.controlSequence[controlIndex].name.compare(controlName) == 0)
-			{
-				combo.controlSequence[controlIndex].parameter[parameterIndex].value = parameterValue;
+int Processing::updateControlParameter(string controlName, string parameter, int parameterValue)
+{
+	int status = 0;
 #if(dbg >= 1)
-				if(debugOutput) cout << "UPDATING: control index: " << controlIndex << "\t parameter index: " << parameterIndex << "\t parameter value: " << parameterValue << endl;
+	if(debugOutput) cout << "ENTERING: Processing::updateControlParameter" << endl;
+	if(debugOutput) cout << "controlName: " << controlName << "\tparameter: " << parameter << "\tparameterValue: " << parameterValue << endl;
 #endif
-				controlSequenceIndex = controlIndex;
-				break;
-			}
+	try
+	{
+		int contIndex = this->controlIndexMap[controlName.c_str()].controlIndex;
+		if(0 > contIndex || 99 < contIndex)
+		{
+			cout << "contIndex out of bounds: " << contIndex << endl;
+			status = -1;
+		}
+
+		int paramIndex = this->controlIndexMap[controlName.c_str()].
+						paramIndexMap[parameter.c_str()].contParamIndex;
+		if(0 > paramIndex || 99 < paramIndex)
+		{
+			cout << "paramIndex out of bounds: " << paramIndex << endl;
+			status = -1;
 		}
 
 	#if(dbg >= 2)
-		if(debugOutput) cout << "\t\tcontrolName: " << controlName  << "parameterIndex: " << parameterIndex  << "\tparameterValue: " << combo.controlSequence[controlIndex].parameter[parameterIndex].value << endl;
-		if(debugOutput) cout << "\t\ttargetProcessIndex: " << combo.controlSequence[controlIndex].paramContConnection[0].processIndex;
-		if(debugOutput) cout << "\t\ttargetProcessName: " << combo.processSequence[combo.controlSequence[controlIndex].paramContConnection[0].processIndex].processName;
-		if(debugOutput) cout << "\t\ttargetProcessParameterIndex: " << combo.controlSequence[controlIndex].paramContConnection[0].processParamIndex << endl;
+		cout << "contIndex: " << contIndex << "paramIndex: " << paramIndex << endl;
 	#endif
-	#if(dbg >= 1)
-		if(debugOutput) cout << "EXITING: Processing::updateControlParameter: " << status << endl;
-	#endif
-		return status;
+		if(status == 0)
+			this->controlSequence[contIndex].parameter[paramIndex].value = parameterValue;
 	}
+	catch(exception &e)
+	{
+		cout << "exception in Processing::updateControlParameter: " << e.what() << endl;
+		status = -1;
+	}
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "EXITING: Processing::updateControlParameter: " << status << endl;
+#endif
+
+	return status;
+}
+
+#define dbg 0
+int Processing::getControlParameter(string controlName, string parameter)
+{
+	int status = 0;
+	int valueIndex = 0;
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "ENTERING: Processing::getControlParameter" << endl;
+	if(debugOutput) cout << "controlName: " << controlName << "\tparameter: " << parameter << endl;
+#endif
+	int contIndex = this->controlIndexMap[controlName.c_str()].controlIndex;
+	int paramIndex = this->controlIndexMap[controlName.c_str()].
+					paramIndexMap[parameter.c_str()].contParamIndex;
+
+	valueIndex = this->controlSequence[contIndex].parameter[paramIndex].value;
+	if(0 <= valueIndex && valueIndex <= 99) status = valueIndex;
+	else status = -1;
+
+
+#if(dbg >= 1)
+	if(debugOutput) cout << "EXITING: Processing::getControlParameter: " << status << endl;
+#endif
+
+
+	return status;
+}
+
+
 
 
 #define dbg 0
-int Processing::enableProcessing()
+void Processing::enableProcessing()
 {
 
 #if(dbg==1)
@@ -914,11 +1032,11 @@ int Processing::enableProcessing()
 	if(debugOutput) cout << "EXITING: Processing::enableProcessing" << endl;
 #endif
 
-	return 0;
+
 }
 
 #define dbg 0
-int Processing::disableProcessing()
+void Processing::disableProcessing()
 {
 #if(dbg==1)
 	if(debugOutput) cout << "ENTERING: Processing::disableProcessing" << endl;
@@ -929,46 +1047,13 @@ int Processing::disableProcessing()
 	if(debugOutput) cout << "EXITING: Processing::disableProcessing" << endl;
 #endif
 
-	return 0;
+
 }
-
-int Processing::enableAudioInput()
-{
-	int status = 0;
-#if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: Processing::enableAudioInput" << endl;
-#endif
-
-	system("i2cset -f -y 1 0x1a 0x00 0x57");
-	system("i2cset -f -y 1 0x1a 0x02 0x57");
-#if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: Processing::enableAudioInput" << endl;
-#endif
-	return status;
-}
-
-
-int Processing::disableAudioInput()
-{
-	int status = 0;
-#if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: Processing::disableAudioInput" << endl;
-#endif
-
-	system("i2cset -f -y 1 0x1a 0x00 0x50");
-	system("i2cset -f -y 1 0x1a 0x02 0x50");
-
-#if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: Processing::disableAudioInput" << endl;
-#endif
-	return status;
-}
-
 
 #define dbg 0
-int Processing::enableAudioOutput()
+void Processing::enableAudioOutput()
 {
-	int status = 0;
+
 #if(dbg >= 1)
 	if(debugOutput) cout << "ENTERING: Processing::disableAudioOutput" << endl;
 #endif
@@ -977,14 +1062,14 @@ int Processing::enableAudioOutput()
 #if(dbg >= 1)
 	if(debugOutput) cout << "EXITING: Processing::disableAudioOutput" << endl;
 #endif
-	return status;
+
 }
 
 
-int Processing::disableAudioOutput()
+void Processing::disableAudioOutput()
 {
 
-	int status = 0;
+
 #if(dbg >= 1)
 	if(debugOutput) cout << "ENTERING: Processing::disableAudioOutput" << endl;
 #endif
@@ -994,71 +1079,93 @@ int Processing::disableAudioOutput()
 	if(debugOutput) cout << "EXITING: Processing::disableAudioOutput" << endl;
 #endif
 
-	return status;
+
 }
 
 
 
-
-int Processing::setNoiseGateCloseThreshold(float closeThres)
+#define dbg 1
+void Processing::setNoiseGateCloseThreshold(double closeThres)
 {
-	int status = 0;
-
+#if(dbg >= 1)
+	if(debugOutput) cout << "ENTERING: Processing::setNoiseGateCloseThreshold: " << closeThres << endl;
+#endif
 	this->gateCloseThreshold = closeThres;
+#if(dbg >= 1)
+	if(debugOutput) cout << "EXITING: Processing::setNoiseGateCloseThreshold" << endl;
+#endif
 
-	return status;
+
 }
 
-int Processing::setNoiseGateOpenThreshold(float openThres)
+void Processing::setNoiseGateOpenThreshold(double openThres)
 {
-	int status = 0;
-
+#if(dbg >= 1)
+	if(debugOutput) cout << "ENTERING: Processing::setNoiseGateOpenThreshold: " << openThres << endl;
+#endif
 	this->gateOpenThreshold = openThres;
+#if(dbg >= 1)
+	if(debugOutput) cout << "EXITING: Processing::setNoiseGateOpenThreshold" << endl;
+#endif
 
-	return status;
+
 }
 
-int Processing::setNoiseGateGain(float gain)
+void Processing::setNoiseGateGain(double gain)
 {
-	int status = 0;
 
+#if(dbg >= 1)
+	if(debugOutput) cout << "ENTERING: Processing::setNoiseGateGain: " << gain << endl;
+#endif
 	this->gateClosedGain = gain;
+#if(dbg >= 1)
+	if(debugOutput) cout << "EXITING: Processing::setNoiseGateGain" << endl;
+#endif
 
-	return status;
+
+
 }
 
-int Processing::setTriggerLowThreshold(float lowThres)
+void Processing::setTriggerLowThreshold(double lowThres)
 {
-	int status = 0;
 
+#if(dbg >= 1)
+	if(debugOutput) cout << "ENTERING: Processing::setTriggerLowThreshold: " << lowThres << endl;
+#endif
 	this->triggerLowThreshold = lowThres;
+#if(dbg >= 1)
+	if(debugOutput) cout << "EXITING: Processing::setTriggerLowThreshold" << endl;
+#endif
 
-	return status;
+
+
 }
 
-int Processing::setTriggerHighThreshold(float highThres)
+void Processing::setTriggerHighThreshold(double highThres)
 {
-	int status = 0;
 
+#if(dbg >= 1)
+	if(debugOutput) cout << "ENTERING: Processing::setTriggerHighThreshold: " << highThres << endl;
+#endif
 	this->triggerHighThreshold = highThres;
+#if(dbg >= 1)
+	if(debugOutput) cout << "EXITING: Processing::setTriggerHighThreshold" << endl;
+#endif
 
-	return status;
+
+
 }
 
-int getPitchFilterIndex = 30;
+int  getPitchFilterIndex = 30;
 #define dbg 0
 int Processing::getPitch(bool activate, double *signal)
 {
 	static int pitch;
-	int getPitchFilterIndexAddends[6] = {1,3,6,11,22,45};
 	double lp_a[4], lp_b[4];
 	static double lp_y[4], lp_x[4];
 	double filterOutSample[2];
-	int zeroCrossingPosition[2];
 	filterOutSample[0] = 0.00000;
 	filterOutSample[1] = 0.00000;
-	zeroCrossingPosition[0] = 0;
-	zeroCrossingPosition[1] = 0;
 	double preFilterPeakToPeakAmplitude = 0.0000;
 	double postFilterPeakToPeakAmplitude = 0.0000;
 	double postPreAmplitudeRatio = 0.000;
@@ -1079,7 +1186,7 @@ int Processing::getPitch(bool activate, double *signal)
 	//filter signal and get peak amplitudes. Get buffer positions using zero-crossing detection
 
 
-	for(unsigned int i = 0; i < bufferSize; i++)
+	for(int i = 0; i < this->bufferSize; i++)
 	{
 		lp_x[0] = signal[i];
 
@@ -1194,4 +1301,76 @@ int Processing::getPitch(bool activate, double *signal)
 #endif
 
 	return pitch;
+}
+
+
+
+#define dbg 1
+void Processing::printIndexMappedProcessData()
+{
+#if(dbg >= 1)
+	if(debugOutput)
+	{
+		cout << "*****ENTERING ComboDataInt::printIndexMappedProcessData" << endl;
+		cout << "PROCESS INDEX MAPPING" << endl;
+		cout << "size: " << this->processIndexMap.size() << endl;
+		for (auto &  processIndexing : this->processIndexMap)
+		{
+
+			cout << "PROCESS:" << processIndexing.second.processName << endl;
+			cout << "name: " << processIndexing.second.processName << endl;
+			cout << "processSequenceIndex: " << processIndexing.second.processSequenceIndex << endl;
+			cout << "parentEffect: " << processIndexing.second.parentEffect << endl;
+
+
+			map<string,ProcessParameterIndexing>::iterator processParamIndexing = processIndexing.second.paramIndexMap.begin();
+			cout << "paramIndexMap size: " << processIndexing.second.paramIndexMap.size() << endl;
+			for(auto &  processParamIndexing : processIndexing.second.paramIndexMap)
+			{
+				cout << "\t\t parameter name: " << processParamIndexing.second.paramName << endl;
+				cout << "\t\t parameter index: " << processParamIndexing.second.paramIndex << endl;
+				cout << "\t\t parentProcess: " << processParamIndexing.second.parentProcess << endl;
+				cout << "\t\t parameter paramControlBufferIndex: " << processParamIndexing.second.connectedBufferIndex << endl;
+			}
+			cout << "**********************************************" << endl;
+		}
+		cout << "***** EXITING ComboDataInt::printIndexMappedProcessData: "  << endl;
+	}
+
+#endif
+
+}
+
+void Processing::printIndexMappedControlData()
+{
+#if(dbg >= 1)
+	if(debugOutput)
+	{
+		cout << "*****ENTERING Processing::printIndexMappedControlData" << endl;
+		cout << "CONTROL INDEX MAPPING" << endl;
+
+		for (auto &  controlIndexing : this->controlIndexMap)
+		{
+			cout << "CONTROL:" << controlIndexing.second.controlName << endl;
+			cout << "name: " << controlIndexing.second.controlName << endl;;
+			cout << "index: " << controlIndexing.second.controlIndex << endl;
+			cout << "parentEffect: " << controlIndexing.second.parentEffect << endl;
+			cout << "conType: " << controlIndexing.second.controlTypeInt << endl;
+
+
+			cout << "paramIndexMap size: " << controlIndexing.second.paramIndexMap.size() << endl;
+
+			for(auto &  contParamIndexing : controlIndexing.second.paramIndexMap)
+			{
+				cout << "\t\t contParam.name: " << contParamIndexing.second.contParamName << endl;
+				cout << "\t\t contParam.index: " << contParamIndexing.second.contParamIndex << endl;
+				cout << "\t\t contParam.parentControl: " << contParamIndexing.second.parentControl << endl;
+			}
+		}
+
+		cout << "***** EXITING Processing::printIndexMappedControlData: "  << endl;
+	}
+
+
+#endif
 }

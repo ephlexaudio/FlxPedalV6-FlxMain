@@ -16,8 +16,9 @@
 #include <cstring>
 #include <time.h>
 #include <sys/time.h>
-
+#include <json/json.h>
 #include <linux/types.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -25,10 +26,12 @@ void startTimer(void);
 int stopTimer(const char *description);
 
 void pabort(const char *s);
-void delay(unsigned long delay);
 void clearBuffer(char *buffer, int length);
-void zero2Space(char* buffer, uint16_t length);
-void cleanString(char* src, char* dest);
-void printAsciiNumbers(char *charArrayData);
-void printAsciiNumbers(string stringData);
+string getCompactedJSONData(Json::Value data);
+string getStringListString(vector<string> stringVector);
+bool validateString(string dataString);
+string removeReturnRelatedCharacters(string dirtyString);
+
+int validateJsonBuffer(char *jsonBuffer);
+
 #endif /* UTILITYFUNCTIONS_H_ */

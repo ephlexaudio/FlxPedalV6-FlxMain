@@ -10,40 +10,32 @@
 
 #include "UsbInt.h"
 #include <vector>
+#include <string>
+#include <string.h>
+#include <stdio.h>
 #include "utilityFunctions.h"
-#include "FileSystemFuncts.h"
-#include "GPIOClass.h"
+#include "FileSystemInt.h"
+
 #include "structs.h"
-#define FILE_SIZE 32000
-class HostUiInt
+
+
+class HostUiInt : public UsbInt
 {
 private:
-	UsbInt usb;
-	char hostUiRawRequestCharArray[FILE_SIZE];
-	char hostUiRequestCharArray[FILE_SIZE];
-	char hostUiResponseCharArray[FILE_SIZE];
-
-
+	FileSystemInt fsInt;
 public:
 
 	HostUiInt();
-	virtual ~HostUiInt();
+	~HostUiInt();
 	// Files are retrieved from the directory and sent straight to the host
-	int connect();
-	int disconnect();
-	int close();
-	bool isConnected();
-	int sendControlTypeData();
-	int sendComponentData();
-	int checkForNewHostData(void);
 	string getUserRequest(void);
+
+	int sendControlTypeData(vector<string>controlTypeDataVector);
+	int sendComponentData(vector<string> componentDataVector);
 	int sendComboList(string comboLists);
-	int sendCurrentStatus(char *currentStatus);
-	int sendCurrentData(vector<IndexedProcessParameter> currentParams);
 	int sendComboToHost(string comboName);
 	string getComboFromHost(string comboData);
-	int sendSimpleResponse(char *response);
-	void clearAllInternalCharArrays(void);
+
 };
 
 #endif /* HOSTUIINT_H_ */

@@ -12,6 +12,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <array>
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
@@ -29,36 +30,33 @@
 using namespace std;
 
 
-int clearProcBuffer(struct ProcessBuffer *procBuffer);
+int clearProcBuffer(struct ProcessSignalBuffer *procBuffer);
 
 
-//************************ processing *************************************************
-void initBufferAveParameters(struct ProcessBuffer *bufferArray);
-void resetBufferAve(struct ProcessBuffer *bufferArray);
-int processBufferAveSample(double sample, struct ProcessBuffer *bufferArray);
-void updateBufferOffset(struct ProcessBuffer *bufferArray);
+int delayb(char action, struct ProcessEvent *procEvent, array<ProcessSignalBuffer,60> &bufferArray,
+		   array<ProcessParameterControlBuffer,60> &paramContBufferArray, bool *footswitchStatus);
 
-int delayb(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int filter3bb(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
+int filter3bb(char action, struct ProcessEvent *procEvent, array<ProcessSignalBuffer,60> &bufferArray,
+			  array<ProcessParameterControlBuffer,60> &paramContBufferArray, bool *footswitchStatus);
 
-int filter3bb2(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
+int filter3bb2(char action, struct ProcessEvent *procEvent, array<ProcessSignalBuffer,60> &bufferArray,
+			   array<ProcessParameterControlBuffer,60> &paramContBufferArray, bool *footswitchStatus);
 
-int lohifilterb(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
+int lohifilterb(char action, struct ProcessEvent *procEvent, array<ProcessSignalBuffer,60> &bufferArray,
+				array<ProcessParameterControlBuffer,60> &paramContBufferArray, bool *footswitchStatus);
 
-int mixerb(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
+int mixerb(char action, struct ProcessEvent *procEvent, array<ProcessSignalBuffer,60> &bufferArray,
+		   array<ProcessParameterControlBuffer,60> &paramContBufferArray, bool *footswitchStatus);
 
-int volumeb(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
+int volumeb(char action, struct ProcessEvent *procEvent, array<ProcessSignalBuffer,60> &bufferArray,
+			array<ProcessParameterControlBuffer,60> &paramContBufferArray, bool *footswitchStatus);
 
-int reverbb(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
+int waveshaperb(char action, struct ProcessEvent *procEvent, array<ProcessSignalBuffer,60> &bufferArray,
+				array<ProcessParameterControlBuffer,60> &paramContBufferArray, bool *footswitchStatus);
 
-int waveshaperb(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int samplerb(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
-int oscillatorb(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
-
-int blankb(char action, struct ProcessEvent *procEvent, struct ProcessBuffer *bufferArray, bool *footswitchStatus);
 
 
 

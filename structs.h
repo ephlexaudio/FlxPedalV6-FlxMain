@@ -13,20 +13,27 @@ using namespace std;
 #include "config.h"
 #include <vector>
 #include <sys/types.h>
-
+#include <json/json.h>
+#include "indexMapStructs.h"
 #define AVE_ARRAY_SIZE 16
+
+
+
+//****************** GET RID OF CONTEXTS*************************************8
+
+
 /*************** CONTROL CONTEXTS ************************/
 struct EnvGenContext{
 	int envStage; //0:attack, 1:decay, 2:sustain, 3:release
-	unsigned int stageTimeValue;
+	int stageTimeValue;
 	double slewRate;
 };
 
 
 struct LfoContext{
-	unsigned int  cycleTimeValueIndex;
+	int  cycleTimeValueIndex;
 	double cyclePositionValue;
-	unsigned int int_cyclePositionValue;
+	int int_cyclePositionValue;
 	double waveValue;
 };
 
@@ -36,9 +43,7 @@ struct DelayContext{
 	unsigned long inputPtr;
 	unsigned long outputPtr;
 	double delayBuffer[DELAY_BUFFER_LENGTH+10];
-	double delayTimeAveragingBuffer[4];
-	double delaySignalAveragingBuffer[8];
-	unsigned int previousDelay;
+	unsigned long delayTimeAveragingBuffer[4];
 };
 
 #define NUMBER_OF_BANDS 2
@@ -64,11 +69,6 @@ struct LohifilterbContext{
 	double noiseFilter_y[3], noiseFilter_x[3];
 };
 
-struct ReverbbContext{
-	unsigned int inputPtr;
-	unsigned int outputPtr[REVERB_TAP_COUNT];
-	double delayBuffer[REVERB_TAP_COUNT][DELAY_BUFFER_LENGTH];
-};
 
 
 struct WaveshaperbContext{
@@ -93,145 +93,172 @@ struct OscillatorbContext{
 	int blankInt;
 };
 
+/**********************************************************************************************/
 
-struct ProcessParams{
-	string name;
+struct Connector{
+	string objectName; // connector "Parent".  Was "process", needed something more generic to cover "effect" and "control"
+	string portName;
+	int portIndex; // position of connector WRT other like connectors (input,output, parameter)
+	int connectedBufferIndex; // index of connection to pub/sub data structure arrays, if applicable
+};
+
+
+
+
+struct ProcessSignalConnection{
+	Connector src; // source process output port
+	Connector dest; // destination process input port
+};
+
+struct ProcessParameterControlConnection{
+	Connector src; // source parameter control output port
+	Connector dest; // destination parameter port
+};
+
+struct ProcessParameter{
+	Connector param; // contains parent process, param name, param index, paramControlBuffer index.
 	int paramType;   //  both ProcessParams type and ControlParameter type use the same type system.
-	int value;
+	string paramControlType;
+	int valueIndex;
 };
 
 struct ControlParameter{
 	string name;
-	string alias;
+	string alias;  // alias and abbr are for Pedal UI
 	string abbr;
+	int index;
+	string parentControl;  // create parent control index in getPedalUi
 	int paramType;
 	int controlledParamType;
 	bool inheritControlledParamType;
 	bool cvEnabled;
-	int value;
+	int valueIndex;
 };
+
+
 
 struct Process{
-	string name;
-	string procType;
-	int footswitchType;
+	string processName;
+	int processSequenceIndex;
+	string processTypeString;
+	int processTypeInt;
+	int processTypeIndex; //used for process contexts.  Will be obsolete
+	string parentEffect;
+	int parentEffectIndex;
+	string footswitchType;
 	int footswitchNumber;
-	vector<string> inputs;
-	vector<string> outputs;
-	vector<ProcessParams> params;
+	int inputCount;
+	int outputCount;
+	int paramCount;
+	vector<Connector> inputVector;	//
+
+	vector<Connector> outputVector;  // use ComboDataInt::connectProcessOutputsToProcessOutputBuffersUsingProcBufferArray
+									 // to put bufferArray index into outputVector[].connectedBufferIndex
+	vector<ProcessParameter> paramVector;
 };
+
 
 struct Control{
-	string name;
+	string name;  // make the name more descriptive (ie. control:mixerb_0:level1)
+	int index;
+	int controlTypeIndex;
 	string parentEffect;
+	int parentEffectIndex;
 	string conType;
-	vector<ControlParameter> params;
-	vector<unsigned int> absProcessParameterIndexes;  // index from sortedParameterArray
-	vector<unsigned int> absProcessParameterIndexesInv;  // index from sortedParameterArray
+	int conTypeInt;
+	vector<ControlParameter> paramVector;
+	Connector output;
+	Connector outputInv;
+	vector<Connector> targetProcessParamVector;
+	vector<Connector> targetProcessParamInvVector;
 };
 
-
-
-struct Connector{
-	string object; // was "process", needed something more generic to cover "effect" and "control"
-	string port;
+struct Effect{
+	string name;
+	string abbr;
+	int index;
+	vector<Process> processVector;
+	vector<ProcessSignalConnection> processConnectionVector;
+	vector<Control> processParamControlVector;
+	vector<ProcessParameterControlConnection> processParamControlConnectionVector;
 };
 
-struct ControlConnection{
+struct EffectConnection{
 	Connector src;
 	Connector dest;
 };
 
-struct ProcessConnection{
-	Connector src;
-	Connector dest;
+
+struct ComboJsonFileStruct
+{
+	string name;
+	Effect effectArray[2];
+	vector<EffectConnection> effectConnectionVector;
 };
 
 
-
-// use indexed parameter structures to enable faster access to parameters for updating, etc.
-struct IndexedProcessParameter{
-	string effectName;
-	int effectIndex;
-	string processName;
-	int effectProcessIndex;
-	int absProcessIndex;
-	string paramName;
-	int processParamIndex;
-	int effectParamIndex;
-	int absParamIndex;
-	int paramValue;
-};
-
-
-struct IndexedControlParameter{
-	string effectName;
-	int effectIndex;
-	string controlName;
-	int effectControlIndex;
-	int absControlIndex;
-	string controlParamName;
-	int controlParamIndex;
-	int effectParamIndex;
-	int controlParamValue;
-};
-
-
-
-struct PedalUI{
-	string title;
-	vector<Control> effect[2];
-};
-
-
-struct ParameterControlConnection{
-	int processIndex;
-	int processParamIndex;
-};
-
-
-typedef  void (*ClearParameters)(struct ProcessBuffer *);
-typedef  int (*ProcessSample)(double sample, struct ProcessBuffer *);
-typedef  void (*GetAvgs)(struct ProcessBuffer *);
-
-
-struct ProcessBuffer{
-	string processName;
-	string portName;
-	double bufferSum;
-	double aveArray[AVE_ARRAY_SIZE];
-	double offset;
-	int aveArrayIndex;
+// KEEP AS STRUCT
+struct ProcessSignalBuffer{
+	Connector srcProcess;
+	vector<Connector> destProcessVector;
 	double buffer[BUFFER_SIZE]; // for real-time processing
-	int ready;
-	int processed;
+
 };
 
+struct ProcessParameterControlBuffer{
+	Connector srcControl;
+	Connector destProcessParameter;
+	int parameterValueIndex;
+};
+
+
+
+// START "CLASSIFYING" STRUCTS FROM HERE
+
+
+
+
+
+
+
+//CLASS "PROCESS" (BASE OR "INTERFACE" CLASS FOR CHILD PROCESSES: DELAY, WAVESHAPER, ETC)
 struct ProcessEvent{
-	int procType;  //used to identify process type, not position in processing sequence
+	int processTypeInt;  //used to identify process type, not position in processing sequence
+	int processSequenceIndex;
 	string processName;
 	int processTypeIndex;
 	int footswitchNumber;
 	int parameterCount;
-	int parameters[10];
-	double internalData[256]; // use to store curves, etc.
-	int dataReadReady; // data buffer ready to be read by outside process
-	int dataReadDone; // outside process finished reading data
+	struct{
+		int internalIndexValue;
+		int paramContBufferIndex;
+		bool controlConnected;
+		string parameterName;
+	}parameterArray[10];
+
 	int processInputCount;
 	int processOutputCount;
-	int inputBufferIndexes[5];
-	vector<string> inputBufferNames;
-	int outputBufferIndexes[5];
-	vector<string> outputBufferNames;
+	int inputConnectedBufferIndexArray[5];
+	int outputConnectedBufferIndexArray[5];
 	bool processFinished;
+	int bufferSize;
+	int inputCouplingMode;
+	int antiAliasingNumber;
+	int waveshaperMode;
+
 };
 
+
+
+//CLASS "CONTROL" (BASE OR "INTERFACE" CLASS FOR CHILD CONTROLS: Normal, EnvelopeGenerator, LowFreqOsc)
 struct ControlEvent{
+	string controlName;
 	int conType;
-	string name;
+	int parameterCount;
 	struct {
 		int value;
 		bool cvEnabled;
+		string parameterName;
 	}parameter[10];
 							// Normal: 	parameter[0].value=parameter value
 
@@ -247,47 +274,92 @@ struct ControlEvent{
 							//			parameter[2].value=offset
 
 
-	ParameterControlConnection paramContConnection[5];
-	int paramContConnectionCount; // number of process parameters being written to by this control
-	ParameterControlConnection paramContConnectionInv[5];
-	int paramContConnectionCountInv; // number of process parameters being written to by this control
+	int outputConnectionCount;
+	int outputInvConnectionCount;
+	int outputToParamControlBufferIndex[5];
+	int outputInvToParamControlBufferIndex[5];
 	int controlTypeIndex;
-	bool gateOpen;
 	bool envTrigger;
 	double output;
 	double outputInv;
-	unsigned int int_output;
-	unsigned int int_outputInv;
+	int int_output;
+	int int_outputInv;
 };
 
 
-
+//CLASS "COMBO"
 struct ComboStruct {
 	string name;
-	ProcessEvent processSequence[20];
-	ControlEvent controlSequence[20];
-	ProcessBuffer procBufferArray[60];
+	ProcessEvent processSequence[20]; // vector of Process child classes
+	ControlEvent controlSequence[20]; // vector of Control child classes
+	ProcessSignalBuffer processSignalBufferArray[60]; // keep this as struct
+	ProcessParameterControlBuffer processParamControlBufferArray[60]; // keep this as struct
+	map<string, ProcessIndexing>  processIndexMap;
+	map<string, ControlIndexing>  controlIndexMap;
 	int footswitchStatus[10];
-	int inputProcBufferIndex[2];
-	int outputProcBufferIndex[2];
+	int inputSystemBufferIndex[2];
+	int outputSystemBufferIndex[2];
 	int processCount;
 	int controlCount;
-	int bufferCount;
+	int processSignalBufferCount;
+	int paramControlBufferCount;
 	bool controlVoltageEnabled;
+	int bufferSize;
 	Json::Value pedalUi;
 };
 
-struct UtilityDataStruct {
-	bool usbEnable;
+
+
+
+
+
+
+//********************* Utility Structs *******************************************
+
+struct ProcessUtility {
 	int antiAliasingNumber;
-	string inputCoupling;
-	string waveshaperMode;
-	int jack_Period;
-	int jack_Buffer;
-	float noiseGate_LowThres;
-	float noiseGate_HighThres;
-	float noiseGate_Gain;
-	float trigger_HighThres;
-	float trigger_LowThres;
+	int inputCouplingMode;
+	int waveshaperMode;
+	int bufferSize;
 };
+
+
+struct JackUtility {
+	int period;
+	int buffer;
+};
+
+struct NoiseGateUtility {
+	double closeThres;
+	double openThres;
+	double gain;
+};
+
+struct EnvTriggerUtility {
+	double highThres;
+	double lowThres;
+};
+
+
+struct ProcessingUtility {
+	NoiseGateUtility noiseGateUtil;
+	EnvTriggerUtility triggerUtil;
+	ProcessUtility procUtil;
+};
+
+
+//************************************************************************************************
+
+
+
+
+
+
+
+
+
+
+
+
+
 #endif /* STRUCTS_H_ */

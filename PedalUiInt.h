@@ -16,6 +16,8 @@
 #include <string>
 #include <cstring>
 #include <linux/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 #include <errno.h>
 #include <iostream>
 #include <fcntl.h>
@@ -23,22 +25,47 @@
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
 
-#include "BaseUiInt.h"
-#include "ComboDataInt.h"
+using namespace std;
+
 #define TX_BUFFER_SIZE 1500
 #define RX_BUFFER_SIZE 1500
 
 
+struct _ipcData {
+	int change;
+	string comboName;
+	string currentStatus;
+	bool usbPortOpen;
+	bool hostGuiActive;
+	int exit;
+};
 
-class PedalUiInt : public BaseUiInt {
+
+class PedalUiInt {
 private:
+	int pedalUiTxFd;
+	int pedalUiRxFd;
+
+	int toPedalUiFD;
+	int fromPedalUiFD;
+	_ipcData *toPedalUiMemory;
+	_ipcData *fromPedalUiMemory;
+	char toPedalUiIPCPath[50];
+	char fromPedalUiIPCPath[50];
+
+	int createIPCFiles(void);
 
 public:
 	PedalUiInt();
 	~PedalUiInt();
-	int checkForNewPedalData(void);
-	int sendComboUiData(Json::Value uiJson);
-	int sendFlxUtilUiData(Json::Value uiJson);
+	string getUserRequest(void);
+	int sendComboPedalUiData(Json::Value uiJson);
+	int sendFlxUtilPedalUiData(Json::Value uiJson);
+	int sendComboList(string comboList);
+	int openIPCFiles(void);
+	int closeIPCFiles(void);
+	int sendUsbPortOpen(bool usbPortOpen);
+	int sendHostGuiActive(bool hostGuiActive);
 };
 
 

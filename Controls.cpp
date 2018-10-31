@@ -8,6 +8,8 @@
 #include "config.h"
 #include "Controls.h"
 #include "valueArrays.h"
+#include "ControlSymbols.h"
+
 
 extern bool debugOutput;
 extern vector<string> controlTypeVector;
@@ -19,7 +21,9 @@ int lfoCount = 0;
 
 
 #define dbg 0
-int normal( char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent)
+int normal( char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent,
+	    array<ProcessParameterControlBuffer,60> &paramContBufferArray)
+
 {
 	int targetParameterValueIndex = 0;
 
@@ -33,7 +37,10 @@ int normal( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 #if(dbg >= 1)
 			if(debugOutput) cout << "Adding normal parameter controller" << endl;
 #endif
-
+#if(dbg >= 1)
+			if(debugOutput) cout << "outputToParamControlBufferIndex: " << controlEvent->outputToParamControlBufferIndex << endl;
+			if(debugOutput)cout << "paramContBufferArray:[" << src.connectedBufferIndex << "," << dest.connectedBufferIndex << "]: " << src.objectName << ":" << src.portName << "->" << dest.objectName << ":" << dest.portName << " :     " << valueIndex << endl;
+#endif
 	}
 	else if(action == 'r')
 	{
@@ -62,21 +69,14 @@ int normal( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 				controlEvent->int_outputInv = 99;
 			}
 
-			for(int paramControlConnectionIndex = 0; paramControlConnectionIndex < controlEvent->paramContConnectionCount; paramControlConnectionIndex++)
+			for(int i = 0; i < controlEvent->outputConnectionCount; i++)
 			{
-				int paramContProcessIndex = controlEvent->paramContConnection[paramControlConnectionIndex].processIndex;
-				int paramContParameterIndex = controlEvent->paramContConnection[paramControlConnectionIndex].processParamIndex;
-
-				procEvent[paramContProcessIndex].parameters[paramContParameterIndex] = controlEvent->int_output;
-
+				paramContBufferArray[controlEvent->outputToParamControlBufferIndex[i]].parameterValueIndex = controlEvent->int_output;
 			}
 
-			for(int paramControlConnectionIndexInv = 0; paramControlConnectionIndexInv < controlEvent->paramContConnectionCountInv; paramControlConnectionIndexInv++)
+			for(int i = 0; i < controlEvent->outputInvConnectionCount; i++)
 			{
-				int paramContProcessIndex = controlEvent->paramContConnectionInv[paramControlConnectionIndexInv].processIndex;
-				int paramContParameterIndex = controlEvent->paramContConnectionInv[paramControlConnectionIndexInv].processParamIndex;
-
-				procEvent[paramContProcessIndex].parameters[paramContParameterIndex] = controlEvent->int_outputInv;
+				paramContBufferArray[controlEvent->outputInvToParamControlBufferIndex[i]].parameterValueIndex = controlEvent->int_outputInv;
 			}
 
 		}
@@ -99,11 +99,13 @@ int normal( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 	return targetParameterValueIndex;
 }
 
-#define dbg 1
-int envGen( char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent)
+#define dbg 0
+int envGen( char action, bool envTrigger, int  controlVoltageIndex,  struct ControlEvent *controlEvent,
+	    array<ProcessParameterControlBuffer,60> &paramContBufferArray)
+
 {
 	static EnvGenContext envGenContext[20];
-	int targetParameterValueIndex = 0;
+	int  targetParameterValueIndex = 0;
 
 	if(action == 'c')
 	{
@@ -119,7 +121,6 @@ int envGen( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 				controlEvent->controlTypeIndex = envGenCount;
 				envGenCount++;
 				envGenContext[controlEvent->controlTypeIndex].envStage = 0;
-				envGenContext[controlEvent->controlTypeIndex].stageTimeValue = 0;
 
 			}
 			catch(std::exception &e)
@@ -135,7 +136,6 @@ int envGen( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 		{
 			if(envTrigger == true ) // ********************* pick detected *********************
 			{
-				envGenContext[controlEvent->controlTypeIndex].stageTimeValue = 0;
 	#if(dbg >= 3)
 				if(debugOutput) cout << "CONTROLS: envTriggerStatus: true." << endl;
 	#endif
@@ -150,10 +150,9 @@ int envGen( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 			}
 
 
-			int stageTimeValue = envGenContext[controlEvent->controlTypeIndex].stageTimeValue;
 			double slewRate = envGenContext[controlEvent->controlTypeIndex].slewRate;
-			int attack;
-			int decay;
+			int  attack;
+			int  decay;
 
 			if(controlEvent->parameter[0].cvEnabled == true)
 			{
@@ -174,8 +173,8 @@ int envGen( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 			}
 
 
-			int attackPeakValueIndex = 100;
-			int decayBottomValueIndex = 10;
+			int  attackPeakValueIndex = 100;
+			int  decayBottomValueIndex = 10;
 
 
 			switch(envGenContext[controlEvent->controlTypeIndex].envStage)
@@ -190,7 +189,7 @@ int envGen( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 	#if(dbg >= 3)
 				if(debugOutput) cout << "case 0: output: " << controlEvent->output << endl;
 	#endif
-					slewRate = (attackPeakValueIndex - decayBottomValueIndex)/(188*envTime[attack]);
+					slewRate = (1.0*attackPeakValueIndex - 1.0*decayBottomValueIndex)/(188.0*envTime[attack]);
 	#if(dbg >= 1)
 					if(debugOutput) cout << "CONTROLS: ATTACK after IDLE" << endl;
 	#endif
@@ -243,13 +242,12 @@ int envGen( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 
 			default:;
 			}
-			controlEvent->int_output  = (unsigned int)(controlEvent->output);
-			controlEvent->int_outputInv  = (unsigned int)(controlEvent->outputInv);
+			controlEvent->int_output  = (int)(controlEvent->output);
+			controlEvent->int_outputInv  = (int)(controlEvent->outputInv);
 
 
 
 
-			envGenContext[controlEvent->controlTypeIndex].stageTimeValue = controlEvent->int_output;
 			envGenContext[controlEvent->controlTypeIndex].slewRate = slewRate;
 
 			if(controlEvent->int_output > 99)
@@ -261,27 +259,14 @@ int envGen( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 				controlEvent->int_outputInv = 99;
 			}
 
-			for(int paramControlConnectionIndex = 0; paramControlConnectionIndex < controlEvent->paramContConnectionCount; paramControlConnectionIndex++)
+			for(int i = 0; i < controlEvent->outputConnectionCount; i++)
 			{
-				int paramContProcessIndex = controlEvent->paramContConnection[paramControlConnectionIndex].processIndex;
-				int paramContParameterIndex = controlEvent->paramContConnection[paramControlConnectionIndex].processParamIndex;
-
-				procEvent[paramContProcessIndex].parameters[paramContParameterIndex] = controlEvent->int_output;
-	#if(dbg >= 2)
-				if(debugOutput) cout << "CONTROLS:  procEvent[" << paramContProcessIndex << "].parameters[" << paramContParameterIndex << "]" << procEvent[paramContProcessIndex].parameters[paramContParameterIndex] << endl;
-	#endif
-
+				paramContBufferArray[controlEvent->outputToParamControlBufferIndex[i]].parameterValueIndex = controlEvent->int_output;
 			}
 
-			for(int paramControlConnectionIndexInv = 0; paramControlConnectionIndexInv < controlEvent->paramContConnectionCountInv; paramControlConnectionIndexInv++)
+			for(int i = 0; i < controlEvent->outputInvConnectionCount; i++)
 			{
-				int paramContProcessIndex = controlEvent->paramContConnectionInv[paramControlConnectionIndexInv].processIndex;
-				int paramContParameterIndex = controlEvent->paramContConnectionInv[paramControlConnectionIndexInv].processParamIndex;
-
-				procEvent[paramContProcessIndex].parameters[paramContParameterIndex] = controlEvent->int_outputInv;
-	#if(dbg >= 3)
-				if(debugOutput) cout << "CONTROLS:  procEvent[" << paramContProcessIndex << "].parametersInv[" << paramContParameterIndex << "]" << procEvent[paramContProcessIndex].parameters[paramContParameterIndex] << endl;
-	#endif
+				paramContBufferArray[controlEvent->outputInvToParamControlBufferIndex[i]].parameterValueIndex = controlEvent->int_outputInv;
 			}
 
 		}
@@ -313,11 +298,12 @@ int envGen( char action, bool envTrigger, int controlVoltageIndex, struct Contro
 
 
 #define dbg 0
-int lfo( char action, bool envTrigger, int controlVoltageIndex, struct ControlEvent *controlEvent, struct ProcessEvent *procEvent)
+int lfo(char action, bool envTrigger, int controlVoltageIndex,  struct ControlEvent *controlEvent,
+	array<ProcessParameterControlBuffer,60> &paramContBufferArray)
 {
-	static LfoContext lfoContext[20];
-	int targetParameterValueIndex = 0;
 
+	int  targetParameterValueIndex = 0;
+  static LfoContext lfoContext[20];
 	if(action == 'c')
 	{
 		controlTypeVector.push_back(lfoSymbol);
@@ -346,12 +332,12 @@ int lfo( char action, bool envTrigger, int controlVoltageIndex, struct ControlEv
 		try
 		{
 
-			unsigned int cycleTimeValueIndex = lfoContext[controlEvent->controlTypeIndex].cycleTimeValueIndex;
+			int cycleTimeValueIndex = lfoContext[controlEvent->controlTypeIndex].cycleTimeValueIndex;
 			double cyclePositionValue = lfoContext[controlEvent->controlTypeIndex].cyclePositionValue;
-			unsigned int int_cyclePositionValue;
-			unsigned int frequencyIndex;
-			unsigned int amplitudeIndex;
-			unsigned int offsetIndex;
+			int int_cyclePositionValue;
+			int frequencyIndex;
+			int amplitudeIndex;
+			int offsetIndex;
 
 			if(controlEvent->parameter[0].cvEnabled == true)
 			{
@@ -379,7 +365,7 @@ int lfo( char action, bool envTrigger, int controlVoltageIndex, struct ControlEv
 			{
 				offsetIndex = controlEvent->parameter[2].value;
 			}
-			unsigned int cyclePositionCount = 250;
+			int cyclePositionCount = 250;
 
 			if(cyclePositionValue >= double(cyclePositionCount-1))
 			{
@@ -392,7 +378,7 @@ int lfo( char action, bool envTrigger, int controlVoltageIndex, struct ControlEv
 			else
 			{
 				cyclePositionValue += lfoFreq[frequencyIndex] * 1.4;
-				int_cyclePositionValue = (unsigned int)cyclePositionValue;
+				int_cyclePositionValue = (int)cyclePositionValue;
 				if(int_cyclePositionValue < 0) int_cyclePositionValue = 0;
 				if(int_cyclePositionValue > (cyclePositionCount-1)) int_cyclePositionValue = (cyclePositionCount-1);
 				controlEvent->output = lfoAmp[amplitudeIndex]*lfoSine[int_cyclePositionValue]+lfoOffset[offsetIndex];
@@ -400,12 +386,12 @@ int lfo( char action, bool envTrigger, int controlVoltageIndex, struct ControlEv
 			}
 
 
-			controlEvent->int_output  = (unsigned int)(controlEvent->output);
-			controlEvent->int_outputInv  = (unsigned int)(controlEvent->outputInv);
+			controlEvent->int_output  = (int)(controlEvent->output);
+			controlEvent->int_outputInv  = (int)(controlEvent->outputInv);
 
 
 			{
-	#if(dbg >= 2)
+	#if(dbg >= 3)
 				if(debugOutput) cout << "output: " << controlEvent->output << "\tint_output: " << controlEvent->int_output;
 				if(debugOutput) cout << "frequencyIndex: " << frequencyIndex << "\tamplitudeIndex: " << amplitudeIndex << "\toffsetIndex: " << offsetIndex <<endl;
 	#endif
@@ -422,21 +408,17 @@ int lfo( char action, bool envTrigger, int controlVoltageIndex, struct ControlEv
 				controlEvent->int_outputInv = 99;
 			}
 
-			for(int paramControlConnectionIndex = 0; paramControlConnectionIndex < controlEvent->paramContConnectionCount; paramControlConnectionIndex++)
-			{
-				int paramContProcessIndex = controlEvent->paramContConnection[paramControlConnectionIndex].processIndex;
-				int paramContParameterIndex = controlEvent->paramContConnection[paramControlConnectionIndex].processParamIndex;
 
-				procEvent[paramContProcessIndex].parameters[paramContParameterIndex] = controlEvent->int_output;
+			for(int i = 0; i < controlEvent->outputConnectionCount; i++)
+			{
+				paramContBufferArray[controlEvent->outputToParamControlBufferIndex[i]].parameterValueIndex = controlEvent->int_output;
 			}
 
-			for(int paramControlConnectionIndexInv = 0; paramControlConnectionIndexInv < controlEvent->paramContConnectionCountInv; paramControlConnectionIndexInv++)
+			for(int i = 0; i < controlEvent->outputInvConnectionCount; i++)
 			{
-				int paramContProcessIndex = controlEvent->paramContConnectionInv[paramControlConnectionIndexInv].processIndex;
-				int paramContParameterIndex = controlEvent->paramContConnectionInv[paramControlConnectionIndexInv].processParamIndex;
-
-				procEvent[paramContProcessIndex].parameters[paramContParameterIndex] = controlEvent->int_outputInv;
+				paramContBufferArray[controlEvent->outputInvToParamControlBufferIndex[i]].parameterValueIndex = controlEvent->int_outputInv;
 			}
+
 		}
 		catch(std::exception &e)
 		{
@@ -456,6 +438,5 @@ int lfo( char action, bool envTrigger, int controlVoltageIndex, struct ControlEv
 			lfoCount--;
 	}
 
-
-	return targetParameterValueIndex;
+  return targetParameterValueIndex;
 }
