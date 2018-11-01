@@ -14,14 +14,6 @@
 
 
 extern bool debugOutput;
-extern string comboName;
-extern bool hostGuiActive;
-
-#define TX_BUFFER_SIZE 1500
-#define RX_BUFFER_SIZE 1500
-#define FILE_BUFFER_SIZE 16000
-const char* rxFifoPath = "/home/pedalUiTx";
-const char* txFifoPath = "/home/pedalUiRx";
 
 
 #if(dbg >= 1)

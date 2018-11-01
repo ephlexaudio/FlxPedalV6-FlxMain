@@ -27,24 +27,27 @@
 
 using namespace std;
 
-#define TX_BUFFER_SIZE 1500
-#define RX_BUFFER_SIZE 1500
+/*#define SPI_TX_BUFFER_SIZE 1500
+#define SPI_RX_BUFFER_SIZE 1500*/
 
 
-struct _ipcData {
-	int change;
-	string comboName;
-	string currentStatus;
-	bool usbPortOpen;
-	bool hostGuiActive;
-	int exit;
-};
 
 
 class PedalUiInt {
 private:
+	struct _ipcData {
+		int change;
+		string comboName;
+		string currentStatus;
+		bool usbPortOpen;
+		bool hostGuiActive;
+		int exit;
+	};
+
 	int pedalUiTxFd;
 	int pedalUiRxFd;
+	const char* rxFifoPath = "/home/pedalUiTx";
+	const char* txFifoPath = "/home/pedalUiRx";
 
 	int toPedalUiFD;
 	int fromPedalUiFD;
