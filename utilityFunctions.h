@@ -20,18 +20,22 @@
 #include <linux/types.h>
 #include <algorithm>
 
-using namespace std;
+#include "structs.h"
 
-void startTimer(void);
-int stopTimer(const char *description);
+namespace std
+{
+	void startTimer(void);
+	int stopTimer(const char *description);
 
-void pabort(const char *s);
-void clearBuffer(char *buffer, int length);
-string getCompactedJSONData(Json::Value data);
-string getStringListString(vector<string> stringVector);
-bool validateString(string dataString);
-string removeReturnRelatedCharacters(string dirtyString);
+	void pabort(const char *s);
+	void clearBuffer(char *buffer, int length);
+	string getCompactedJSONData(Json::Value data);
+	string getStringListString(vector<string> stringVector);
+	bool validateString(string dataString);
+	string removeReturnRelatedCharacters(string dirtyString);
+	ProcessControlChange parseValueChangeRequest(string changeRequestString);
+	int validateJsonBuffer(char *jsonBuffer);
 
-int validateJsonBuffer(char *jsonBuffer);
+}
 
 #endif /* UTILITYFUNCTIONS_H_ */

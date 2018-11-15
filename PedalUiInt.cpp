@@ -13,7 +13,6 @@
 #include "utilityFunctions.h"
 
 
-extern bool debugOutput;
 
 
 #if(dbg >= 1)
@@ -26,16 +25,26 @@ extern bool debugOutput;
 
 
 
-using namespace std;
+namespace std
+{
+
 
 
 PedalUiInt::PedalUiInt()
 {
 #if(dbg >= 1)
-	if(debugOutput) cout << "********** ENTERING PedalUiInt constructor: "  << endl;
+	 cout << "********** ENTERING PedalUiInt constructor: "  << endl;
 #endif
 
 
+	 try
+	 {
+
+	 }
+	 catch(exception &e)
+	 {
+		 cout << "exception in PedalUiInt constructor: " << e.what() << endl;
+	 }
 	this->pedalUiTxFd = -1;
 	this->pedalUiRxFd = -1;
 
@@ -58,44 +67,57 @@ PedalUiInt::PedalUiInt()
 		this->pedalUiTxFd = open(txFifoPath, O_RDWR | O_NONBLOCK);
 		usleep(10000);
 #if(dbg >= 2)
-		if(debugOutput) cout << "waiting for FIFOs" << endl;
-		if(debugOutput) cout << "********** OFX_MAIN: " << strerror(errno) << endl;
+		 cout << "waiting for FIFOs" << endl;
+		 cout << "********** OFX_MAIN: " << strerror(errno) << endl;
 #endif
 	}
 
 	this->toPedalUiMemory = NULL;
 	this->fromPedalUiMemory = NULL;
+	this->fromPedalUiFD = -1;
+	this->toPedalUiFD = -1;
 	this->createIPCFiles();
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "********** EXITING PedalUiInt constructor: "  <<  endl;
+	 cout << "********** EXITING PedalUiInt constructor: "  <<  endl;
 #endif
 
 }
 
 PedalUiInt::~PedalUiInt()
 {
-	if(debugOutput) cout << "~PedalUiInt" << endl;
-	if(pedalUiTxFd >= 0)
+	 cout << "~PedalUiInt" << endl;
+	 int status = 0;
+
+	 try
+	 {
+
+	 }
+	 catch(exception &e)
+	 {
+		 cout << "exception in PedalUiInt destructor: " << e.what() << endl;
+		 status = -1;
+	 }
+if(pedalUiTxFd >= 0)
 	{
-		if(debugOutput) cout << "closing and removing /home/pedalUiTx." << endl;
+		cout << "closing and removing /home/pedalUiTx." << endl;
 		close(pedalUiTxFd);
 		system("rm /home/pedalUiTx");
 	}
 	else
 	{
-		if(debugOutput) cout << "/home/pedalUiTx not found." << endl;
+		cout << "/home/pedalUiTx not found." << endl;
 	}
 
 	if(pedalUiRxFd >= 0)
 	{
-		if(debugOutput) cout << "closing and removing /home/pedalUiRx." << endl;
+		cout << "closing and removing /home/pedalUiRx." << endl;
 		close(pedalUiRxFd);
 		system("rm /home/pedalUiRx");
 	}
 	else
 	{
-		if(debugOutput) cout << "/home/pedalUiRx not found." << endl;
+		cout << "/home/pedalUiRx not found." << endl;
 	}
 
 	this->closeIPCFiles();
@@ -113,24 +135,33 @@ PedalUiInt::~PedalUiInt()
 string PedalUiInt::getUserRequest(void)
 {
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: PedalUiInt::getUserRequest" << endl;
+	 cout << "***** ENTERING: PedalUiInt::getUserRequest" << endl;
 #endif
-	char responseCharArray[200];
-	uint8_t responseCharArrayIndex = 0;
+	/*char responseCharArray[200];
+	int responseCharArrayIndex = 0;*/
 	string responseString;
+	int status = 0;
 
-
-	int dataStatus = 0; //1: new data available
 	int tempBufferIndex = 4;
 	char tempBuffer[100];
 	clearBuffer(tempBuffer,100);
+
+	 try
+	 {
+
+	 }
+	 catch(exception &e)
+	 {
+		 cout << "exception in PedalUiInt destructor: " << e.what() << endl;
+		 status = -1;
+	 }
 
 	errno = 0;
 	int dataReadSize = read(this->pedalUiRxFd, tempBuffer, 100);
 	if( dataReadSize > 0)
 	{
 #if(dbg >= 2)
-		if(debugOutput) cout << "tempBuffer: " << tempBuffer << endl;
+		 cout << "tempBuffer: " << tempBuffer << endl;
 #endif
 
 		for(tempBufferIndex = 0; tempBufferIndex < 100; tempBufferIndex++)
@@ -139,30 +170,24 @@ string PedalUiInt::getUserRequest(void)
 			{
 				responseString += tempBuffer[tempBufferIndex];
 #if(dbg >= 2)
-				if(debugOutput) cout << "tempBuffer[" << tempBufferIndex << "]: valid data: " << tempBuffer[tempBufferIndex] << "(" << (int)(tempBuffer[tempBufferIndex]) << ")" << endl;
+				 cout << "tempBuffer[" << tempBufferIndex << "]: valid data: " << tempBuffer[tempBufferIndex] << "(" << static_cast<int>(tempBuffer[tempBufferIndex]) << ")" << endl;
 #endif
 			}
 			else if(tempBufferIndex > 5)
 			{
-				dataStatus = 1;
 				break;
 			}
 			else // corrupt data
 			{
 #if(dbg >= 2)
-				if(debugOutput) cout << "tempBuffer[" << tempBufferIndex << "]: corrupt data: " << tempBuffer[tempBufferIndex] << "(" << (int)(tempBuffer[tempBufferIndex]) << ")" << endl;
+				 cout << "tempBuffer[" << tempBufferIndex << "]: corrupt data: " << tempBuffer[tempBufferIndex] << "(" << static_cast<int>(tempBuffer[tempBufferIndex]) << ")" << endl;
 #endif
-
 			}
 		}
 	}
-	else
-	{
-		dataStatus = 0;
-	}
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: PedalUiInt::getUserRequest: " << responseString << endl;
+	 cout << "***** EXITING: PedalUiInt::getUserRequest: " << responseString << endl;
 #endif
 
 	return responseString;
@@ -174,30 +199,40 @@ string PedalUiInt::getUserRequest(void)
 int PedalUiInt::sendComboPedalUiData(Json::Value uiJson)
 {
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: PedalUiInt::sendComboUiData: " <<  endl;
+	 cout << "***** ENTERING: PedalUiInt::sendComboUiData: " <<  endl;
 #endif
-	uint8_t status = 0;
-	string uiData;
+	int status = 0;
+	char uiData[TX_BUFFER_SIZE];
+	clearBuffer(uiData,TX_BUFFER_SIZE);
 
-	uiData.clear();
-	uiData = getCompactedJSONData(uiJson);
+	 try
+	 {
+
+	 }
+	 catch(exception &e)
+	 {
+		 cout << "exception in PedalUiInt destructor: " << e.what() << endl;
+	 }
+
+	strncpy(uiData,getCompactedJSONData(uiJson).c_str(),TX_BUFFER_SIZE);
 
 
 	errno = 0;
-	int txSentCount = write(this->pedalUiTxFd, uiData.c_str(), uiData.size());
+	int txSentCount = write(this->pedalUiTxFd, uiData, strlen(uiData));
+
 #if(dbg>=2)
-	if(debugOutput) cout << "this->pedalUiTxFd:" << pedalUiTxFd << endl;
-	if(debugOutput) cout << "uiData:" << uiData << endl;
-	if(debugOutput) cout << "uiData length:" << uiData.size() << endl;
-	if(debugOutput) cout << "txSentCount: " << txSentCount << endl;
+	 cout << "this->pedalUiTxFd:" << pedalUiTxFd << endl;
+	 cout << "uiData:" << uiData << endl;
+	 cout << "uiData length:" << strlen(uiData) << endl;
+	 cout << "txSentCount: " << txSentCount << endl;
 	if(txSentCount < 0)
-		if(debugOutput) cout << "FIFO write error: " << strerror(errno) << endl;
+		 cout << "FIFO write error: " << strerror(errno) << endl;
 #endif
 
-	if(txSentCount == uiData.size()) status = 0;
+	if(txSentCount == static_cast<int>(strlen(uiData))) status = 0;
 	else status = -1;
 
-	uiData.clear();
+	clearBuffer(uiData,TX_BUFFER_SIZE);
 #if(dbg >= 1)
 	cout << "***** EXITING: PedalUiInt::sendComboUiData: " << status << endl;
 #endif
@@ -205,14 +240,23 @@ int PedalUiInt::sendComboPedalUiData(Json::Value uiJson)
 }
 
 
-#define dbg 0
+#define dbg 1
 int PedalUiInt::sendFlxUtilPedalUiData(Json::Value uiJson)
 {
 	int status = 0;
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: PedalUiInt::sendFlxUtilUiData: " <<  endl;
+	 cout << "***** ENTERING: PedalUiInt::sendFlxUtilUiData: " <<  endl;
 #endif
 	string uiData;
+	 try
+	 {
+
+	 }
+	 catch(exception &e)
+	 {
+		 cout << "exception in PedalUiInt destructor: " << e.what() << endl;
+		 status = -1;
+	 }
 
 	uiData.clear();
 	uiData = getCompactedJSONData(uiJson);
@@ -220,14 +264,14 @@ int PedalUiInt::sendFlxUtilPedalUiData(Json::Value uiJson)
 	errno = 0;
 	int txSentCount = write(this->pedalUiTxFd, uiData.c_str(), uiData.size());
 #if(dbg>=2)
-	if(debugOutput) cout << "uiData:" << uiData << endl;
-	if(debugOutput) cout << "uiData length:" << uiData.size() << endl;
-	if(debugOutput) cout << "txSentCount: " << txSentCount << endl;
+	 cout << "uiData:" << uiData << endl;
+	 cout << "uiData length:" << uiData.size() << endl;
+	 cout << "txSentCount: " << txSentCount << endl;
 	if(txSentCount < 0)
-		if(debugOutput) cout << "FIFO write error: " << strerror(errno) << endl;
+		 cout << "FIFO write error: " << strerror(errno) << endl;
 #endif
 
-	if(txSentCount == uiData.size()) status = 0;
+	if(txSentCount == static_cast<int>(uiData.size())) status = 0;
 	else status = -1;
 
 	uiData.clear();
@@ -241,15 +285,15 @@ int PedalUiInt::sendFlxUtilPedalUiData(Json::Value uiJson)
 int PedalUiInt::sendComboList(string comboList)
 {
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: PedalUiInt::sendComboList" << endl;
+	 cout << "***** ENTERING: PedalUiInt::sendComboList" << endl;
 #endif
-	uint8_t status = 0;
+	int status = 0;
 
 
-	write(this->pedalUiTxFd,comboList.c_str(), comboList.length());
+	status = write(this->pedalUiTxFd,comboList.c_str(), comboList.length());
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: PedalUiInt::sendComboList: " << status << endl;
+	 cout << "***** EXITING: PedalUiInt::sendComboList: " << status << endl;
 #endif
 	return status;
 
@@ -260,39 +304,48 @@ int PedalUiInt::sendComboList(string comboList)
 int PedalUiInt::createIPCFiles(void)
 {
 	int status = 0;
-
-	for(int i = 0; i < 50; i++) this->toPedalUiIPCPath[i] = 0;
-
-	sprintf(this->toPedalUiIPCPath,"/ipc_toPedalUiInt");
-	errno = 0;
-
-	this->toPedalUiFD = shm_open(this->toPedalUiIPCPath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-	if(this->toPedalUiFD == -1)
+	try
 	{
-		printf("toProdFD open failed.\n");
-		printf("errno %d:%s\n", errno, strerror(errno));
-	}
-	else if(ftruncate(this->toPedalUiFD,100) == -1)
-	{
-		printf("toProdFD ftruncate failed: %d\n", errno);
+
+
+		for(int i = 0; i < 50; i++) this->toPedalUiIPCPath[i] = 0;
+
+		sprintf(this->toPedalUiIPCPath,"/ipc_toPedalUiInt");
 		errno = 0;
+
+		this->toPedalUiFD = shm_open(this->toPedalUiIPCPath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+		if(this->toPedalUiFD == -1)
+		{
+			printf("toProdFD open failed.\n");
+			printf("errno %d:%s\n", errno, strerror(errno));
+		}
+		else if(ftruncate(this->toPedalUiFD,100) == -1)
+		{
+			printf("toProdFD ftruncate failed: %d\n", errno);
+			errno = 0;
+		}
+
+		sprintf(this->fromPedalUiIPCPath,"/ipc_fromPedalUiInt");
+
+		this->fromPedalUiFD = shm_open(this->fromPedalUiIPCPath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+		if(this->fromPedalUiFD == -1)
+		{
+			printf("fromPedalUiFD open failed.\n");
+		}
+		else if(ftruncate(this->fromPedalUiFD,100) == -1)
+		{
+			printf("fromPedalUiFD ftruncate failed: %d.\n", errno);
+			errno = 0;
+		}
+
+		close(toPedalUiFD);
+		close(fromPedalUiFD);
 	}
-
-	sprintf(this->fromPedalUiIPCPath,"/ipc_fromPedalUiInt");
-
-	this->fromPedalUiFD = shm_open(this->fromPedalUiIPCPath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-	if(this->fromPedalUiFD == -1)
+	catch(exception &e)
 	{
-		printf("fromPedalUiFD open failed.\n");
+		cout << "exception in PedalUiInt::openIPCFiles: " << e.what();
+		status = -1;
 	}
-	else if(ftruncate(this->fromPedalUiFD,100) == -1)
-	{
-		printf("fromPedalUiFD ftruncate failed: %d.\n", errno);
-		errno = 0;
-	}
-
-	close(toPedalUiFD);
-	close(fromPedalUiFD);
 
 	return status;
 }
@@ -301,32 +354,40 @@ int PedalUiInt::openIPCFiles(void)
 {
 	int status = 0;
 
-
-	this->toPedalUiFD = shm_open(this->toPedalUiIPCPath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-	if(this->toPedalUiFD == -1)
+	try
 	{
-		printf("toProdFD open failed.\n");
-	}
-	else
-	{
-		this->toPedalUiMemory = (_ipcData *)mmap (0, sizeof(_ipcData), PROT_WRITE | PROT_READ,
-	                        MAP_SHARED, this->toPedalUiFD, 0);
-	}
+
+		this->toPedalUiFD = shm_open(this->toPedalUiIPCPath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+		if(this->toPedalUiFD == -1)
+		{
+			printf("toProdFD open failed.\n");
+		}
+		else
+		{
+			this->toPedalUiMemory = (_ipcData *)mmap (0, sizeof(_ipcData), PROT_WRITE | PROT_READ,
+								MAP_SHARED, this->toPedalUiFD, 0);
+		}
 
 
-	this->fromPedalUiFD = shm_open(this->fromPedalUiIPCPath, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR);
-	if(this->fromPedalUiFD == -1)
-	{
-		printf("fromPedalUiFD open failed.\n");
-	}
-	else
-	{
-		this->fromPedalUiMemory = (_ipcData *)mmap (0, sizeof(_ipcData), PROT_READ,
-	                        MAP_SHARED, this->fromPedalUiFD, 0);
-	}
+		this->fromPedalUiFD = shm_open(this->fromPedalUiIPCPath, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR);
+		if(this->fromPedalUiFD == -1)
+		{
+			printf("fromPedalUiFD open failed.\n");
+		}
+		else
+		{
+			this->fromPedalUiMemory = (_ipcData *)mmap (0, sizeof(_ipcData), PROT_READ,
+								MAP_SHARED, this->fromPedalUiFD, 0);
+		}
 
-	close(toPedalUiFD);
-    close(fromPedalUiFD);
+		close(toPedalUiFD);
+		close(fromPedalUiFD);
+	}
+	catch(exception &e)
+	{
+		cout << "exception in PedalUiInt::openIPCFiles: " << e.what();
+		status = -1;
+	}
 
 
 	return status;
@@ -335,31 +396,33 @@ int PedalUiInt::openIPCFiles(void)
 
 int PedalUiInt::closeIPCFiles(void)
 {
-	munmap(this->fromPedalUiMemory, this->fromPedalUiFD);
-	munmap(this->toPedalUiMemory, this->toPedalUiFD);
-
-}
-#define dbg 1
-int PedalUiInt::sendUsbPortOpen(bool usbPortOpen)
-{
 	int status = 0;
+	if(munmap(this->fromPedalUiMemory, this->fromPedalUiFD) == -1) status = -1;
+	if(munmap(this->toPedalUiMemory, this->toPedalUiFD) == -1) status = -1;
+	return status;
+}
+
+#define dbg 1
+void PedalUiInt::sendUsbPortOpen(bool usbPortOpen)
+{
+
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: PedalUiInt::sendUsbPortOpen" << endl;
+	 cout << "***** ENTERING: PedalUiInt::sendUsbPortOpen" << endl;
 #endif
 	this->toPedalUiMemory->exit = 0;
 	this->toPedalUiMemory->change = 1;
 	this->toPedalUiMemory->usbPortOpen = usbPortOpen;
 
 	#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: PedalUiInt::sendUsbPortOpen: " << status << endl;
+	 cout << "***** EXITING: PedalUiInt::sendUsbPortOpen: " << endl;
 #endif
-	return status;
+
 }
-int PedalUiInt::sendHostGuiActive(bool hostGuiActive)
+void PedalUiInt::sendHostGuiActive(bool hostGuiActive)
 {
-	int status = 0;
+
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: PedalUiInt::sendHostGuiActive" << endl;
+	 cout << "***** ENTERING: PedalUiInt::sendHostGuiActive" << endl;
 #endif
 	this->toPedalUiMemory->exit = 0;
 	this->toPedalUiMemory->change = 1;
@@ -367,7 +430,8 @@ int PedalUiInt::sendHostGuiActive(bool hostGuiActive)
 
 
 	#if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: PedalUiInt::sendHostGuiActive: " << status << endl;
+	 cout << "***** EXITING: PedalUiInt::sendHostGuiActive: "  << endl;
 #endif
-	return status;
+
+}
 }

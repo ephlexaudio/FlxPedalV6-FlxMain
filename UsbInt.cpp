@@ -8,9 +8,10 @@
 #include "config.h"
 #include "UsbInt.h"
 
-using namespace std;
+namespace std
+{
 
-extern bool debugOutput;
+
 
 UsbInt::UsbInt()
 {
@@ -81,7 +82,7 @@ void UsbInt::acmRndisUsbInit()
 }
 
 #define dbg 0
-int UsbInt::configureUsbGadgetForOs(int selectedOs)
+int UsbInt::configureUsbGadgetForOs(string selectedOs)
 {
 	errno = 0;
 	this->osSelected = selectedOs;
@@ -98,28 +99,27 @@ int UsbInt::configureUsbGadgetForOs(int selectedOs)
 
 		if(gadget[0] != 'g')
 		{
-						switch(osSelected)
-						{
-							case 0:
-								status = -1;
-								break;
-							case 1:		// Windows selected
-								cout << "this->acmRndisUsbInit()" << endl;
-								this->acmRndisUsbInit();
-								break;
-							case 2:		// Mac OS X selected
-								cout << "this->acmEcmUsbInit()" << endl;
-								this->acmEcmUsbInit();
-								break;
-							case 3:		// Linux selected
-								cout << "this->acmEcmUsbInit()" << endl;
-								this->acmEcmUsbInit();
-								break;
-							default:
-								status = -1;
-						}
+			if(selectedOs.compare("Win") == 0)
+			{
+				cout << "this->acmRndisUsbInit()" << endl;
+				this->acmRndisUsbInit();
+			}
+			else if(selectedOs.compare("Mac") == 0)
+			{
+				cout << "this->acmEcmUsbInit()" << endl;
+				this->acmEcmUsbInit();
+			}
+			else if(selectedOs.compare("Lin") == 0)
+			{
+				cout << "this->acmEcmUsbInit()" << endl;
+				this->acmEcmUsbInit();
+			}
+			else
+			{
+				cout << "invalid option" << endl;
+				status = -1;
+			}
 		}
-
 	}
 	catch(exception &e)
 	{
@@ -167,7 +167,7 @@ int UsbInt::openPort()
 		}
 		else
 		{
-			if(debugOutput) cout << "failed to open USB:"  << errno << endl;
+			 cout << "failed to open USB:"  << errno << endl;
 			this->portOpenStatus = false;
 		}
 	}
@@ -194,7 +194,7 @@ int UsbInt::closePort()
 	}
 	else
 	{
-		if(debugOutput) cout << "failed to close USB: " << errno << endl;
+		 cout << "failed to close USB: " << errno << endl;
 	}
 #if(dbg >= 1)
 	cout << "********** EXITING UsbInt::closePort: " << status << endl;
@@ -209,14 +209,16 @@ int UsbInt::closePort()
 string UsbInt::readNewData(void)
 {
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: UsbInt::getNewData" << endl;
+	 cout << "***** ENTERING: UsbInt::getNewData" << endl;
 #endif
 	char usbInputBuffer[FILE_SIZE];
 	clearBuffer(usbInputBuffer,FILE_SIZE);
 
 	bool stringIsValid = false;
 	int status = 0;
+
 	string usbString;
+
 
 	ssize_t size_read = read(this->usbFD, usbInputBuffer, FILE_SIZE);
 
@@ -225,17 +227,16 @@ string UsbInt::readNewData(void)
 		usbString = string(usbInputBuffer);
 		stringIsValid = validateString(usbString);
 #if(dbg >= 1)
-		if(debugOutput) cout << "USB received size: " << strlen(this->usbInputBuffer) << ":\t" << this->usbInputBuffer << endl;
-		if(debugOutput) cout << "clean data size: " << strlen(this->usbCleanInputBuffer )<< ":\t" << this->usbCleanInputBuffer << endl;
+		 cout << "USB received size: " << strlen(usbInputBuffer) << ":\t" << usbInputBuffer << endl;
 #endif
 		status = 0;
 	}
 	else status = -1;
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: UsbInt::getNewData" << status << endl;
+	 cout << "***** EXITING: UsbInt::getNewData: " << status << endl;
 #endif
-	if(stringIsValid) return usbString;
+	if(stringIsValid >= 0)return usbString;
 	else return string("");
 }
 
@@ -245,12 +246,12 @@ int UsbInt::writeData(string input)
 {
 	int status = 0;
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: UsbInt::writeData" << endl;
+	 cout << "***** ENTERING: UsbInt::writeData" << endl;
 #endif
 
 #if(dbg >= 2)
 
-	if(debugOutput) cout << "dataString: " << this->usbOutputBuffer << endl;
+	 cout << "dataString: " << this->usbOutputBuffer << endl;
 #endif
 
 	ssize_t size_write = write(this->usbFD, input.c_str(), input.size());
@@ -259,8 +260,9 @@ int UsbInt::writeData(string input)
 	else status = -1;
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: UsbInt::writeData" << endl;
+	 cout << "***** EXITING: UsbInt::writeData" << endl;
 #endif
 
 	return status;
+}
 }

@@ -8,20 +8,23 @@
 #ifndef HOSTUIINT_H_
 #define HOSTUIINT_H_
 
-#include "UsbInt.h"
 #include <vector>
 #include <string>
 #include <string.h>
 #include <stdio.h>
 #include "utilityFunctions.h"
 #include "FileSystemInt.h"
-
 #include "structs.h"
+#include "UsbInt.h"
+
+namespace std
+{
 
 
 class HostUiInt : public UsbInt
 {
 private:
+
 	FileSystemInt fsInt;
 public:
 
@@ -35,7 +38,9 @@ public:
 	int sendComboList(string comboLists);
 	int sendComboToHost(string comboName);
 	string getComboFromHost(string comboData);
+	int sendCurrentStatus(string currentStatus);
+	int setHostPcUtility(HostPcUtility hostUtil);
 
 };
-
+}
 #endif /* HOSTUIINT_H_ */

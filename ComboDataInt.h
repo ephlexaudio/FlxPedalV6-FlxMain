@@ -18,19 +18,37 @@
 #include <map>
 #include <json/json.h>
 #include <algorithm>
-
-using namespace std;
-
+#include "FileSystemInt.h"
 #include "structs.h"
-
-#include "indexMapStructs.h"
-
 #include "utilityFunctions.h"
 
-
 #define JSON_BUFFER_LENGTH 32000
+
+namespace std
+{
+
+
+
 class ComboDataInt
 {
+public:
+	void printProcessList(bool sorted, vector<Process> processVector);
+	void printProcessStructVector(bool sorted, vector<Process> processVector);
+	void printControlStructVector(bool sorted, vector<Control> controlVector);
+	void printDataReadyList(void);
+	void printProcessSignalConnectionList(bool sorted, vector<ProcessSignalConnection> processSignalConnectionVector);
+	void printControlConnectionList(bool sorted, vector<ProcessParameterControlConnection> procParamContConnectVector);
+	void printProcBufferList(void);
+	void printContBufferList(void);
+
+	void debugPrintParamContBufferListWithConnections();
+	void printIndexMappedProcessData();
+	void printIndexMappedControlData();
+	void printIndexMappedComboData(void);
+	void printPedalUIData();
+	void printEffectComboJsonProcessParameters(Json::Value combo);
+	void printEffectComboJsonControlParameters(Json::Value combo);
+
 
 private:
 
@@ -48,7 +66,7 @@ private:
 	string comboName;
 	Json::Value effectComboJson;
 	Json::Value pedalUiJson;
-
+	FileSystemInt fsInt;
 	std::vector<Process> unsortedProcessStructVector;
 
 	std::vector<ProcessSignalConnection> unmergedProcessSubconnectionStructVector;
@@ -79,6 +97,7 @@ private:
 
 
 	int loadEffectComboJsonFromFile(string comboName); //get JSON data from file and parse into effectComboJson
+	int loadEffectComboJson(string comboData); //get JSON data from file and parse into effectComboJson
 	int loadComboJsonFileStructFromEffectComboJson(void);
 	int loadUnsortedProcessStructVectorFromComboJsonFileStruct(void);
 	int loadUnmergedSubconnectionStructVectorFromComboJsonFileStruct(void);
@@ -113,9 +132,9 @@ private:
 	int setControlOutputAndProcessParameterControlBufferIndexesUsingParamContBufferArray();
 
 	/******************* Set other data ****************************************/
-	void setProcessAndControlTypeIntsInSortedStructVectors();
-	void  loadProcessIndexMapFromSortedProcessVector();
-	void  loadControlIndexMapFromSortedControlVector();
+	int  setProcessAndControlTypeIntsInSortedStructVectors();
+	int  loadProcessIndexMapFromSortedProcessVector();
+	int  loadControlIndexMapFromSortedControlVector();
 	int loadIndexMappedComboDataFromSortedVectors(void);
 
 	int getPedalUi(void); // setup pedalUiJson using comboFileStruct
@@ -130,7 +149,7 @@ private:
 
 protected:
 
-	ProcessUtility procUtil;
+	ProcessUtility processUtil;
 
 
 public:
@@ -142,33 +161,25 @@ public:
 
 
 
-	void printProcessList(bool sorted, vector<Process> processVector);
-	void printProcessStructVector(bool sorted, vector<Process> processVector);
-	void printControlStructVector(bool sorted, vector<Control> controlVector);
-	void printDataReadyList(void);
-	void printProcessSignalConnectionList(bool sorted, vector<ProcessSignalConnection> processSignalConnectionVector);
-	void printControlConnectionList(bool sorted, vector<ProcessParameterControlConnection> procParamContConnectVector);
-	void printProcBufferList(void);
-	void printContBufferList(void);
-
-	void debugPrintParamContBufferListWithConnections();
-	void printIndexMappedProcessData();
-	void printIndexMappedControlData();
-	void printIndexMappedComboData(void);
-	void printPedalUIData();
-	 void setProcessUtilityData(ProcessUtility procUtil);
+	void setProcessUtilityData(ProcessUtility procUtil);
 
 	Json::Value getPedalUiJson(void);
-
 	int loadIndexMappedComboData(string comboName);
-	int saveCombo(ComboStruct combo);
 
+	int saveCombo(ComboStruct combo);  // this is used only by the the PedalUi
 	string getName();
 	ComboStruct getComboStruct();
+	Json::Value getEffectComboJson();
+	ComboJsonFileStruct getComboJsonFileStruct(){return this->comboFileStruct;}
+	string getComboStringData(string comboName);
+	int loadIndexMappedComboData2(Json::Value comboJson);
+	void transferComboStructBackToEffectComboJson(ComboStruct combo);
+
+	void setComboStringData(string comboData);
 
 };
 
 
-
+}
 
 #endif /* DATABASEINT_H_ */

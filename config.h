@@ -8,6 +8,8 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+namespace std
+{
 
 #define BUFFER_SIZE 1024
 #define DELAY_BUFFER_LENGTH 480000
@@ -20,7 +22,10 @@
 #define SPI_TX_BUFFER_SIZE 1500
 #define SPI_RX_BUFFER_SIZE 1500
 #define FILE_SIZE 32000
-
+#define DISABLE_AUDIO_THREAD 0  // for allow for stepping through code in debugger
+#define AUDIO_THREAD_EFFECTS_BYPASS 0   // for debugging audio processing
 #define PROC_BUFFER_REF 1
 #define PROC_BUFFER_VAL 0
+
+}
 #endif /* CONFIG_H_ */

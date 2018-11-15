@@ -1,13 +1,9 @@
-#include "config.h"
-#include <fstream>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <errno.h>
-#include <string.h>
-#include "GPIOClass.h"
 
-using namespace std;
+#include "GPIOClass.h"
+#include "config.h"
+
+namespace std
+{
 
 GPIOClass::GPIOClass()
 {
@@ -147,4 +143,5 @@ int/*string*/ GPIOClass::get_gpionum(){
 
 return this->gpionum;
 
+}
 }

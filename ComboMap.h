@@ -16,10 +16,9 @@ namespace std
 	class ComboMap : public ComboDataInt
 	{
 	private:
-		//ProcessUtility procUtil;
 		map<string, ComboDataInt> comboDataMap;
 		vector<string> comboNameVector;
-		FileSystemInt fsInt;
+		FileSystemInt fsInt; // used only by PedalUi, so only saving will be done
 	protected:
 
 
@@ -37,7 +36,9 @@ namespace std
 		ComboDataInt getComboObject(string comboName);
 		bool isInComboMap(string comboName);
 		void eraseFromMap(string comboName);
-		int saveCombo(string comboName, ComboStruct comboData);
+		int saveCombo(ComboStruct comboData);
+		int updateFromFileSystem();  // use when HostUi downloads from host to filesystem
+
 	};
 
 } /* namespace std */

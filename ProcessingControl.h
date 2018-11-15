@@ -8,6 +8,7 @@
 #ifndef PROCESSINGCONTROL_H_
 #define PROCESSINGCONTROL_H_
 #include <iostream>
+#include <map>
 #include <fcntl.h>
 
 #include <signal.h>
@@ -16,23 +17,24 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <map>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <jack/jack.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
-#include "config.h"
-#include "structs.h"
-#include "GPIOClass.h"
 #include "Processing.h"
 
+namespace std
+{
 
 class ProcessingControl
 {
 private:
 	Processing *processing;
-	ProcessingUtility processingUtil;
+	int bufferSize;
+	NoiseGateUtility gateUtil;
+	EnvTriggerUtility triggerUtil;
 	JackUtility jackUtil;
 	bool justPoweredUp;
 	bool inputsSwitched;
@@ -49,7 +51,7 @@ public:
 	int startJack(void);
 	int stopJack(void);
 	int startComboProcessing();
-	int stopComboProcessing();
+	void stopComboProcessing();
 	void enableEffects();
 	void disableEffects();
 	void enableAudioOutput();
@@ -59,18 +61,21 @@ public:
 	void updateControlParameter(string parentControl, string parameter, int parameterValue);
 
 	void readFootswitches(void);
-	void setNoiseGateCloseThreshold(double closeThres);
-	void setNoiseGateOpenThreshold(double openThres);
-	void setNoiseGateGain(double gain);
-	void setTriggerLowThreshold(double lowThres);
-	void setTriggerHighThreshold(double lowThres);
-	void setProcessingUtility(ProcessingUtility gateTrigUtil);
+	void setNoiseGateUtility(NoiseGateUtility gateTrigUtil);
+	void updateNoiseGateUtility(NoiseGateUtility gateTrigUtil);
+	NoiseGateUtility getNoiseGateUtility();
+	void setEnvTriggerUtility(EnvTriggerUtility gateTrigUtil);
+	void updateEnvTriggerUtility(EnvTriggerUtility gateTrigUtil);
+	EnvTriggerUtility getEnvTriggerUtility();
+	void setBufferSize(int bufferSize);
+	int getBufferSize();
 	void setJackUtility(JackUtility jackUtil);
-	ProcessingUtility getProcessingUtility();
-
+	void loadSymbols();
+	vector<string> getComponentSymbols();
+	vector<string> getControlSymbols();
+	//int processUtilityChange(PedalUtilityChange utilChange);  // "process" meaning "do something with this"
 };
+}
 
-int loadComponentSymbols(void);
-int loadControlSymbols(void);
 
 #endif /* PROCESSINGCONTROL_H_ */

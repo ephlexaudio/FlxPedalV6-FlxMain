@@ -5,16 +5,18 @@
  *      Author: mike
  */
 
-#include "config.h"
-#include "utilityFunctions.h"
 
+#include "utilityFunctions.h"
+#include "config.h"
 
 long startStamp;
 long stopStamp;
 struct timeval tv;
-extern bool debugOutput;
 
 #define JSON_BUFFER_LENGTH 32000
+
+namespace std
+{
 
 void startTimer(void)
 {
@@ -28,10 +30,10 @@ int stopTimer(const char *description)
 	stopStamp = 1000000*tv.tv_sec+tv.tv_usec;
 	if(description != NULL)
 	{
-		if(debugOutput) if(debugOutput) cout << "******" << description << "time: " << stopStamp - startStamp << endl;
+		 cout << "******" << description << "time: " << stopStamp - startStamp << endl;
 	}
 
-	return (int)(stopStamp - startStamp);
+	return static_cast<int>(stopStamp - startStamp);
 }
 
 
@@ -77,7 +79,7 @@ string removeReturnRelatedCharacters(string dirtyString)
 string getStringListString(vector<string> stringVector)
 {
 	string vectorString;
-	int i = 0;
+	unsigned int i = 0;
 	for(auto & stringName : stringVector)
 	{
 		vectorString.append(stringName);
@@ -91,8 +93,8 @@ string getStringListString(vector<string> stringVector)
 bool validateString(string dataString)
 {
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: validateString" << endl;
-	if(debugOutput) cout << "dataString: " << dataString << endl;
+	 cout << "***** ENTERING: validateString" << endl;
+	 cout << "dataString: " << dataString << endl;
 #endif
 	bool dataStringIsValid = true;
 	int  charIndex = 0;
@@ -113,7 +115,7 @@ bool validateString(string dataString)
 #endif
 	}
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: validateString: " << dataStringIsValid << endl;
+	 cout << "***** EXITING: validateString: " << dataStringIsValid << endl;
 #endif
 
 	return dataStringIsValid;
@@ -124,11 +126,11 @@ bool validateString(string dataString)
 int validateJsonBuffer(char *jsonBuffer)
 {
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: validateJsonBuffer" << endl;
+	 cout << "***** ENTERING: validateJsonBuffer" << endl;
 #endif
 	int status = 0;
 	Json::Value jsonClean;
-	int newlineIndex = 0;
+	size_t newlineIndex = 0;
 	Json::Reader jsonDirtyReader;
 	Json::FastWriter jsonCleanWriter;
 
@@ -146,9 +148,9 @@ int validateJsonBuffer(char *jsonBuffer)
 
 	newlineIndex = tempBufferString.find("\n");
 #if(dbg >=2)
-	if(debugOutput) cout << "tempBufferString: " << tempBufferString << endl;
-	if(debugOutput) cout << "tempBufferString length: " << tempBufferString.size() << endl;
-	if(debugOutput) cout << "newline found at: " << newlineIndex << endl;
+	 cout << "tempBufferString: " << tempBufferString << endl;
+	 cout << "tempBufferString length: " << tempBufferString.size() << endl;
+	 cout << "newline found at: " << newlineIndex << endl;
 #endif
 	if(newlineIndex == (tempBufferString.length()-1)) newlineIndex = std::string::npos; // ignore newline at end of string
 	if((newlineIndex != std::string::npos))
@@ -158,7 +160,7 @@ int validateJsonBuffer(char *jsonBuffer)
 	else
 	{
 #if(dbg >=2)
-		if(debugOutput) cout << "no newline found" << endl;
+		 cout << "no newline found" << endl;
 #endif
 		dirtyBufferString.assign(tempBufferString);
 	}
@@ -166,21 +168,21 @@ int validateJsonBuffer(char *jsonBuffer)
 
 
 #if(dbg >=2)
-	if(debugOutput) cout << "Dirty string: " << dirtyBufferString << endl;
-	if(debugOutput) cout << "Dirty string length: " << dirtyBufferString.size() << endl;
+	 cout << "Dirty string: " << dirtyBufferString << endl;
+	 cout << "Dirty string length: " << dirtyBufferString.size() << endl;
 #endif
 
 
 	if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 	{
 #if(dbg >=2)
-		if(debugOutput) cout << "JSON name: " << jsonClean["name"] << endl;
+		 cout << "JSON name: " << jsonClean["name"] << endl;
 #endif
 		cleanBufferString = jsonCleanWriter.write(jsonClean);
 		cleanBufferString.erase(remove(cleanBufferString.begin(),cleanBufferString.end(),'\n'),cleanBufferString.end());
 #if(dbg >=2)
-		if(debugOutput) cout << "Clean string: " << cleanBufferString << endl;
-		if(debugOutput) cout << "Clean string length: " << cleanBufferString.size() << endl;
+		 cout << "Clean string: " << cleanBufferString << endl;
+		 cout << "Clean string length: " << cleanBufferString.size() << endl;
 #endif
 
 
@@ -188,7 +190,7 @@ int validateJsonBuffer(char *jsonBuffer)
 		if(dirtyBufferString.size() == cleanBufferString.size() && (newlineIndex == std::string::npos))
 		{
 #if(dbg >=2)
-			if(debugOutput) cout << "jsonString is clean" << endl;
+			 cout << "jsonString is clean" << endl;
 #endif
 			status = 1;
 		}
@@ -199,31 +201,28 @@ int validateJsonBuffer(char *jsonBuffer)
 				dirtyBufferString.clear();
 				dirtyBufferString.assign(cleanBufferString);
 #if(dbg >=2)
-				if(debugOutput) cout << "confirming clean..." << endl;
+				 cout << "confirming clean..." << endl;
 #endif
 				if(jsonDirtyReader.parse(dirtyBufferString,jsonClean) == true)
 				{
 					cleanBufferString = jsonCleanWriter.write(jsonClean);
 					cleanBufferString.erase(remove(cleanBufferString.begin(),cleanBufferString.end(),'\n'),cleanBufferString.end());
 #if(dbg >=2)
-					if(debugOutput) cout << "JSON name: " << jsonClean["name"] << endl;
-					if(debugOutput) cout << "Clean string: " << cleanBufferString << endl;
-					if(debugOutput) cout << "Clean string length: " << cleanBufferString.size() << endl;
+					 cout << "JSON name: " << jsonClean["name"] << endl;
+					 cout << "Clean string: " << cleanBufferString << endl;
+					 cout << "Clean string length: " << cleanBufferString.size() << endl;
 #endif
 
 					if(dirtyBufferString.size() == cleanBufferString.size())
 					{
 						clearBuffer(jsonBuffer, JSON_BUFFER_LENGTH);
 						strncpy(jsonBuffer,cleanBufferString.c_str(),JSON_BUFFER_LENGTH);
-#if(dbg >=2)
-						if(debugOutput) cout << "jsonString needed cleaning/repair" << endl;
-#endif
 						status = 0; // jsonString needed cleaning/repair
 					}
 					else
 					{
 #if(dbg >=2)
-						if(debugOutput) cout << "jsonString cleaning failed" << endl;
+						 cout << "jsonString cleaning failed" << endl;
 #endif
 						status = -1;
 						clearBuffer(jsonBuffer, JSON_BUFFER_LENGTH);
@@ -233,7 +232,7 @@ int validateJsonBuffer(char *jsonBuffer)
 				else
 				{
 #if(dbg >=2)
-					if(debugOutput) cout << "jsonString cleaning failed" << endl;
+					 cout << "jsonString cleaning failed" << endl;
 #endif
 					status = -1;
 				}
@@ -244,14 +243,57 @@ int validateJsonBuffer(char *jsonBuffer)
 	else
 	{
 #if(dbg >=2)
-		if(debugOutput) cout << "jsonString could not be parsed" << endl;
+		 cout << "jsonString could not be parsed" << endl;
 #endif
 		status = -1;
 	}
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: validateJsonBuffer: " << status << endl;
+	 cout << "***** EXITING: validateJsonBuffer: " << status << endl;
 #endif
 
 
 	return status;
+}
+
+ProcessControlChange parseValueChangeRequest(string changeRequestString)
+{
+	ProcessControlChange parsedChangeRequest;
+
+
+	int status = 0;
+
+	#if(dbg >= 1)
+	 cout << "***** ENTERING: parseValueChangeRequest" << endl;
+#endif
+	 try
+	 {
+		 int delimiterPosition[2] = {0,0}; // 1: colon, 2: equals
+
+		string valueString;
+
+		delimiterPosition[0] = changeRequestString.find(":",0);
+		parsedChangeRequest.procContName = changeRequestString.substr(0,delimiterPosition[0]);
+		delimiterPosition[1] = changeRequestString.find("=",delimiterPosition[0]);
+		parsedChangeRequest.parameter = changeRequestString.substr(delimiterPosition[0]+1,delimiterPosition[1]-delimiterPosition[0]-1);
+
+		valueString = changeRequestString.substr(delimiterPosition[1]+1);
+		parsedChangeRequest.parameterValueIndex = std::strtol((char *)valueString.c_str(), NULL, 10);
+
+	 }
+	 catch(exception &e)
+	 {
+		 cout << "exception in utilityFunctions:parseValueChangeRequest: " << e.what();
+		 status = -1;
+	 }
+
+
+#if(dbg >= 1)
+	 cout << "***** EXITING: parseValueChangeRequest: " << status << endl;
+#endif
+
+	return parsedChangeRequest;
+}
+
+
+
 }

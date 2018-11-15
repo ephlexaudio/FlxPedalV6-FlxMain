@@ -8,92 +8,23 @@
 #ifndef STRUCTS_H_
 #define STRUCTS_H_
 
-using namespace std;
 
-#include "config.h"
+
+
 #include <vector>
 #include <sys/types.h>
 #include <json/json.h>
 #include "indexMapStructs.h"
+#include "config.h"
 #define AVE_ARRAY_SIZE 16
 
 
 
-//****************** GET RID OF CONTEXTS*************************************8
-
-
-/*************** CONTROL CONTEXTS ************************/
-struct EnvGenContext{
-	int envStage; //0:attack, 1:decay, 2:sustain, 3:release
-	int stageTimeValue;
-	double slewRate;
-};
-
-
-struct LfoContext{
-	int  cycleTimeValueIndex;
-	double cyclePositionValue;
-	int int_cyclePositionValue;
-	double waveValue;
-};
-
-
-/****************** EFFECTS CONTEXTS *********************/
-struct DelayContext{
-	unsigned long inputPtr;
-	unsigned long outputPtr;
-	double delayBuffer[DELAY_BUFFER_LENGTH+10];
-	unsigned long delayTimeAveragingBuffer[4];
-};
-
-#define NUMBER_OF_BANDS 2
-struct Filter3bbContext{
-	double lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4];
-	double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4];
-	double couplingFilter_y[4], couplingFilter_x[4];
-	double rolloffFilter_y[4], rolloffFilter_x[4];
-};
-
-struct Filter3bb2Context{
-	double lp_y[4], lp_x[4];
-	double bp_y[7], bp_x[7];
-	double hp_y[4], hp_x[4];
-	double couplingFilter_y[3], couplingFilter_x[3];
-	double rolloffFilter_y[3], rolloffFilter_x[3];
-};
-
-struct LohifilterbContext{
-	double hp_y[NUMBER_OF_BANDS][4], hp_x[NUMBER_OF_BANDS][4];
-	double lp_y[NUMBER_OF_BANDS][4], lp_x[NUMBER_OF_BANDS][4];
-	double couplingFilter_y[3], couplingFilter_x[3];
-	double noiseFilter_y[3], noiseFilter_x[3];
-};
-
-
-
-struct WaveshaperbContext{
-	double v[5];
-	double x[6],y[6];
-	double m[5],b[5];
-	double couplingFilter_y[3], couplingFilter_x[3];
-	double noiseFilter_y[3], noiseFilter_x[3];
-	double antiAliasingFilter_y[2][3], antiAliasingFilter_x[2][3];
-	double outMeasure;
-};
-
-struct BlankbContext{
-	int blankInt;
-};
-
-struct SamplerbContext{
-	int blankInt;
-};
-
-struct OscillatorbContext{
-	int blankInt;
-};
 
 /**********************************************************************************************/
+namespace std
+{
+
 
 struct Connector{
 	string objectName; // connector "Parent".  Was "process", needed something more generic to cover "effect" and "control"
@@ -213,20 +144,13 @@ struct ProcessParameterControlBuffer{
 
 
 
-// START "CLASSIFYING" STRUCTS FROM HERE
-
-
-
-
-
 
 
 //CLASS "PROCESS" (BASE OR "INTERFACE" CLASS FOR CHILD PROCESSES: DELAY, WAVESHAPER, ETC)
-struct ProcessEvent{
+struct ProcessObjectData{
 	int processTypeInt;  //used to identify process type, not position in processing sequence
 	int processSequenceIndex;
 	string processName;
-	int processTypeIndex;
 	int footswitchNumber;
 	int parameterCount;
 	struct{
@@ -240,7 +164,6 @@ struct ProcessEvent{
 	int processOutputCount;
 	int inputConnectedBufferIndexArray[5];
 	int outputConnectedBufferIndexArray[5];
-	bool processFinished;
 	int bufferSize;
 	int inputCouplingMode;
 	int antiAliasingNumber;
@@ -251,7 +174,7 @@ struct ProcessEvent{
 
 
 //CLASS "CONTROL" (BASE OR "INTERFACE" CLASS FOR CHILD CONTROLS: Normal, EnvelopeGenerator, LowFreqOsc)
-struct ControlEvent{
+struct ControlObjectData{
 	string controlName;
 	int conType;
 	int parameterCount;
@@ -278,20 +201,15 @@ struct ControlEvent{
 	int outputInvConnectionCount;
 	int outputToParamControlBufferIndex[5];
 	int outputInvToParamControlBufferIndex[5];
-	int controlTypeIndex;
 	bool envTrigger;
-	double output;
-	double outputInv;
-	int int_output;
-	int int_outputInv;
 };
 
 
-//CLASS "COMBO"
+
 struct ComboStruct {
 	string name;
-	ProcessEvent processSequence[20]; // vector of Process child classes
-	ControlEvent controlSequence[20]; // vector of Control child classes
+	ProcessObjectData processSequenceData[20]; // array of Process child classes
+	ControlObjectData controlSequenceData[20]; // array of Control child classes
 	ProcessSignalBuffer processSignalBufferArray[60]; // keep this as struct
 	ProcessParameterControlBuffer processParamControlBufferArray[60]; // keep this as struct
 	map<string, ProcessIndexing>  processIndexMap;
@@ -314,50 +232,97 @@ struct ComboStruct {
 
 
 
-//********************* Utility Structs *******************************************
+// **********  Utility value structs provide error checking data  ****************
 
-struct ProcessUtility {
-	int antiAliasingNumber;
-	int inputCouplingMode;
-	int waveshaperMode;
-	int bufferSize;
+struct UtilDoubleValue {
+	double value;
+	double minimum;
+	double maximum;
 };
 
+struct UtilIntValue {
+	int value;
+	int minimum;
+	int maximum;
+};
+
+struct UtilOption {
+	string option;
+	vector<string> validOptions;
+};
+
+//********************* Utility Structs *******************************************
+
+
+struct UtilParam{
+	string name;
+	string abbr;
+	int utilParamIndex;
+	int paramType; //0=Double, 1=String Option
+	UtilOption	option;
+	UtilIntValue intValue;
+	UtilDoubleValue doubleValue;
+};
+
+struct UtilType{
+	string name;
+	string abbr;
+	vector<UtilParam> utilParams;
+};
+
+//********************** structs for FlxUtilityParams text file data **********************
+struct ProcessUtility {
+		UtilIntValue antiAliasingNumber;
+		UtilOption inputCouplingMode;
+		UtilOption waveshaperMode;
+		UtilIntValue bufferSize;
+};
 
 struct JackUtility {
-	int period;
-	int buffer;
+	UtilIntValue period;
+	UtilIntValue buffer;
 };
 
 struct NoiseGateUtility {
-	double closeThres;
-	double openThres;
-	double gain;
+	UtilDoubleValue closeThres;
+	UtilDoubleValue openThres;
+	UtilDoubleValue gain;
 };
 
 struct EnvTriggerUtility {
-	double highThres;
-	double lowThres;
+	UtilDoubleValue highThres;
+	UtilDoubleValue lowThres;
+};
+
+struct PedalUtility {
+	bool usbEnable;
+};
+
+struct HostPcUtility {
+	UtilOption os;
+};
+
+//***************************** Change requests **********************************
+struct PedalUtilityChange {
+	string utility;
+	string utilityParameter;
+	union{
+		int intValue;
+		double doubleValue;
+		char option[5];
+	};
+	bool error;
+};
+
+struct ProcessControlChange {
+	string procContName;
+	string parameter;
+	int parameterValueIndex;
 };
 
 
-struct ProcessingUtility {
-	NoiseGateUtility noiseGateUtil;
-	EnvTriggerUtility triggerUtil;
-	ProcessUtility procUtil;
-};
 
-
-//************************************************************************************************
-
-
-
-
-
-
-
-
-
+}
 
 
 

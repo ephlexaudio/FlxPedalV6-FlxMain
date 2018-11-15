@@ -18,22 +18,42 @@
 					<folderInfo id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.855599864." name="/" resourcePath="">
 						<toolChain id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.380541779" name="Buildroot ARM (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.platform.base.1029452863" isAbstract="false" name="Buildroot ARM Platform (/home/buildrooteclipse/buildroot-2017.08CM1/output)" osList="linux" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.platform.base"/>
-							<builder buildPath="${workspace_loc:/FlxMain}/debug" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.builder.1961936008" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Buildroot ARM builder (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.builder"/>
+							<builder buildPath="${workspace_loc:/FlxMain}/debug" id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.builder.1961936008" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Buildroot ARM builder (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.builder">
+								<outputEntries>
+									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="debug"/>
+									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="release"/>
+								</outputEntries>
+							</builder>
 							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.assembler.776963438" name="Buildroot ARM Assembler (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.assembler">
+								<option id="gnu.both.asm.option.include.paths.757088779" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/home/buildrooteclipse/FlxPedalV6/FlxMain/Controls"/>
+									<listOptionValue builtIn="false" value="/home/buildrooteclipse/FlxPedalV6/FlxMain/Processes"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.2097676798" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.compiler.984574224" name="Buildroot ARM C Compiler (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.compiler">
-								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.option.optimization.level.1337126988" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" value="gnu.c.optimization.level.more" valueType="enumerated"/>
+								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.option.optimization.level.1337126988" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" value="gnu.c.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.debugging.level.1744227653" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.dialect.std.877378623" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.c11" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.warnings.extrawarn.1097243527" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.warnings.wconversion.1737142283" name="Implicit conversion warnings (-Wconversion)" superClass="gnu.c.compiler.option.warnings.wconversion" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.include.paths.1341339378" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/home/buildrooteclipse/FlxPedalV6/FlxMain/Controls"/>
+									<listOptionValue builtIn="false" value="/home/buildrooteclipse/FlxPedalV6/FlxMain/Processes"/>
+								</option>
+								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1474317378" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="__cplusplus=201103L"/>
+								</option>
+								<option id="gnu.c.compiler.option.debugging.prof.1133305546" name="Generate prof information (-p)" superClass="gnu.c.compiler.option.debugging.prof" value="false" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.debugging.gprof.598343838" name="Generate gprof information (-pg)" superClass="gnu.c.compiler.option.debugging.gprof" value="false" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.debugging.codecov.198242756" name="Generate gcov information (-ftest-coverage -fprofile-arcs)" superClass="gnu.c.compiler.option.debugging.codecov" value="false" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.debugging.other.402255387" name="Other debugging flags" superClass="gnu.c.compiler.option.debugging.other" value="" valueType="string"/>
 								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.input.1594735749" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.input"/>
 							</tool>
 							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.archiver.652939427" name="Buildroot ARM Archiver (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.archiver"/>
 							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.linker.273648050" name="Buildroot ARM C Linker (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.c.linker"/>
 							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler.1636911064" name="Buildroot ARM C++ Compiler (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler">
-								<option id="gnu.cpp.compiler.option.optimization.level.1210812657" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.more" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.optimization.level.1210812657" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.debugging.level.2111132208" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.dialect.std.100915102" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" value="gnu.cpp.compiler.dialect.c++11" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.warnings.extrawarn.1881323610" name="Extra warnings (-Wextra)" superClass="gnu.cpp.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
@@ -41,6 +61,11 @@
 								<option id="gnu.cpp.compiler.option.preprocessor.def.15328729" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__cplusplus=201103L"/>
 								</option>
+								<option id="gnu.cpp.compiler.option.include.paths.1917628115" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths"/>
+								<option id="gnu.cpp.compiler.option.debugging.prof.1612601938" name="Generate prof information (-p)" superClass="gnu.cpp.compiler.option.debugging.prof" value="false" valueType="boolean"/>
+								<option id="gnu.cpp.compiler.option.debugging.gprof.407497584" name="Generate gprof information (-pg)" superClass="gnu.cpp.compiler.option.debugging.gprof" value="false" valueType="boolean"/>
+								<option id="gnu.cpp.compiler.option.debugging.codecov.1484866395" name="Generate gcov information (-ftest-coverage -fprofile-arcs)" superClass="gnu.cpp.compiler.option.debugging.codecov" value="false" valueType="boolean"/>
+								<option id="gnu.cpp.compiler.option.debugging.other.995045612" name="Other debugging flags" superClass="gnu.cpp.compiler.option.debugging.other" value="" valueType="string"/>
 								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input.1984377175" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input"/>
 							</tool>
 							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.linker.1290223254" name="Buildroot ARM CC Linker (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.linker">
@@ -51,9 +76,12 @@
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jsoncpp"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jack"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jackserver"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="m"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="rt"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="m"/>
 								</option>
+								<option id="gnu.cpp.link.option.debugging.prof.1003638305" name="Generate prof information (-p)" superClass="gnu.cpp.link.option.debugging.prof" value="false" valueType="boolean"/>
+								<option id="gnu.cpp.link.option.debugging.gprof.427399981" name="Generate gprof information (-pg)" superClass="gnu.cpp.link.option.debugging.gprof" value="false" valueType="boolean"/>
+								<option id="gnu.cpp.link.option.debugging.codecov.669757958" name="Generate gcov information (-ftest-coverage -fprofile-arcs)" superClass="gnu.cpp.link.option.debugging.codecov" value="false" valueType="boolean"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1894357894" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -62,8 +90,21 @@
 							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.pkgconfig.54506323" name="Buildroot ARM Pkg config (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.pkgconfig"/>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.855599864.296738196" name="ComponentSymbols.h" rcbsApplicability="disable" resourcePath="ComponentSymbols.h" toolsToInvoke=""/>
+					<fileInfo id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.855599864.676766332" name="ControlSymbols.h" rcbsApplicability="disable" resourcePath="ControlSymbols.h" toolsToInvoke=""/>
+					<fileInfo id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.855599864.709731975" name="Delay.cpp" rcbsApplicability="disable" resourcePath="Processes/Delay.cpp" toolsToInvoke="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler.1636911064.620575811">
+						<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler.1636911064.620575811" name="Buildroot ARM C++ Compiler (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cc.compiler.1636911064">
+							<option id="gnu.cpp.compiler.option.include.files.56440209" name="Include files (-include)" superClass="gnu.cpp.compiler.option.include.files" valueType="includeFiles">
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Processes/Processes.h}&quot;"/>
+							</option>
+							<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input.597141775" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input"/>
+						</tool>
+					</fileInfo>
+					<fileInfo id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.exe.debug.855599864.645296147" name="Processes.h" rcbsApplicability="disable" resourcePath="Processes/Processes.h" toolsToInvoke=""/>
 					<sourceEntries>
-						<entry excluding="structs3.h|structs2.h|BaseProcess.cpp|BaseProcess.h" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="Controls|structs3.h|BaseProcess.cpp|Processes|emptyStructs.h|structs2.h|BaseProcess.h" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Controls"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Processes"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -103,7 +144,7 @@
 								<option id="gnu.cpp.compiler.option.optimization.level.35561282" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.debugging.level.2064760546" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.dialect.std.1048370751" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" value="gnu.cpp.compiler.dialect.c++11" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.preprocessor.def.916588066" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
+								<option id="gnu.cpp.compiler.option.preprocessor.def.916588066" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__cplusplus=201103L"/>
 								</option>
 								<inputType id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input.1519172555" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.cpp.input"/>
@@ -126,6 +167,10 @@
 							<tool id="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.pkgconfig.1883353940" name="Buildroot ARM Pkg config (/home/buildrooteclipse/buildroot-2017.08CM1/output)" superClass="org.buildroot.home.buildrooteclipse.buildroot-2017.08CM1.output.pkgconfig"/>
 						</toolChain>
 					</folderInfo>
+					<sourceEntries>
+						<entry excluding="Processes" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Processes"/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>

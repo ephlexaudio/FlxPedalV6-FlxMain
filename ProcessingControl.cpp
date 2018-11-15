@@ -6,13 +6,16 @@
  */
 
 
-#include "config.h"
+
+
 #include "ProcessingControl.h"
 #include "indexMapStructs.h"
 
-using namespace std;
 
-extern bool debugOutput;
+#include "GPIOClass.h"
+#include "config.h"
+#include "structs.h"
+
 
 
 #define FS1_LED	30
@@ -25,16 +28,20 @@ extern bool debugOutput;
 #define CONTROL_PIN_0_NUMBER 41
 #define CONTROL_PIN_1_NUMBER 42
 #define CONTROL_PIN_2_NUMBER 43
+namespace std
+{
 
 
 ProcessingControl::ProcessingControl()
 {
+	this->processing = NULL;
+	// processing object is initialized in start function below
+	this->bufferSize = 256;
+	this->inputsSwitched = false;
 
 	//right/control port signal switches (audio/control_voltage/ground)
 	char gpioStr[5];
 	strcpy(gpioStr,"out");
-
-	// processing object is initialized in start function below
 	this->footswitchLed[0] = GPIOClass(FS1_LED);
 	this->footswitchLed[0].export_gpio();
 	this->footswitchLed[0].setdir_gpio(gpioStr);
@@ -64,32 +71,29 @@ ProcessingControl::~ProcessingControl()
 
 }
 
-int audioCallbackComboIndex = 100;
-#define dbg 1
-
-
 
 
 #define dbg 2
 int ProcessingControl::startJack(void)
 {
 	int status = 0;
+#if(DISABLE_AUDIO_THREAD == 0)
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: ProcessingControl::startJack" << endl;
+	 cout << "***** ENTERING: ProcessingControl::startJack" << endl;
 #endif
 
 
-	if(debugOutput) cout << "ProcessingControl JACK period: " << this->jackUtil.period << "\tJACK buffer: " << this->jackUtil.buffer << endl;
+	 cout << "ProcessingControl JACK period: " << this->jackUtil.period.value << "\tJACK buffer: " << this->jackUtil.buffer.value << endl;
 
 	char jackInitString[100];
-	sprintf(jackInitString, "jackd -d alsa -p %d -n %d &", this->jackUtil.period, this->jackUtil.buffer);
+	sprintf(jackInitString, "jackd -d alsa -p %d -n %d &", this->jackUtil.period.value, this->jackUtil.buffer.value);
 #if(dbg >= 2)
 	cout << "jackInitString: " << jackInitString << endl;
 #endif
 	system(jackInitString);
 	sleep(2);
-	if(debugOutput) cout << "setting up I2C port..." << endl;
+	 cout << "setting up I2C port..." << endl;
 	uint8_t i2cInitSequence[][2] = 	{
 			{0x12 ,0},		// setting to inactive
 			{0x10 ,0},		// resetting
@@ -110,6 +114,8 @@ int ProcessingControl::startJack(void)
 	int i2cDevFile;
 	int i2cAdapter=1;
 	char i2cDevFileName[20];
+
+
 	ssize_t i2cStatus = 0;
 
 
@@ -159,7 +165,8 @@ int ProcessingControl::startJack(void)
 	  }
 	  close(i2cDevFile);
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: ProcessingControl::startJack:" << status << endl;
+	 cout << "***** EXITING: ProcessingControl::startJack:" << status << endl;
+#endif
 #endif
 	return status;
 
@@ -176,39 +183,63 @@ int ProcessingControl::stopJack(void)
 }
 
 
-#define dbg 1
+#define dbg 0
 int ProcessingControl::loadComboStruct(ComboStruct comboStruct)
 {
 
 	int status = 0;
 #if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: ProcessingControl::loadComboStruct" << endl;
-	if(debugOutput) cout << "comboName: " << comboStruct.name << endl;
+	 cout << "ENTERING: ProcessingControl::loadComboStruct" << endl;
+	 cout << "comboName: " << comboStruct.name << endl;
 #endif
+	try
+	{
+		// *************** Stop current combo and delete processes in array
 
-	this->processing->setComboName(comboStruct.name);
-	this->processing->loadComboStructData(comboStruct);
+		this->processing->unloadCombo();
+
+		// create new Processes/Controls from comboStruct and put them in their respective arrays.
+
+		this->processing->setComboName(comboStruct.name);
+		this->processing->loadCombo(comboStruct);
+
+	}
+	catch(exception &e)
+	{
+		cout << "exception in ProcessingControl::loadComboStruct: " << e.what() << endl;
+	}
+
 
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "EXIT: ProcessingControl::loadComboStruct: " << status << endl;
+	 cout << "EXIT: ProcessingControl::loadComboStruct: " << status << endl;
 #endif
 	return status;
 }
 
 
-#define dbg 1
+#define dbg 0
 ComboStruct ProcessingControl::getComboStruct()
 {
 	int status = 0;
+
 #if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: ProcessingControl::getComboStruct" << endl;
-	if(debugOutput) cout << "comboName: " << this->processing->getComboName() << endl;
+	 cout << "ENTERING: ProcessingControl::getComboStruct" << endl;
+	 cout << "comboName: " << this->processing->getComboName() << endl;
 #endif
 	ComboStruct combo;
 	try
 	{
 		combo = this->processing->getComboStruct();
+		cout << "combo name: " << combo.name;
+		cout << "ProcessingControl control data: " << endl;
+		for(auto & control : combo.controlSequenceData)
+		{
+			{
+				cout << control.controlName << ":" << control.parameter[0].parameterName;
+				cout << "=" << control.parameter[0].value << endl;
+			}
+		}
 	}
 	catch(exception &e)
 	{
@@ -219,7 +250,7 @@ ComboStruct ProcessingControl::getComboStruct()
 
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "EXIT: ProcessingControl::getComboStruct: " << status << endl;
+	 cout << "EXIT: ProcessingControl::getComboStruct: " << status << endl;
 #endif
 	return combo;
 }
@@ -230,35 +261,40 @@ int ProcessingControl::startComboProcessing() // start clients and connect them
 {
 	int status = 0;
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: ProcessingControl::start" << endl;
+#if(DISABLE_AUDIO_THREAD == 0)
+	 cout << "***** ENTERING: ProcessingControl::startComboProcessing" << endl;
+#else
+	 cout << "***** ENTERING: ProcessingControl::startComboProcessing with RT audio thread disabled" << endl;
+#endif
 #endif
 
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "starting combo." << endl;
+	 cout << "creating new Processing object." << endl;
 #endif
-	this->processing = new Processing(this->getProcessingUtility());// initial ports from constructor created here.
+	this->processing = new Processing(this->getNoiseGateUtility(),this->getEnvTriggerUtility(), this->getBufferSize());// initial ports from constructor created here.
 #if(dbg >= 1)
-	if(debugOutput) cout << "processing Constructor successful." << endl;
+	 cout << "processing Constructor successful." << endl;
 #endif
+#if(DISABLE_AUDIO_THREAD == 0)
 	this->processing->start();	// activate the client
 #if(dbg >= 1)
-	if(debugOutput) cout << "process started." << endl;
+	 cout << "process started." << endl;
 #endif
 	// reporting some client info
 #if(dbg >= 1)
-	if(debugOutput) cout << "my name: " << this->processing->getName() << endl;
+	 cout << "my name: " << this->processing->getName() << endl;
 #endif
 
 	// test to see if it is real time
 	if(this->processing->isRealTime())
 	{
 #if(dbg >= 1)
-		if(debugOutput) cout << "is realtime " << endl;
+		 cout << "is realtime " << endl;
 	}
 	else
 	{
-		if(debugOutput) cout << "is not realtime " << endl;
+		 cout << "is not realtime " << endl;
 #endif
 	}
 
@@ -266,26 +302,26 @@ int ProcessingControl::startComboProcessing() // start clients and connect them
 
 	this->processing->connectFromPhysical(0,0);	// connects this client in port 0 to physical source port 0
 #if(dbg >= 1)
-	if(debugOutput) cout << "connecting processes: " << this->processing->getInputPortName(0) << endl;
+	 cout << "connecting processes: " << this->processing->getInputPortName(0) << endl;
 #endif
 
 	this->processing->connectFromPhysical(1,1);	// connects this client in port 1 to physical source port 1
 #if(dbg >= 1)
-	if(debugOutput) cout << "connecting processes: " << this->processing->getInputPortName(1) << endl;
+	 cout << "connecting processes: " << this->processing->getInputPortName(1) << endl;
 #endif
 
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "connecting processes." << endl;
+	 cout << "connecting processes." << endl;
 #endif
 
 	this->processing->connectToPhysical(0,0);		// connects this client out port 0 to physical destination port 0
 #if(dbg >= 1)
-	if(debugOutput) cout << "connecting processes: " << this->processing->getOutputPortName(0) << endl;
+	 cout << "connecting processes: " << this->processing->getOutputPortName(0) << endl;
 #endif
 	this->processing->connectToPhysical(1,1);		// connects this client out port 1 to physical destination port 1
 #if(dbg >= 1)
-	if(debugOutput) cout << "connecting processes: " << this->processing->getOutputPortName(1) << endl;
+	 cout << "connecting processes: " << this->processing->getOutputPortName(1) << endl;
 #endif
 
 
@@ -294,67 +330,72 @@ int ProcessingControl::startComboProcessing() // start clients and connect them
 		inputsSwitched = this->processing->areInputsSwitched();
 		justPoweredUp = false;
 	}
-
+#endif
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: ProcessingControl::start: " << status << endl;
+#if(DISABLE_AUDIO_THREAD == 0)
+	 cout << "***** EXITING: ProcessingControl::startComboProcessing: " << status << endl;
+#else
+	 cout << "***** EXITING: ProcessingControl::startComboProcessing with RT audio thread disabled" << endl;
+#endif
 #endif
 
 	return status;
 
 }
 
-#define dbg 0
-int ProcessingControl::stopComboProcessing() // stop clients and disconnect them
-{
 
+#define dbg 1
+void ProcessingControl::stopComboProcessing() // stop clients and disconnect them
+{
+#if(DISABLE_AUDIO_THREAD == 0)
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: ProcessingControl::stop" << endl;
+	 cout << "***** ENTERING: ProcessingControl::stop" << endl;
 #endif
 
 	this->processing->disconnectInPort(0);	// Disconnecting ports.
 #if(dbg >= 1)
-	if(debugOutput) cout << "this->disconnectInPort(0)" << endl;
+	 cout << "this->disconnectInPort(0)" << endl;
 #endif
 	this->processing->disconnectOutPort(1);
 #if(dbg >= 1)
-	if(debugOutput) cout << "this->processing->disconnectOutPort(1)" << endl;
+	 cout << "this->processing->disconnectOutPort(1)" << endl;
 #endif
 	this->processing->stop();
 	this->processing->close();	// stop client.
 #if(dbg >= 1)
-	if(debugOutput) cout << "this->processing->close()" << endl;
+	 cout << "this->processing->close()" << endl;
 #endif
 	delete this->processing;	// always clean up after yourself.
 	this->stopJack();
 #if(dbg >= 1)
-	if(debugOutput) cout << "delete this->processing" << endl;
+	 cout << "delete this->processing" << endl;
 #endif
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: ProcessingControl::stop: " << status << endl;
+	 cout << "***** EXITING: ProcessingControl::stop: " <<  endl;
 #endif
-
+#endif
 }
 
 
 
+
+
+
+
 #define dbg 0
-
-
-
-#define dbg 0
-void  ProcessingControl::updateProcessParameter(string parentProcess, string parameter, int parameterValue)
+void ProcessingControl::updateProcessParameter(string parentProcess, string parameter, int parameterValue)
 {
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: ProcessingControl::updateProcessParameter" << endl;
-	if(debugOutput) cout << "parentProcess: " << parentProcess << "\parameter: " << parameter << "\tparameterValue: "  << parameterValue << endl;
+	 cout << "ENTERING: ProcessingControl::updateProcessParameter" << endl;
+	 cout << "parentProcess: " << parentProcess << "\parameter: " << parameter << "\tparameterValue: "  << parameterValue << endl;
 #endif
 
 
 	this->processing->updateProcessParameter(parentProcess, parameter, parameterValue);
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "EXIT: ProcessingControl::updateProcessParameter: " << status << endl;
+	 cout << "EXIT: ProcessingControl::updateProcessParameter: " << status << endl;
 #endif
 
 }
@@ -362,19 +403,19 @@ void  ProcessingControl::updateProcessParameter(string parentProcess, string par
 
 
 
-#define dbg 1
+#define dbg 0
 void ProcessingControl::updateControlParameter(string parentControl, string parameter, int parameterValue)
 {
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: ProcessingControl::updateControlParameter" << endl;
-	if(debugOutput) cout << "parentControl: " << parentControl << "\tparameter: " << parameter << "\tparameterValue: "  << parameterValue << endl;
+	 cout << "ENTERING: ProcessingControl::updateControlParameter" << endl;
+	 cout << "parentControl: " << parentControl << "\tparameter: " << parameter << "\tparameterValue: "  << parameterValue << endl;
 #endif
 
 	this->processing->updateControlParameter(parentControl, parameter, parameterValue);
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "EXITING: ProcessingControl::updateControlParameter: " << endl;
+	 cout << "EXITING: ProcessingControl::updateControlParameter: " << endl;
 #endif
 
 }
@@ -385,14 +426,14 @@ void ProcessingControl::enableEffects()
 {
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: ProcessingControl::enableEffects" << endl;
+	 cout << "***** ENTERING: ProcessingControl::enableEffects" << endl;
 #endif
 
 
 	this->processing->enableProcessing();
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: ProcessingControl::enableEffects: " << status << endl;
+	 cout << "***** EXITING: ProcessingControl::enableEffects: " << status << endl;
 #endif
 
 }
@@ -401,14 +442,14 @@ void ProcessingControl::disableEffects()
 {
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: ProcessingControl::disableEffects" << endl;
+	 cout << "***** ENTERING: ProcessingControl::disableEffects" << endl;
 #endif
 
 
 	this->processing->disableProcessing();
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: ProcessingControl::disableEffects: " << status << endl;
+	 cout << "***** EXITING: ProcessingControl::disableEffects: " << status << endl;
 #endif
 
 }
@@ -419,13 +460,13 @@ void ProcessingControl::enableAudioOutput()
 {
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: ProcessingControl::enableAudioOutput" << endl;
+	 cout << "***** ENTERING: ProcessingControl::enableAudioOutput" << endl;
 #endif
 
 	this->processing->enableAudioOutput();
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: ProcessingControl::enableAudioOutput: " << status << endl;
+	 cout << "***** EXITING: ProcessingControl::enableAudioOutput: " << status << endl;
 #endif
 
 }
@@ -435,13 +476,13 @@ void ProcessingControl::disableAudioOutput()
 {
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: ProcessingControl::disableAudioOutput" << endl;
+	 cout << "***** ENTERING: ProcessingControl::disableAudioOutput" << endl;
 #endif
 
 	this->processing->disableAudioOutput();
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: ProcessingControl::disableAudioOutput: " << status << endl;
+	 cout << "***** EXITING: ProcessingControl::disableAudioOutput: " << status << endl;
 #endif
 
 }
@@ -453,7 +494,7 @@ void ProcessingControl::readFootswitches(void)
 {
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: ProcessingControl::readFootswitches" << endl;
+	 cout << "***** ENTERING: ProcessingControl::readFootswitches" << endl;
 #endif
 
 	int footSwitchState0;
@@ -472,12 +513,12 @@ void ProcessingControl::readFootswitches(void)
 			if((footSwitchState0 == 0) && (this->footSwitchPressed[i] == true))
 			{
 				this->footSwitchPressed[i] = false;
-				if(debugOutput) cout << "footswitch[" << i << "] = 0: " << this->footswitchStatus[i] << endl;
+				 cout << "footswitch[" << i << "] = 0: " << this->footswitchStatus[i] << endl;
 			}
 			else if((footSwitchState0 == 1) && (this->footSwitchPressed[i] == false))
 			{
 				this->footswitchStatus[i] ^= true; // footswitches are active low
-				if(debugOutput) cout << "footswitch[" << i << "] = 1: " << this->footswitchStatus[i] << endl;
+				 cout << "footswitch[" << i << "] = 1: " << this->footswitchStatus[i] << endl;
 				this->footswitchLed[i].setval_gpio((this->footswitchStatus[i]?0:1));
 				this->footSwitchPressed[i] = true;
 			}
@@ -488,63 +529,41 @@ void ProcessingControl::readFootswitches(void)
 	this->processing->updateFootswitch(this->footswitchStatus);
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: ProcessingControl::readFootswitches:" << this->footswitchStatus[0] << "," << this->footswitchStdl;
+	 cout << "***** EXITING: ProcessingControl::readFootswitches:" << this->footswitchStatus[0] << "," << this->footswitchStdl;
 #endif
 
 }
 
 
 
-void ProcessingControl::setNoiseGateCloseThreshold(double closeThres)
+void ProcessingControl::setBufferSize(int bufferSize)
 {
-
-	this->processing->setNoiseGateCloseThreshold(closeThres);
-
+	this->bufferSize = bufferSize;
 }
-
-void ProcessingControl::setNoiseGateOpenThreshold(double openThres)
-{
-
-
-	this->processing->setNoiseGateOpenThreshold(openThres);
-
-}
-
-void ProcessingControl::setNoiseGateGain(double gain)
-{
-	this->processing->setNoiseGateGain(gain);
-}
-
-void ProcessingControl::setTriggerLowThreshold(double lowThres)
-{
-	this->processing->setTriggerLowThreshold(lowThres);
-}
-
-void ProcessingControl::setTriggerHighThreshold(double highThres)
-{
-	this->processing->setTriggerHighThreshold(highThres);
-}
-
-
 
 #define dbg 1
-void ProcessingControl::setProcessingUtility(ProcessingUtility processingUtil)
+int ProcessingControl::getBufferSize()
 {
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: ProcessingControl::setGateTriggerParameters" << endl;
+	 cout << "***** ENTERING: ProcessingControl::getBufferSize" << endl;
+#endif
+	return 256;
+#if(dbg >= 1)
+	 cout << "***** EXITING: ProcessingControl::getBufferSize: " <<  endl;
+#endif
+}
+
+void ProcessingControl::setNoiseGateUtility(NoiseGateUtility gateUtil)
+{
+#if(dbg >= 1)
+	 cout << "***** ENTERING: ProcessingControl::setGateTriggerParameters" << endl;
 #endif
 
 	try
 	{
-		this->processingUtil.noiseGateUtil.closeThres = processingUtil.noiseGateUtil.closeThres;
-		this->processingUtil.noiseGateUtil.openThres = processingUtil.noiseGateUtil.openThres;
-		this->processingUtil.noiseGateUtil.gain = processingUtil.noiseGateUtil.gain;
-		this->processingUtil.triggerUtil.highThres = processingUtil.triggerUtil.highThres;
-		this->processingUtil.triggerUtil.lowThres = processingUtil.triggerUtil.lowThres;
-		this->processingUtil.procUtil.bufferSize=processingUtil.procUtil.bufferSize;
-		this->processingUtil.procUtil.inputCouplingMode=processingUtil.procUtil.inputCouplingMode;
-		this->processingUtil.procUtil.antiAliasingNumber=processingUtil.procUtil.antiAliasingNumber;
-		this->processingUtil.procUtil.waveshaperMode=processingUtil.procUtil.waveshaperMode;
+		this->gateUtil.closeThres.value = gateUtil.closeThres.value;
+		this->gateUtil.openThres.value = gateUtil.openThres.value;
+		this->gateUtil.gain.value = gateUtil.gain.value;
 
 	}
 	catch(exception &e)
@@ -553,10 +572,92 @@ void ProcessingControl::setProcessingUtility(ProcessingUtility processingUtil)
 	}
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: ProcessingControl::setGateTriggerParameters" << endl;
+	 cout << "***** EXITING: ProcessingControl::setGateTriggerParameters" << endl;
+#endif
+}
+
+
+void ProcessingControl::updateNoiseGateUtility(NoiseGateUtility gateUtil)
+{
+	this->processing->setNoiseGateUtility(gateUtil);
+}
+
+#define dbg 1
+NoiseGateUtility ProcessingControl::getNoiseGateUtility()
+{
+#if(dbg >= 1)
+	 cout << "***** ENTERING: ProcessingControl::getNoiseGateUtility" << endl;
+#endif
+	 NoiseGateUtility gateUtil;
+	try
+	{
+		gateUtil.closeThres.value = this->gateUtil.closeThres.value;
+		gateUtil.openThres.value = this->gateUtil.openThres.value;
+		gateUtil.gain.value = this->gateUtil.gain.value;
+
+	}
+	catch(exception &e)
+	{
+		cout << "exception in ProcessingControl::getNoiseGateUtility: " << e.what() << endl;
+	}
+
+#if(dbg >= 1)
+	 cout << "***** EXITING: ProcessingControl::getNoiseGateUtility" << endl;
+#endif
+	 return gateUtil;
+}
+
+
+void ProcessingControl::setEnvTriggerUtility(EnvTriggerUtility triggerUtil)
+{
+#if(dbg >= 1)
+	 cout << "***** ENTERING: ProcessingControl::setEnvTriggerUtility" << endl;
 #endif
 
+	try
+	{
+		this->triggerUtil.highThres = triggerUtil.highThres;
+		this->triggerUtil.lowThres = triggerUtil.lowThres;
+	}
+	catch(exception &e)
+	{
+		cout << "exception in ProcessingControl::setEnvTriggerUtility: " << e.what() << endl;
+	}
+
+#if(dbg >= 1)
+	 cout << "***** EXITING: ProcessingControl::setEnvTriggerUtility" << endl;
+#endif
 }
+
+
+void ProcessingControl::updateEnvTriggerUtility(EnvTriggerUtility triggerUtil)
+{
+	this->setEnvTriggerUtility(triggerUtil);
+}
+
+
+EnvTriggerUtility ProcessingControl::getEnvTriggerUtility()
+{
+#if(dbg >= 1)
+	 cout << "***** ENTERING: ProcessingControl::getEnvTriggerUtility" << endl;
+#endif
+	 EnvTriggerUtility triggerUtil;
+	try
+	{
+		triggerUtil.highThres = this->triggerUtil.highThres;
+		triggerUtil.lowThres = this->triggerUtil.lowThres;
+	}
+	catch(exception &e)
+	{
+		cout << "exception in ProcessingControl::getEnvTriggerUtility: " << e.what() << endl;
+	}
+
+#if(dbg >= 1)
+	 cout << "***** EXITING: ProcessingControl::getEnvTriggerUtility" << endl;
+#endif
+	 return triggerUtil;
+}
+
 
 
 void ProcessingControl::setJackUtility(JackUtility jackUtil)
@@ -570,70 +671,89 @@ void ProcessingControl::setJackUtility(JackUtility jackUtil)
 
 
 
-ProcessingUtility ProcessingControl::getProcessingUtility()
+void ProcessingControl::loadSymbols()
 {
-	cout << "this->processingUtil.noiseGateUtil.openThres: " << this->processingUtil.noiseGateUtil.openThres << endl;
-	cout << "this->processingUtil.noiseGateUtil.closeThres: " << this->processingUtil.noiseGateUtil.closeThres << endl;
-	cout << "this->processingUtil.noiseGateUtil.gain: " << this->processingUtil.noiseGateUtil.gain << endl;
-	cout << "this->processingUtil.triggerUtil.highThres: " << this->processingUtil.triggerUtil.highThres << endl;
-	cout << "this->processingUtil.triggerUtil.lowThres: " << this->processingUtil.triggerUtil.lowThres << endl;
-	cout << "this->processingUtil.procUtil.bufferSize: " << this->processingUtil.procUtil.bufferSize << endl;
-	cout << "this->processingUtil.procUtil.inputCouplingMode: " << this->processingUtil.procUtil.inputCouplingMode << endl;
-	cout << "this->processingUtil.procUtil.antiAliasingNumber: " << this->processingUtil.procUtil.antiAliasingNumber << endl;
-	cout << "this->processingUtil.procUtil.waveshaperMode: " << this->processingUtil.procUtil.waveshaperMode << endl;
+#if(dbg >= 1)
+	 cout << "***** ENTERING: ProcessingControl::loadSymbols" << endl;
+#endif
 
-	return this->processingUtil;
+	this->processing->loadSymbols();
+#if(dbg >= 1)
+	 cout << "***** EXITING: ProcessingControl::loadSymbols" << endl;
+#endif
 
 }
 
-
-
-
-
-#define dbg 0
-int loadComponentSymbols(void)
+vector<string> ProcessingControl::getComponentSymbols()
 {
-#if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: ProcessingControl::loadComponentSymbols" << endl;
-#endif
-
-	array<ProcessSignalBuffer,60> nullProcSigBufVec;
-	array<ProcessParameterControlBuffer,60> nullParamContBufVec;
-
-	delayb('c', NULL, nullProcSigBufVec, nullParamContBufVec, NULL);
-	filter3bb('c', NULL, nullProcSigBufVec, nullParamContBufVec, NULL);
-	filter3bb2('c', NULL, nullProcSigBufVec, nullParamContBufVec, NULL);
-	lohifilterb('c', NULL, nullProcSigBufVec, nullParamContBufVec, NULL);
-	mixerb('c', NULL, nullProcSigBufVec, nullParamContBufVec, NULL);
-	volumeb('c', NULL, nullProcSigBufVec, nullParamContBufVec, NULL);
-	waveshaperb('c', NULL, nullProcSigBufVec, nullParamContBufVec, NULL);
-#if(dbg >= 1)
-	if(debugOutput) cout << "EXITING ProcessingControl::loadComponentSymbols" << endl;
-#endif
-
-	return 0;
+	return this->processing->getComponentSymbols();
+}
+vector<string> ProcessingControl::getControlSymbols()
+{
+	return this->processing->getControlSymbols();
 }
 
-#define dbg 0
-int loadControlSymbols(void)
+/*int ProcessingControl::processUtilityChange(PedalUtilityChange utilChange)
 {
-#if(dbg >= 1)
-	if(debugOutput) cout << "ENTERING: ProcessingControl::loadControlSymbols" << endl;
-#endif
+	int status = 0;
 
-	array<ProcessParameterControlBuffer,60> nullParamContBufVec;
+		try
+		{
+			if(utilChange.utility.compare("noiseGate") == 0)
+			{
+				if(utilChange.utilityParameter.compare("closeThres") == 0)
+				{
+					this->gateUtil.closeThres.value = utilChange.doubleValue;
+		#if(dbg >=2)
+			 cout << "pedalUtilData.noiseGateUtil.closeThres: " << utilChange.doubleValue << endl;
+		#endif
+				}
+				else if(utilChange.utilityParameter.compare("openThres") == 0)
+				{
+					this->gateUtil.openThres.value = utilChange.doubleValue;
 
-	struct ControlEvent loadControlType;
-	struct ProcessEvent nullProcessEvent;
-	loadControlType.conType = 0; // load Normal control symbol data
-	normal('c', false, 0, &loadControlType, nullParamContBufVec);
-	loadControlType.conType = 1; // load Envelope Generator control symbol data;
-	envGen('c', false, 0, &loadControlType, nullParamContBufVec);
-	loadControlType.conType = 2; // load LFO control symbol data;
-	lfo('c', false, 0, &loadControlType, nullParamContBufVec);
-#if(dbg >= 1)
-	if(debugOutput) cout << "EXITING ProcessingControl::loadControlSymbols" << endl;
-#endif
+		#if(dbg >=2)
+			 cout << "pedalUtilData.noiseGateUtil.openThres: " << utilChange.doubleValue << endl;
+		#endif
+				}
+				else if(utilChange.utilityParameter.compare("gain") == 0)
+				{
+					this->gateUtil.gain.value = utilChange.doubleValue;
 
-	return 0;
+		#if(dbg >=2)
+			 cout << "pedalUtilData.noiseGateUtil.gain: " << utilChange.doubleValue << endl;
+		#endif
+				}
+
+			}
+			else if(utilChange.utility.compare("trigger") == 0)
+			{
+				if(utilChange.utilityParameter.compare("highThres") == 0)
+				{
+					this->triggerUtil.highThres.value = utilChange.doubleValue;
+
+		#if(dbg >=2)
+			 cout << "pedalUtilData.triggerUtil.highThres: " << utilChange.doubleValue << endl;
+		#endif
+				}
+				else if(utilChange.utilityParameter.compare("lowThres") == 0)
+				{
+					this->triggerUtil.lowThres.value = utilChange.doubleValue;
+		#if(dbg >=2)
+			 cout << "pedalUtilData.triggerUtil.lowThres: " << utilChange.doubleValue << endl;
+		#endif
+				}
+			}
+
+		}
+		catch(exception &e)
+		{
+			cout << "exception in ProcessingControl::processUtilityChange: " << e.what() << endl;
+			status = -1;
+		}
+
+	return status;
+}*/
+
+
 }

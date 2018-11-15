@@ -25,13 +25,17 @@
 #include "utilityFunctions.h"
 #include "ComputeModulePinOuts2.h"
 #include "GPIOClass.h"
-using namespace std;
+
+namespace std
+{
+
+
 
 class UsbInt
 {
 private:
 
-	int osSelected = 3;
+	string osSelected = "Lin";
 	char gadget[10] = "";
 	int usbFD;
 	bool connectionStatus;
@@ -44,13 +48,15 @@ public:
 	UsbInt();
 	virtual ~UsbInt();
 	bool isUsbCableConnected();
-	int configureUsbGadgetForOs(int selectedOs);
+	int configureUsbGadgetForOs(string selectedOs);
 	int openPort();
 	bool isUsbConfigured();
 	bool isPortOpen();
 	int closePort();
 	string readNewData(void);
 	int writeData(string input);
+
 };
 
 #endif /* USBINT_H_ */
+}

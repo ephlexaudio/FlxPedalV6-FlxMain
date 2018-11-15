@@ -27,16 +27,26 @@ namespace std
 
 	class FileSystemInt
 	{
+		Json::Reader jsonReader;
+		Json::FastWriter jsonWriter;
 
 	public:
 		FileSystemInt ();
 		~FileSystemInt ();
 
-
+		// for Host UI
+		string saveComboDataFromHostToFileSystem(string comboJson);
+		string loadComboDataFromFileSystemToHost(string comboName);
+		// for ComboMap
 		std::vector<string> getComboListFromFileSystem(void);
-		std::string getComboDataFromFileSystem(std::string comboName);
-		string saveComboToFileSystem(std::string comboData);
+		Json::Value loadValidatedComboJsonDataFromFileSystemToComboMap(std::string comboName);
+		string saveComboJsonDataFromComboMapToFileSystem(Json::Value comboJsonData);
 		int deleteComboFromFileSystem(std::string comboName);
+		// for PedalUtilityData
+		Json::Value loadPedalUtilityJsonDataFromFileSystem();
+		int savePedalUtilityJsonDataToFileSystem(Json::Value comboJsonData);
+
+
 	};
 
 } /* namespace std */

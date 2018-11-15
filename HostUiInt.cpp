@@ -5,16 +5,13 @@
  *      Author: buildrooteclipse
  */
 
-#include "config.h"
 #include "HostUiInt.h"
+#include "config.h"
 
 
+namespace std
+{
 
-#define SHARED_MEMORY_FILE_ADDRESS 32768
-extern bool debugOutput;
-
-
-using namespace std;
 
 HostUiInt::HostUiInt()
 {
@@ -25,22 +22,17 @@ HostUiInt::HostUiInt()
 HostUiInt::~HostUiInt() {
 	// TODO Auto-generated destructor stub
 }
-#define dbg 0
-
-
-
-
 
 
 #define dbg 0
 string HostUiInt::getUserRequest(void)
 {
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::getUserRequest" << endl;
+	 cout << "***** ENTERING: HostUiInt::getUserRequest" << endl;
 #endif
-	string newData = UsbInt::readNewData();
+	string newData = this->readNewData();
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::getUserRequest" << newData << endl;
+	 cout << "***** EXITING: HostUiInt::getUserRequest" << newData << endl;
 #endif
 	return newData;
 }
@@ -52,7 +44,7 @@ int HostUiInt::sendComboList(string comboLists)
 
 	int status = 0;
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendComboList" << endl;
+	 cout << "***** ENTERING: HostUiInt::sendComboList" << endl;
 #endif
 	string hostUiResponse;
 
@@ -60,23 +52,23 @@ int HostUiInt::sendComboList(string comboLists)
 	hostUiResponse += comboLists;
 	hostUiResponse += "</ComboList>";
 	errno = 0;
-	if(UsbInt::writeData(hostUiResponse) >= 0)
+	if(this->writeData(hostUiResponse) >= 0)
 	{
 		status = 0;
 #if(dbg >= 2)
-		if(debugOutput) cout << hostUiResponse << endl;
+		 cout << hostUiResponse << endl;
 #endif
 	}
 	else
 	{
 		status = -1;
 #if(dbg >= 2)
-		if(debugOutput) cout << "combo list end fail: " << errno << endl;
+		 cout << "combo list end fail: " << errno << endl;
 #endif
 	}
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::sendComboList: " << status << endl;
+	 cout << "***** EXITING: HostUiInt::sendComboList: " << status << endl;
 #endif
 
 
@@ -89,7 +81,7 @@ int HostUiInt::sendComponentData(vector<string> componentDataVector)
 {
 	int status = 0;
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendComponentData" << endl;
+	 cout << "***** ENTERING: HostUiInt::sendComponentData" << endl;
 #endif
 	string hostUiResponse;
 	string componentDataString;
@@ -106,25 +98,25 @@ int HostUiInt::sendComponentData(vector<string> componentDataVector)
 	hostUiResponse += "]</ComponentData>";
 
 	#if(dbg >= 2)
-		if(debugOutput) cout << "Data retrieved, sending to host...." << hostUiResponse << endl;
+		 cout << "Data retrieved, sending to host...." << hostUiResponse << endl;
 	#endif
 
-	if(UsbInt::writeData((char *)hostUiResponse.c_str()) >= 0)
+	if(this->writeData((char *)hostUiResponse.c_str()) >= 0)
 	{
 #if(dbg >= 2)
-		if(debugOutput) cout << "combo data: " << hostUiResponse << endl;
+		 cout << "combo data: " << hostUiResponse << endl;
 #endif
 
 	}
 	else
 	{
-		if(debugOutput) cout << "error sending data to host" << endl;
+		 cout << "error sending data to host" << endl;
 		status = -1;
 	}
 
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::sendComponentData:" << status << endl;
+	 cout << "***** EXITING: HostUiInt::sendComponentData:" << status << endl;
 #endif
 
 	return status;
@@ -135,7 +127,7 @@ int HostUiInt::sendControlTypeData(vector<string>controlTypeDataVector)
 {
 	int status = 0;
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** ENTERING: HostUiInt::sendControlTypeData" << endl;
+	 cout << "***** ENTERING: HostUiInt::sendControlTypeData" << endl;
 #endif
 	string hostUiResponse;
 	string controlTypeDataString;
@@ -152,23 +144,23 @@ int HostUiInt::sendControlTypeData(vector<string>controlTypeDataVector)
 	hostUiResponse += "]</ControlTypeData>";
 
 	#if(dbg >= 2)
-		if(debugOutput) cout << "Data retrieved, sending to host...." << hostUiResponse << endl;
+		 cout << "Data retrieved, sending to host...." << hostUiResponse << endl;
 	#endif
 
-	if(UsbInt::writeData((char *)hostUiResponse.c_str()) >= 0)
+	if(this->writeData((char *)hostUiResponse.c_str()) >= 0)
 	{
 #if(dbg >= 2)
-		if(debugOutput) cout << "combo data: " << hostUiResponse << endl;
+		 cout << "combo data: " << hostUiResponse << endl;
 #endif
 	}
 	else
 	{
-		if(debugOutput) cout << "error sending data to host" << endl;
+		 cout << "error sending data to host" << endl;
 		status = -1;
 	}
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "***** EXITING: HostUiInt::sendControlTypeData:" << status << endl;
+	 cout << "***** EXITING: HostUiInt::sendControlTypeData:" << status << endl;
 #endif
 
 	return status;
@@ -179,10 +171,10 @@ int HostUiInt::sendControlTypeData(vector<string>controlTypeDataVector)
 int HostUiInt::sendComboToHost(string comboName)
 {
 	#if(dbg >= 1)
-		if(debugOutput) cout << "******************************************" << endl;
-		if(debugOutput) cout << "***** ENTERING: HostUiInt::sendComboToHost" << endl;
-		if(debugOutput) cout << "comboName: " << comboName << endl;
-		if(debugOutput) cout << "******************************************" << endl;
+		 cout << "******************************************" << endl;
+		 cout << "***** ENTERING: HostUiInt::sendComboToHost" << endl;
+		 cout << "comboName: " << comboName << endl;
+		 cout << "******************************************" << endl;
 		startTimer();
 	#endif
 
@@ -191,7 +183,7 @@ int HostUiInt::sendComboToHost(string comboName)
 	string hostUiResponse;
 
 
-	comboString = fsInt.getComboDataFromFileSystem(comboName);
+	comboString = fsInt.loadComboDataFromFileSystemToHost(comboName);
 	if(comboString.empty() == false)
 	{
 		int checkSum = 0;
@@ -211,19 +203,19 @@ int HostUiInt::sendComboToHost(string comboName)
 		hostUiResponse += "</ComboData>";
 
 	#if(dbg >= 2)
-		if(debugOutput) cout << "Data retrieved, sending to host...." << hostUiResponse << endl;
+		 cout << "Data retrieved, sending to host...." << hostUiResponse << endl;
 	#endif
 
-		if(UsbInt::writeData(hostUiResponse) >= 0)
+		if(this->writeData(hostUiResponse) >= 0)
 		{
 	#if(dbg >= 2)
-			if(debugOutput) cout << "combo data: " << hostUiResponse << endl;
+			 cout << "combo data: " << hostUiResponse << endl;
 	#endif
 
 		}
 		else
 		{
-			if(debugOutput) cout << "error sending data to host" << endl;
+			 cout << "error sending data to host" << endl;
 			status = -1;
 		}
 
@@ -231,15 +223,15 @@ int HostUiInt::sendComboToHost(string comboName)
 	else
 	{
 		status = -1;
-		if(debugOutput) cout << "error reading data" << endl;
+		 cout << "error reading data" << endl;
 	}
 
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "******************************************" << endl;
-	if(debugOutput) cout << "***** EXITING: HostUiInt::sendComboToHost: " << status << endl;
-	if(debugOutput) stopTimer("sendComboToHost");
-	if(debugOutput) cout << "******************************************" << endl;
+	 cout << "******************************************" << endl;
+	 cout << "***** EXITING: HostUiInt::sendComboToHost: " << status << endl;
+	 stopTimer("sendComboToHost");
+	 cout << "******************************************" << endl;
 #endif
 
 	return status;
@@ -249,9 +241,9 @@ int HostUiInt::sendComboToHost(string comboName)
 string HostUiInt::getComboFromHost(string hostComboJson)
 {
 	#if(dbg >= 1)
-		if(debugOutput) cout << "******************************************" << endl;
-		if(debugOutput) cout << "***** ENTERING: HostUiInt::getComboFromHost" << endl;
-		if(debugOutput) cout << "******************************************" << endl;
+		 cout << "******************************************" << endl;
+		 cout << "***** ENTERING: HostUiInt::getComboFromHost" << endl;
+		 cout << "******************************************" << endl;
 		startTimer();
 	#endif
 
@@ -272,41 +264,93 @@ string HostUiInt::getComboFromHost(string hostComboJson)
 
 
 	comboData = hostComboJson;
-	if(debugOutput) cout << "USB data size: " << comboData.size() << endl;
+	 cout << "USB data size: " << comboData.size() << endl;
 	if(comboData.size() < 3990) // "saveCombo:" is removed, cutting string from 4000 to 3990
 		done = true;
 
 	while(!done)
 	{
-		string newData = UsbInt::readNewData();
+		string newData = this->readNewData();
 
 		if(newData.empty() == false)
 		{
 			newDataSize = newData.size();
 			comboData += newData;
-			if(debugOutput) cout << "USB data size: " << newDataSize << endl;
+			 cout << "USB data size: " << newDataSize << endl;
 			if(newDataSize < 4000) done = true;
 		}
 	}
 	hostUiRequest = comboData;
 
-	comboName = fsInt.saveComboToFileSystem(hostUiRequest);
+	comboName = fsInt.saveComboDataFromHostToFileSystem(hostUiRequest);
 	if(comboName.empty() == true)
 	{
-		if(debugOutput) cout << "error saving combo." << endl;
+		 cout << "error saving combo." << endl;
 	}
 
 
 #if(dbg >= 2)
-	if(debugOutput) cout << "combo data: " << hostUiRequest << endl;
+	 cout << "combo data: " << hostUiRequest << endl;
 #endif
 
 #if(dbg >= 1)
-	if(debugOutput) cout << "******************************************" << endl;
-	if(debugOutput) cout << "***** EXITING: HostUiInt::getComboFromHost: " << comboName << endl;
-	if(debugOutput) cout << stopTimer("getComboFromHost");
-	if(debugOutput) cout << "******************************************" << endl;
+	 cout << "******************************************" << endl;
+	 cout << "***** EXITING: HostUiInt::getComboFromHost: " << comboName << endl;
+	 cout << stopTimer("getComboFromHost");
+	 cout << "******************************************" << endl;
 #endif
 
 	return comboName;
+}
+
+#define dbg 0
+int HostUiInt::sendCurrentStatus(string currentStatus)
+{
+	int status = 0;
+
+#if(dbg >= 1)
+	 cout << "***** ENTERING: HostUiInt::sendCurrentStatus" << endl;
+#endif
+
+
+	string hostUiReponseString;
+
+	hostUiReponseString = "<CurrentStatus>" + currentStatus + "</CurrentStatus>";
+	if(this->writeData(hostUiReponseString) >= 0)
+	{
+		status = 0;
+	}
+	else
+	{
+		status = -1;
+	}
+
+
+#if(dbg >= 1)
+	 cout << "***** EXITING: HostUiInt::sendCurrentStatus: " << status << endl;
+#endif
+
+	return status;
+}
+
+int HostUiInt::setHostPcUtility(HostPcUtility hostUtil)
+{
+	int status = 0;
+
+		try
+		{
+			cout << "hostUtil.os.option: " << hostUtil.os.option << endl;
+			this->configureUsbGadgetForOs(hostUtil.os.option);
+		}
+		catch(exception &e)
+		{
+			cout << "exception in HostUiInt::processUtilityChange: " << e.what() << endl;
+			status = -1;
+		}
+
+	return status;
+}
+
+
+
 }

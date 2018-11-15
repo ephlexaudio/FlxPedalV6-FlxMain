@@ -8,12 +8,14 @@
 #ifndef INDEXMAPSTRUCTS_H_
 #define INDEXMAPSTRUCTS_H_
 
-#include "config.h"
+
 #include <vector>
 #include <map>
 #include <sys/types.h>
 
-using namespace std;
+
+namespace std
+{
 
 
 struct ProcessParameterIndexing{
@@ -49,7 +51,7 @@ struct ControlIndexing{
 
 
 
-
+}
 
 
 #endif /* INDEXMAPSTRUCTS_H_ */

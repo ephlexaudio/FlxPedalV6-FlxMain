@@ -11,7 +11,7 @@
 #define processingDbg 0
 
 
-#include "config.h"
+
 #include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -44,18 +44,21 @@
 #include "GPIOClass.h"
 #include "ProcessingControl.h"
 #include "PedalUtilityData.h"
+#include "config.h"
 
 
-using namespace std;
+
+
 
 
 bool debugOutput = true; // set by running FlxMain with option "-d"
 
+using namespace std;
 
 static void signal_handler(int sig)
 {
 
-	if(debugOutput) cout << "signal received: " << sig <<", OfxMain exiting ..." << endl;
+	 std::cout << "signal received: " << sig <<", OfxMain exiting ..." << std::endl;
 
 
 	system("killall -9 jackd");
@@ -67,8 +70,6 @@ static void signal_handler(int sig)
 
 
 
-vector<string> componentVector;  //need to turn Processes and Controls into classes before getting rid of these
-vector<string> controlTypeVector;
 
 
 
@@ -76,16 +77,17 @@ vector<string> controlTypeVector;
 #define dbg 0
 int main(int argc, char *argv[])
 {
-	if(debugOutput) cout << "************************************************************************************************" << endl;
-	if(debugOutput) cout << "*****************************************   OFX START   ****************************************" << endl;
-	if(debugOutput) cout << "************************************************************************************************" << endl;
 
-	vector<string> comboList;
+	 cout << "************************************************************************************************" << endl;
+	 cout << "*****************************************   OFX START   ****************************************" << endl;
+	 cout << "************************************************************************************************" << endl;
+
+
 	PedalUtilityData pedalUtilityData;
 	HostUiInt hostUi;
 	ProcessingControl procCont;
 
-	ComboStruct combo;
+
 	ComboMap comboMap;
 	FileSystemInt fsInt;
 
@@ -95,22 +97,18 @@ int main(int argc, char *argv[])
 	errno = 0;
 	string pinString;
 	bool usbConnected = false;
-	bool newDataFromServer = false;
 	string comboName;
 	string pedalUiRequest;
 	string pedalUiRequestCommand;
 	string pedalUiRequestData;
-	//bool pedalUiRequestIsValid = false;
 	string hostUiRequest;
 	string hostUiRequestCommand;
 	string hostUiRequestData;
-	//bool statusChange = false;
 	hostUiRequest.resize(FILE_SIZE);
 	hostUiRequestData.resize(FILE_SIZE);
-	//bool hostUiRequestIsValid = false;
-	string ofxMainStatus;
-	Json::Value ofxParamJsonData;
-	Json::Reader ofxParamJsonReader;
+	string FlxMainStatus;
+	Json::Value FlxParamJsonData;
+	Json::Reader FlxParamJsonReader;
 	Json::Reader hostUiJsonReader;
 	Json::Value hostUiJsonData;
 	std::string serverRequest;
@@ -141,19 +139,10 @@ int main(int argc, char *argv[])
 	signal(SIGXFSZ, signal_handler);
 	signal(SIGVTALRM, signal_handler);
 	signal(SIGPROF, signal_handler);
-	loadComponentSymbols();
-	loadControlSymbols();
+
 
 	errno = 0;
 
-	if(argc > 1)
-	{
-		if(strcmp(argv[1],"-d") == 0)
-		{
-			debugOutput = true;
-			if(debugOutput) cout << "debug mode enabled." << endl;
-		}
-	}
 
 	pedalUtilityData.readUtilityDataFromFile();
 	/*****************END: Start up and init of pedal *******************/
@@ -161,36 +150,28 @@ int main(int argc, char *argv[])
 
 	comboMap.loadComboMapAndList();
 	comboMap.setProcessUtilityData(pedalUtilityData.getProcessUtility());
-	procCont.setProcessingUtility(pedalUtilityData.getProcessingUtility());
+	procCont.setNoiseGateUtility(pedalUtilityData.getNoiseGateUtility());
+	procCont.setEnvTriggerUtility(pedalUtilityData.getEnvTriggerUtility());
 	procCont.setJackUtility(pedalUtilityData.getJackUtility());
 	if(procCont.startJack() == -1)
 	{
 		cout << "startJack failed"  << endl;
 		signal_handler(SIGQUIT);
 	}
-	procCont.enableAudioOutput();
-	procCont.startComboProcessing();
-	procCont.disableEffects();
-	ofxMainStatus.clear();
 
+	sleep(1); // give JACK more time to start up
+	procCont.startComboProcessing();
+	//procCont.enableAudioOutput();
+	procCont.disableAudioOutput();
+	FlxMainStatus.clear();
+	procCont.disableEffects();
+	procCont.loadSymbols();
 
 
 	/***************** Start up FlxPedalUi process and connect ***************/
 
 
-
-	FILE *pedalUiProc;
-
-	if(pedalUtilityData.getUsbEnableMode())
-	{
-		pedalUiProc = popen("/home/FlxPedalUi -d | tee /uiLog.txt &", "w");
-		if(debugOutput) cout << "launching FlxPedalUi with USB enabled." << endl;
-	}
-	else
-	{
-		pedalUiProc = popen("/home/FlxPedalUi -u -d | tee /uiLog.txt &", "w");
-		if(debugOutput) cout << "launching FlxPedalUi with USB disabled." << endl;
-	}
+	popen("/home/FlxPedalUi -d | tee /uiLog.txt &", "w");
 
 	PedalUiInt pedalUi;
 
@@ -203,7 +184,6 @@ int main(int argc, char *argv[])
 
 	while(exit == 0)
 	{
-
 
 			if(hostUi.isUsbCableConnected() == true && hostUi.isUsbConfigured() == true && usbConnected == false)
 			{
@@ -242,58 +222,65 @@ int main(int argc, char *argv[])
 
 		if(hostGuiActive == 1)
 		{
+			hostUiRequest = hostUi.getUserRequest();
 			//***************************** Process requests from Host PC *********************************************
-			if((hostUiRequest = hostUi.getUserRequest()).size() > 5)  // data is validated/filtered in UsbInt
+			if(hostUiRequest.size() > 5)  // data is validated/filtered in UsbInt
 			{
 
 #if(hostUiDbg >= 1)
-				if(debugOutput) cout << "HOST UI REQUEST: " << hostUiRequest.substr(0,100) << endl;
-				if(debugOutput) cout << "hostUiRequest size: " << hostUiRequest.size() << endl;
+				 cout << "HOST UI REQUEST: " << hostUiRequest.substr(0,100) << endl;
+				 cout << "hostUiRequest size: " << hostUiRequest.size() << endl;
 #endif
 
 				hostUiRequest = removeReturnRelatedCharacters(hostUiRequest);
 				{
-					int colonPosition = hostUiRequest.find(":");
+					unsigned int colonPosition = hostUiRequest.find(":");
 					if(0 < colonPosition && colonPosition < hostUiRequest.length())
 					{
 						hostUiRequestCommand = hostUiRequest.substr(0,colonPosition);
 						hostUiRequestData = hostUiRequest.substr(colonPosition+1);
+
 #if(hostUiDbg >= 2)
 						cout << "hostUiRequestCommand: " << hostUiRequestCommand << endl;
 						cout << "hostUiRequestData: " << hostUiRequestData.substr(0,100) << endl;
+
 #endif
 					}
 					else hostUiRequestCommand = hostUiRequest;
 
 					if(hostUiRequestCommand.compare("getControlTypes") == 0)
 					{
-						hostUi.sendControlTypeData(controlTypeVector);
+						hostUi.sendControlTypeData(procCont.getControlSymbols());
 					}
 					else if(hostUiRequestCommand.compare("getComponents") == 0)
 					{
-						hostUi.sendComponentData(componentVector);
+						hostUi.sendComponentData(procCont.getComponentSymbols());
 					}
 					else if(hostUiRequestCommand.compare("listCombos") == 0)
 					{
-						comboList = comboMap.getComboNameList();
+						vector<string> comboList = comboMap.getComboNameList();
 						hostUi.sendComboList(getStringListString(comboList));
 #if(hostUiDbg >= 2)
-						if(debugOutput) cout << "sent listCombos" << endl;
+						 cout << "sent listCombos" << endl;
 #endif
 					}
 					else if(hostUiRequestCommand.compare("getCombo") == 0)
 					{
-						if((hostUiRequestData.size() > 1))
+						if(hostUiRequestData.empty() == false && validateString(hostUiRequestData) == true)
 						{
-							comboName = hostUiRequestData;
+							string tempComboName = hostUiRequestData;
 							procCont.disableAudioOutput();
-							if(comboMap.isInComboMap(comboName))
+							if(comboMap.isInComboMap(tempComboName))
 							{
+								comboName = tempComboName;
 								procCont.disableEffects();
-								if(debugOutput) cout << "hostUiRequestData: " << hostUiRequestData << endl;
+
+#if(hostUiDbg >= 2)
+								cout << "hostUiRequestData: " << hostUiRequestData << endl;
 								cout << "sending combo data to host PC."  << endl;
+#endif
 								hostUi.sendComboToHost(hostUiRequestData);
-#if(dbg >= 1)
+#if(hostUiDbg >= 1)
 								cout << "combo data sent to host PC."  << endl;
 #endif
 								ComboStruct comboStruct = comboMap.getComboObject(comboName).getComboStruct();
@@ -301,75 +288,58 @@ int main(int argc, char *argv[])
 								else loadSuccess = false;
 								if(loadSuccess == true)
 								{
-									ofxMainStatus = "combo running";
+									FlxMainStatus = "combo running";
 								}
 								else
 								{
-									if(debugOutput) cout << "could not get combo" << endl;
-									ofxMainStatus = "load failed";
+									 cout << "could not get combo" << endl;
+									FlxMainStatus = "load failed";
 								}
 								usleep(10000);
 								procCont.enableEffects();
 							}
 							else
 							{
-								if(debugOutput) cout << "could not get combo" << endl;
-								ofxMainStatus = "load failed";
+								 cout << "could not get combo" << endl;
+								FlxMainStatus = "load failed";
 							}
 							procCont.enableAudioOutput();
 						}
 						else
 						{
-							if(debugOutput) cout << "no combo name given." << endl;
+							 cout << "empty or invalid combo name given." << endl;
 						}
 					}
 					else if(hostUiRequestCommand.compare("changeValue") == 0)
 					{
-						if(hostUiRequestData.empty() == false)
+						if(hostUiRequestData.empty() == false && validateString(hostUiRequestData) == true)
 						{
-							int delimiterPosition[2] = {0,0}; // 1: colon, 2: equals
-							string procContString;
-							string paramString;
-							string valueString;
-							string procParamString;
-							int valueIndex;
-
 							try
 							{
-								int size = hostUiRequestData.size();
-								if(size > 0)
+								ProcessControlChange change = parseValueChangeRequest(pedalUiRequestData);
+								if(change.procContName.find("control") != string::npos)
 								{
-									delimiterPosition[0] = hostUiRequestData.find(":",0);
-									procContString = hostUiRequestData.substr(0,delimiterPosition[0]);
-									delimiterPosition[1] = hostUiRequestData.find("=",delimiterPosition[0]);
-									paramString = hostUiRequestData.substr(delimiterPosition[0]+1,delimiterPosition[1]-delimiterPosition[0]-1);
-
-									valueString = hostUiRequestData.substr(delimiterPosition[1]+1);
-									valueIndex = std::strtol((char *)valueString.c_str(), NULL, 10);
-									if(procContString.find("control") >= 0)
-									{
-										procCont.updateControlParameter(procContString, paramString, valueIndex);
-									}
-									else
-									{
-										procCont.updateProcessParameter(procContString, paramString, valueIndex);
-									}
+									procCont.updateControlParameter(change.procContName, change.parameter, change.parameterValueIndex);
+								}
+								else
+								{
+									procCont.updateProcessParameter(change.procContName, change.parameter, change.parameterValueIndex);
 								}
 							}
 							catch(exception &e)
 							{
 								cout << "error parsing changeValue request: " << e.what() << endl;
 							}
-
 						}
 						else
 						{
-							if(debugOutput) cout << "no change data given." << endl;
+							 cout << "empty or invalid change data given." << endl;
 						}
 					}
 					else if(hostUiRequestCommand.compare("saveCombo") == 0)
 					{
-						if(hostUiRequestData.empty() == false)
+						vector<string> comboList;
+						if(hostUiRequestData.empty() == false && validateString(hostUiRequestData) == true)
 						{
 							bool validComboName;
 
@@ -377,8 +347,12 @@ int main(int argc, char *argv[])
 							procCont.disableEffects();
 							usleep(10000);
 							// hostUiRequestData is the first block of data of the JSON combo file.
-							string tempComboName = hostUi.getComboFromHost(hostUiRequestData); // new combo data is saved here.
 
+							/***********************************************************************
+							 * getComboFromHost saves new combo data file DIRECTLY to file system via
+							 * aggregation of FileSystemInt.
+							 ***********************************************************************/
+							string tempComboName = hostUi.getComboFromHost(hostUiRequestData);
 
 							if(tempComboName.empty() == false)
 							{
@@ -386,32 +360,20 @@ int main(int argc, char *argv[])
 								if(comboMap.isInComboMap(tempComboName) == false) // combo was added
 								{
 									comboName = tempComboName;
-									if(debugOutput) cout << "new combo added" << endl;
-									if(debugOutput) cout << "new combo data to be saved: " << endl;
-									if(debugOutput) cout << comboName << endl;
-
-
+									 cout << "new combo added" << endl;
+									 cout << "new combo data to be saved: " << endl;
+									 cout << comboName << endl;
 									comboList = newComboList; // update combo list
-									comboMap.addNewComboObjectToMapAndList(tempComboName);
+									comboMap.addNewComboObjectToMapAndList(comboName);
 
-									comboName = tempComboName;
 									validComboName = true;
 								}
 								else // existing combo: update by erasing map element and adding newer struct to map.
 								{
-
 									comboName = tempComboName;
-									if(comboMap.isInComboMap(tempComboName))
-									{
-										comboMap.eraseFromMap(comboName);
-										comboMap.addNewComboObjectToMapAndList(comboName);
-										validComboName = true;
-									}
-									else
-									{
-										if(debugOutput) cout << "invalid combo name: " << comboName << endl;
-										validComboName = false;
-									}
+									comboMap.eraseFromMap(comboName);
+									comboMap.addNewComboObjectToMapAndList(comboName);
+									validComboName = true;
 									usleep(500000);
 								}
 
@@ -431,13 +393,13 @@ int main(int argc, char *argv[])
 								ComboStruct comboStruct = comboMap.getComboObject(comboName).getComboStruct();
 								if(procCont.loadComboStruct(comboStruct) == 0)
 								{
-									if(debugOutput) cout << "combo running: " << comboName << endl;
-									ofxMainStatus = "combo running";
+									 cout << "combo running: " << comboName << endl;
+									FlxMainStatus = "combo running";
 								}
 								else
 								{
-									if(debugOutput) cout << "could not load combo" << endl;
-									ofxMainStatus = "load failed";
+									 cout << "could not load combo" << endl;
+									FlxMainStatus = "load failed";
 								}
 							}
 							else
@@ -450,11 +412,12 @@ int main(int argc, char *argv[])
 						}
 						else
 						{
-							if(debugOutput) cout << "no data given to save." << endl;
+							 cout << "no valid data given to save." << endl;
 						}
 					}
 					else if(hostUiRequestCommand.compare("deleteCombo") == 0)
 					{
+						vector<string> comboList;
 						if(hostUiRequestData.empty() == false)
 						{
 							if(fsInt.deleteComboFromFileSystem(hostUiRequestData) == 0)
@@ -464,37 +427,35 @@ int main(int argc, char *argv[])
 								procCont.disableEffects();
 								comboMap.deleteComboObjectFromMapAndList(hostUiRequestData); // update comboMap
 
-								if(debugOutput) cout << "combo map list size: " << comboList.size() << endl;
+								 cout << "combo map list size: " << comboList.size() << endl;
 
 								string comboNameArray;
 
 								hostUi.sendComboList(getStringListString(comboList));
-								ofxMainStatus = "combo deleted";
+								FlxMainStatus = "combo deleted";
 								procCont.enableEffects();
 							}
 							else
 							{
-								if(debugOutput) cout << "failed to delete combo." << endl;
+								 cout << "failed to delete combo." << endl;
 							}
 						}
 						else
 						{
-							if(debugOutput) cout << "no combo name given to delete." << endl;
+							 cout << "no combo name given to delete." << endl;
 						}
 					}
-					else if(hostUiRequestCommand.compare("getCurrentValues") == 0)
+					else if(hostUiRequestCommand.compare("getCurrentStatus") == 0)
 					{
-						if(newDataFromServer)
-						{
-							newDataFromServer = false;
-						}
-#if(pedalUiDbg >= 1)
-						if(debugOutput) cout << "sent current data to HOST " << endl;
-#endif
+						hostUi.sendCurrentStatus(FlxMainStatus);
+	#if(hostUiDbg >= 1)
+						 cout << "sent current status to HOST: " << FlxMainStatus << endl;
+	#endif
 					}
+
 					else
 					{
-						if(debugOutput) cout << "sent nothing to host" << endl;
+						 cout << "sent nothing to host" << endl;
 					}
 				}
 				hostUiRequest.clear();
@@ -502,32 +463,27 @@ int main(int argc, char *argv[])
 				hostUiRequestData.clear();
 			}
 
-			usleep(100000);
-
-		}
-		else
-		{
-
+			usleep(50000);
 		}
 
 
 		//************* Process requests from PCB UI Interface  *************
 		// this needs to be running even when USB is connected to be able to
-		// detect, via FlxPedalUi process, when the USB is disconnected
+		// use the Utility menu
 
 		if((pedalUiRequest = pedalUi.getUserRequest()).size() > 5)
 		{
 
 #if(pedalUiDbg >= 3)
-			if(debugOutput) cout << "PEDAL UI REQUEST: " << pedalUiRequest << endl;
-			if(debugOutput) cout << "pedalUiRequest size: " << pedalUiRequest.size() << endl;
+			 cout << "PEDAL UI REQUEST: " << pedalUiRequest << endl;
+			 cout << "pedalUiRequest size: " << pedalUiRequest.size() << endl;
 #endif
 
 			// validate request (make sure it isn't corrupted)
 
 			if(validateString(pedalUiRequest) == true)
 			{
-				int colonPosition = pedalUiRequest.find(":");
+				size_t colonPosition = pedalUiRequest.find(":");
 				if(0 < colonPosition && colonPosition < pedalUiRequest.length())
 				{
 					pedalUiRequestCommand = pedalUiRequest.substr(0,colonPosition);
@@ -540,13 +496,13 @@ int main(int argc, char *argv[])
 #endif
 				if(pedalUiRequestCommand.compare("listCombos") == 0)
 				{
-					comboList = comboMap.getComboNameList();
+					vector<string> comboList = comboMap.getComboNameList();
 					string comboListString = getStringListString(comboList);
 					pedalUi.sendComboList(comboListString);
 
 #if(pedalUiDbg >= 2)
-					if(debugOutput) cout << comboListString << endl;
-					if(debugOutput) cout << "sent listCombos" << endl;
+					 cout << comboListString << endl;
+					 cout << "sent listCombos" << endl;
 #endif
 				}
 				else if(pedalUiRequestCommand.compare("getCombo") == 0)
@@ -554,16 +510,17 @@ int main(int argc, char *argv[])
 					if(pedalUiRequestData.size() > 1)
 					{
 						comboName = pedalUiRequestData;
-						procCont.disableAudioOutput();
+						pedalUi.sendComboPedalUiData(comboMap.getComboObject(comboName).getPedalUiJson());
+						procCont.disableAudioOutput();  // mutes the popping noises during the combo change
 						if(comboMap.isInComboMap(comboName))
 						{
-							procCont.disableEffects();
+							procCont.disableEffects();  // causes Processing::audioCallback to bypass all processing
+														// and sends signal from input straight to output
 
 							comboName = pedalUiRequestData;
 
-							if(debugOutput) cout << comboName << endl;
-
-							usleep(1000);
+							usleep(5000); // let Processing::audioCallback finish and get disabled before
+										// changing combos
 
 							ComboStruct comboStruct = comboMap.getComboObject(comboName).getComboStruct();
 							if(procCont.loadComboStruct(comboStruct) == 0) loadSuccess = true;
@@ -572,53 +529,38 @@ int main(int argc, char *argv[])
 
 							if(loadSuccess == true)
 							{
-								pedalUi.sendComboPedalUiData(comboMap.getComboObject(comboName).getPedalUiJson());
 #if(pedalUiDbg >= 1)
-								if(debugOutput) cout << "sent pedalUiJson for: " << comboName << endl;
+								 cout << "sent pedalUiJson for: " << comboName << endl;
 #endif
-								ofxMainStatus = "combo running";
+								FlxMainStatus = "combo running";
 							}
 							else
 							{
-								ofxMainStatus = "load failed";
+								FlxMainStatus = "load failed";
 							}
-
-							procCont.enableEffects();
-
-
+							procCont.enableEffects(); // start processing again
 						}
 						else
 						{
-							if(debugOutput) cout << "comboName not found." << endl;
-							ofxMainStatus = "load failed";
+							 cout << "comboName not found." << endl;
+							FlxMainStatus = "load failed";
 						}
 						procCont.enableAudioOutput();
 					}
 					else
 					{
-						if(debugOutput) cout << "invalid pedalUiRequestData: " << pedalUiRequestData << endl;
+						 cout << "invalid pedalUiRequestData: " << pedalUiRequestData << endl;
 					}
 				}
 				else if(pedalUiRequestCommand.compare("changeValue") == 0)
 				{
-					int delimiterPosition[2] = {0,0}; // 1: colon, 2: equals
-					string controlString;
-					string paramString;
-					string valueString;
-					int valueIndex;
 					try
 					{
 						int size = pedalUiRequestData.size();
 						if(size > 0)
 						{
-							delimiterPosition[0] = pedalUiRequestData.find(":",0);
-							controlString = pedalUiRequestData.substr(0,delimiterPosition[0]);
-							delimiterPosition[1] = pedalUiRequestData.find("=",delimiterPosition[0]);
-							paramString = pedalUiRequestData.substr(delimiterPosition[0]+1,delimiterPosition[1]-delimiterPosition[0]-1);
-
-							valueString = pedalUiRequestData.substr(delimiterPosition[1]+1);
-							valueIndex = std::strtol((char *)valueString.c_str(), NULL, 10);
-							procCont.updateControlParameter(controlString, paramString, valueIndex);
+							ProcessControlChange change = parseValueChangeRequest(pedalUiRequestData);
+							procCont.updateControlParameter(change.procContName, change.parameter, change.parameterValueIndex);
 						}
 					}
 					catch(exception &e)
@@ -633,16 +575,14 @@ int main(int argc, char *argv[])
 						procCont.disableEffects();
 						{
 							comboData = procCont.getComboStruct();
-							comboMap.saveCombo(comboName,comboData);
+							cout << "saveCombo: " << comboData.name << endl;
+							comboMap.saveCombo(comboData);
 							usleep(200000);
 						}
 
-						ofxMainStatus = "combo saved";
+						FlxMainStatus = "combo saved";
 						procCont.enableEffects();
 					}
-				}
-				else if(pedalUiRequestCommand.compare("getCurrentValues") == 0)
-				{
 				}
 				else if(pedalUiRequestCommand.compare("getUtilities") == 0)
 				{
@@ -659,19 +599,34 @@ int main(int argc, char *argv[])
 					{
 						utilityParameterName = pedalUiRequestData.substr(0,equalIndex);
 						utilityParameterValue = pedalUiRequestData.substr(equalIndex+1);
-
-						if(pedalUtilityData.updateUtilityValue(utilityParameterName, utilityParameterValue) == -1)
+						int utilType = 0;
+						if((utilType = pedalUtilityData.updateUtilityValue(utilityParameterName, utilityParameterValue)) == -1)
 						{
 							cout << "invalid utility value." << endl;
 						}
 						else
 						{
 							try
-							{
-								pedalUtilityData.processPedalUtilityChange( utilityParameterName,
-																			utilityParameterValue,
-														   pedalUtilityData,  hostUi, procCont);
-
+							{		//TODO: Use the Observer Pattern here
+								switch(utilType)
+								{
+									case 0:
+										comboMap.setProcessUtilityData(pedalUtilityData.getProcessUtility());
+										break;
+									case 1:
+										procCont.setJackUtility(pedalUtilityData.getJackUtility());
+										break;
+									case 2:
+										procCont.updateNoiseGateUtility(pedalUtilityData.getNoiseGateUtility());
+										break;
+									case 3:
+										procCont.updateEnvTriggerUtility(pedalUtilityData.getEnvTriggerUtility());
+										break;
+									case 4:
+										hostUi.setHostPcUtility(pedalUtilityData.getHostUtility());
+										break;
+									default:;
+								}
 							}
 							catch(exception &e)
 							{
@@ -691,33 +646,31 @@ int main(int argc, char *argv[])
 				}
 				else if(pedalUiRequestCommand.compare("powerOff") == 0)
 				{
-					system("poweroff");
-					exit = 1;  // not sure what real effect this will have,
-					// since it comes after poweroff
+					// exit main loop, shutdown IPC, processing, and ports, and then poweroff.
+					exit = 1;
 				}
 				else
 				{
-					if(debugOutput) cout << "sent nothing to pedal" << endl;
+					 cout << "sent nothing to pedal" << endl;
 				}
 			}
 			else
 			{
-				if(debugOutput) cout << "pedalUiRequest is invalid or corrupted." << endl;
+				 cout << "pedalUiRequest is invalid or corrupted." << endl;
 			}
 
 			pedalUiRequest.clear();
 			pedalUiRequestCommand.clear();
 			pedalUiRequestData.clear();
 		}
-
-
 		procCont.readFootswitches();
 	}
 	pedalUi.closeIPCFiles();
+	procCont.disableAudioOutput();
 	procCont.stopComboProcessing();
 	hostUi.closePort();
 	procCont.stopJack();
-
-
+	system("poweroff");
+	while(1);
 	return 0;
 }

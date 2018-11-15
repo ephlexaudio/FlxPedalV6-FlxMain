@@ -25,12 +25,14 @@
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
 
-using namespace std;
-
-/*#define SPI_TX_BUFFER_SIZE 1500
-#define SPI_RX_BUFFER_SIZE 1500*/
 
 
+#define TX_BUFFER_SIZE 1500
+#define RX_BUFFER_SIZE 1500
+
+
+namespace std
+{
 
 
 class PedalUiInt {
@@ -67,10 +69,10 @@ public:
 	int sendComboList(string comboList);
 	int openIPCFiles(void);
 	int closeIPCFiles(void);
-	int sendUsbPortOpen(bool usbPortOpen);
-	int sendHostGuiActive(bool hostGuiActive);
+	void sendUsbPortOpen(bool usbPortOpen);
+	void sendHostGuiActive(bool hostGuiActive);
 };
 
 
-
+}
 #endif /* PEDALUI_H_ */
