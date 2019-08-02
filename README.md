@@ -4,5 +4,4 @@ This is the main process running on the Raspberry Pi Compute Module. It launches
 
 This is the 6th Version of the pedal itself.  A new version generally means a change in hardware, or at least an addition or removal of a linux process.
 
-For more information on how the pedal evolved, please visit my website at www.ephlexaudio.com/pedal/
 
