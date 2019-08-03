@@ -145,7 +145,6 @@ int main(int argc, char *argv[])
 
 
 	pedalUtilityData.readUtilityDataFromFile();
-	/*****************END: Start up and init of pedal *******************/
 
 
 	comboMap.loadComboMapAndList();
@@ -161,12 +160,12 @@ int main(int argc, char *argv[])
 
 	sleep(1); // give JACK more time to start up
 	procCont.startComboProcessing();
-	//procCont.enableAudioOutput();
 	procCont.disableAudioOutput();
 	FlxMainStatus.clear();
 	procCont.disableEffects();
 	procCont.loadSymbols();
 
+	/*****************END: Start up and init of pedal *******************/
 
 	/***************** Start up FlxPedalUi process and connect ***************/
 
