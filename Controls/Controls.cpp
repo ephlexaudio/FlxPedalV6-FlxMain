@@ -16,8 +16,8 @@
 
 
 
-namespace std
-{
+using namespace std;
+
 
 Controls::Controls()
 {
@@ -103,4 +103,4 @@ void Controls::setProcessParameterControlBufferArray(array<ProcessParameterContr
 
 
 
-}
+

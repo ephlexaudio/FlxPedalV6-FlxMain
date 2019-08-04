@@ -12,8 +12,8 @@
 #include "../valueArrays.h"
 #include "../config.h"
 
-namespace std
-{
+using namespace std;
+
 #define dbg 0
 
 Filter3Band2::Filter3Band2():lp_y {0.000,0.000,0.000},
@@ -298,4 +298,4 @@ void Filter3Band2::stop()
 }
 
 
-}
+

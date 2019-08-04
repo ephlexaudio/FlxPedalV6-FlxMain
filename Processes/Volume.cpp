@@ -11,8 +11,9 @@
 #include "../config.h"
 #include "../valueArrays.h"
 
-namespace std
-{
+using namespace std;
+
+
 #define dbg 0
 Volume::Volume()
 {
@@ -125,4 +126,4 @@ void Volume::stop()
 		cout << "exception in Volume::stop: " << e.what() << endl;
 	}
 }
-}
+

@@ -22,8 +22,7 @@
 
 #include "structs.h"
 
-namespace std
-{
+
 	void startTimer(void);
 	int stopTimer(const char *description);
 
@@ -36,6 +35,6 @@ namespace std
 	ProcessControlChange parseValueChangeRequest(string changeRequestString);
 	int validateJsonBuffer(char *jsonBuffer);
 
-}
+
 
 #endif /* UTILITYFUNCTIONS_H_ */

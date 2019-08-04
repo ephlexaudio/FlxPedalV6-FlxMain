@@ -10,8 +10,6 @@
 
 #include "ComboDataInt.h"
 #include "FileSystemInt.h"
-namespace std
-{
 
 	class ComboMap : public ComboDataInt
 	{
@@ -41,6 +39,6 @@ namespace std
 
 	};
 
-} /* namespace std */
+
 
 #endif /* COMBOMAP_H_ */

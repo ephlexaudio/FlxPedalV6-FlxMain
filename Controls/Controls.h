@@ -25,9 +25,8 @@
 
 #include "../structs.h"
 
+using std::array;
 
-namespace std
-{
 
 class Controls {
 protected:
@@ -110,7 +109,6 @@ public:
 };
 
 
-} /* namespace std */
 
 
 #endif /* CONTROLS_CONTROLS_H_ */

@@ -25,8 +25,7 @@
 #include "FileSystemInt.h"
 #include "structs.h"
 
-namespace std
-{
+
 
 class PedalUtilityData
 {
@@ -71,5 +70,5 @@ public:
 
 
 };
-}
+
 #endif /* PEDALUTILITYDATA_H_ */

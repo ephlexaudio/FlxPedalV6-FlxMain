@@ -25,8 +25,7 @@
 #include <linux/i2c-dev.h>
 #include "Processing.h"
 
-namespace std
-{
+
 
 class ProcessingControl
 {
@@ -75,7 +74,7 @@ public:
 	vector<string> getControlSymbols();
 	//int processUtilityChange(PedalUtilityChange utilChange);  // "process" meaning "do something with this"
 };
-}
+
 
 
 #endif /* PROCESSINGCONTROL_H_ */

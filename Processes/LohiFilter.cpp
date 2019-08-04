@@ -11,8 +11,7 @@
 #include "../valueArrays.h"
 #include "../config.h"
 
-namespace std
-{
+using namespace std;
 
 #define dbg 0
 
@@ -238,4 +237,4 @@ LohiFilter::~LohiFilter()
  }
 
 
-}
+

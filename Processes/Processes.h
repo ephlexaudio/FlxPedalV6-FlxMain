@@ -22,13 +22,15 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <exception>
 #include <json/json.h>
 
 #include "../config.h"
 #include "../structs.h"
 
-namespace std
-{
+using std::array;
+
+
 	class Processes {
 	protected:
 		ProcessObjectData processData;
@@ -254,7 +256,7 @@ namespace std
 	};
 
 
-}
+
 
 
 

@@ -26,8 +26,6 @@
 #include "ComputeModulePinOuts2.h"
 #include "GPIOClass.h"
 
-namespace std
-{
 
 
 
@@ -59,4 +57,4 @@ public:
 };
 
 #endif /* USBINT_H_ */
-}
+

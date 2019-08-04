@@ -13,8 +13,8 @@
 //extern bool debugOutput;
 
 
-namespace std
-{
+using namespace std;
+
 #define dbg 0
 
 	Filter3Band::Filter3Band():lp_y {{0.000,0.000,0.000},{0.000,0.000,0.000}},
@@ -334,4 +334,4 @@ namespace std
 
 	}
 
-}
+

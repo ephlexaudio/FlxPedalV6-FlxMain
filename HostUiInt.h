@@ -17,8 +17,6 @@
 #include "structs.h"
 #include "UsbInt.h"
 
-namespace std
-{
 
 
 class HostUiInt : public UsbInt
@@ -42,5 +40,5 @@ public:
 	int setHostPcUtility(HostPcUtility hostUtil);
 
 };
-}
+
 #endif /* HOSTUIINT_H_ */

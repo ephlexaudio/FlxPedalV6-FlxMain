@@ -24,8 +24,6 @@
 
 #define JSON_BUFFER_LENGTH 32000
 
-namespace std
-{
 
 
 
@@ -180,6 +178,6 @@ public:
 };
 
 
-}
+
 
 #endif /* DATABASEINT_H_ */

@@ -22,8 +22,6 @@
 #define JSON_BUFFER_LENGTH 32000
 
 #include "utilityFunctions.h"
-namespace std
-{
 
 	class FileSystemInt
 	{
@@ -49,6 +47,6 @@ namespace std
 
 	};
 
-} /* namespace std */
+
 
 #endif /* FILESYSTEMINT_H_ */

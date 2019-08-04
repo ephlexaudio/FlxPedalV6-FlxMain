@@ -10,9 +10,7 @@
 
 #define JSON_BUFFER_LENGTH 32000
 
-namespace std
-{
-
+using namespace std;
 
 
 	ComboDataInt::ComboDataInt()
@@ -3334,4 +3332,4 @@ namespace std
 
 
 
-}
+

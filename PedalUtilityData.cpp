@@ -9,8 +9,8 @@
 #include "utilityFunctions.h"
 
 
-namespace std
-{
+using namespace std;
+
 
 PedalUtilityData::PedalUtilityData()
 {
@@ -580,4 +580,4 @@ HostPcUtility PedalUtilityData::getHostUtility()
 	 return hostUtil;
 }
 
-}
+

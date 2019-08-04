@@ -9,8 +9,8 @@
 
 //extern bool debugOutput;
 
-namespace std
-{
+using namespace std;
+
 
 	FileSystemInt::FileSystemInt ()
 	{
@@ -511,4 +511,3 @@ int FileSystemInt::savePedalUtilityJsonDataToFileSystem(Json::Value utilityJsonD
 
 
 
-} /* namespace std */

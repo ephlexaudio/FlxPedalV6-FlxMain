@@ -31,8 +31,7 @@
 #define RX_BUFFER_SIZE 1500
 
 
-namespace std
-{
+using std::string;
 
 
 class PedalUiInt {
@@ -74,5 +73,5 @@ public:
 };
 
 
-}
+
 #endif /* PEDALUI_H_ */

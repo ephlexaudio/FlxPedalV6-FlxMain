@@ -15,8 +15,8 @@ struct timeval tv;
 
 #define JSON_BUFFER_LENGTH 32000
 
-namespace std
-{
+using namespace std;
+
 
 void startTimer(void)
 {
@@ -296,4 +296,4 @@ ProcessControlChange parseValueChangeRequest(string changeRequestString)
 
 
 
-}
+

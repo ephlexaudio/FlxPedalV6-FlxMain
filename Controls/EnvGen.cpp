@@ -10,8 +10,8 @@
 #include "../valueArrays.h"
 
 
-namespace std
-{
+using namespace std;
+
 
 
 
@@ -226,4 +226,4 @@ void EnvGen::stop()
 
 }
 
-}
+

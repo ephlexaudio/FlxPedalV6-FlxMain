@@ -9,13 +9,14 @@
 #define INDEXMAPSTRUCTS_H_
 
 
-#include <vector>
+
 #include <map>
 #include <sys/types.h>
+#include <string>
 
+using std::string;
+using std::map;
 
-namespace std
-{
 
 
 struct ProcessParameterIndexing{
@@ -51,7 +52,7 @@ struct ControlIndexing{
 
 
 
-}
+
 
 
 #endif /* INDEXMAPSTRUCTS_H_ */

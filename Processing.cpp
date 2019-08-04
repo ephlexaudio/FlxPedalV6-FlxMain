@@ -15,8 +15,8 @@
 #include "valueArrays.h"
 
 
-namespace std
-{
+using namespace std;
+
 
 #define TIMING_DBG 0
 #define SIGPROC_DBG 0
@@ -1278,4 +1278,4 @@ vector<string> Processing::getControlSymbols()
 }
 
 
-}
+

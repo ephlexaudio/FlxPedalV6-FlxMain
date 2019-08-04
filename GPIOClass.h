@@ -15,8 +15,7 @@
  * Purpose: Each object instatiated from this class will control a GPIO pin
  * The GPIO pin number must be passed to the overloaded class constructor
  */
-namespace std
-{
+
 
 class GPIOClass
 {
@@ -35,5 +34,5 @@ public:
     int getval_gpio(int/*string &*/ &val);
     int/*string*/ get_gpionum();
 };
-}
+
 #endif

@@ -9,8 +9,8 @@
 #include "config.h"
 
 
-namespace std
-{
+using namespace std;
+
 
 
 HostUiInt::HostUiInt()
@@ -353,4 +353,4 @@ int HostUiInt::setHostPcUtility(HostPcUtility hostUtil)
 
 
 
-}
+

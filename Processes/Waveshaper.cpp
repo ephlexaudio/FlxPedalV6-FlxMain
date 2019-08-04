@@ -11,8 +11,8 @@
 #include "../config.h"
 #include "../valueArrays.h"
 
-namespace std
-{
+using namespace std;
+
 
 #define dbg 0
 	Waveshaper::Waveshaper(): k {{0.000,0.000,0.000,0.000,0.000,0.000},{0.000,0.000,0.000,0.000,0.000,0.000},
@@ -691,4 +691,4 @@ namespace std
 		}
 	}
 
-}
+

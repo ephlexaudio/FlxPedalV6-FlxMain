@@ -8,8 +8,8 @@
 #include "ComboMap.h"
 
 
-namespace std
-{
+using namespace std;
+
 
 	ComboMap::ComboMap ()
 	{
@@ -307,4 +307,3 @@ int ComboMap::saveCombo(ComboStruct comboData)
 	return status;
 }
 
-} /* namespace std */

@@ -30,9 +30,8 @@
 #include "jackaudioio.h"
 #include "structs.h"
 
-namespace std
-{
 
+using std::array;
 
 
 #if(DISABLE_AUDIO_THREAD == 0)
@@ -134,5 +133,5 @@ public:
 
 };
 
-}
+
 #endif /* PROCESSING_H_ */

@@ -25,8 +25,8 @@ cout << "***** EXITING: PedalUiInt:::" << endl;
 
 
 
-namespace std
-{
+using namespace std;
+
 
 
 
@@ -433,4 +433,4 @@ void PedalUiInt::sendHostGuiActive(bool hostGuiActive)
 #endif
 
 }
-}
+

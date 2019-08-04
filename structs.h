@@ -10,20 +10,20 @@
 
 
 
-
-#include <vector>
+/*#include <string>
+#include <vector>*/
 #include <sys/types.h>
 #include <json/json.h>
 #include "indexMapStructs.h"
 #include "config.h"
 #define AVE_ARRAY_SIZE 16
 
-
-
+using std::string;
+using std::vector;
+using std::map;
 
 /**********************************************************************************************/
-namespace std
-{
+
 
 
 struct Connector{
@@ -322,7 +322,7 @@ struct ProcessControlChange {
 
 
 
-}
+
 
 
 

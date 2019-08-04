@@ -13,8 +13,8 @@
 
 
 
-namespace std
-{
+using namespace std;
+
 
 #define dbg 0
 Processes::Processes()
@@ -141,4 +141,4 @@ int Processes::clearProcBuffer(ProcessSignalBuffer *processSignalBuffer)
 
 
 
-}
+

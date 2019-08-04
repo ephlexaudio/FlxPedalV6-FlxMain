@@ -28,8 +28,10 @@
 #define CONTROL_PIN_0_NUMBER 41
 #define CONTROL_PIN_1_NUMBER 42
 #define CONTROL_PIN_2_NUMBER 43
-namespace std
-{
+
+
+using namespace std;
+
 
 
 ProcessingControl::ProcessingControl()
@@ -756,4 +758,4 @@ vector<string> ProcessingControl::getControlSymbols()
 }*/
 
 
-}
+
